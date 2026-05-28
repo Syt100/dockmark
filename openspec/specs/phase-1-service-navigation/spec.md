@@ -14,7 +14,13 @@ Dockmark SHALL model Homelab navigation with categories, service items, service 
 #### Scenario: A service has a primary URL
 - **WHEN** a service item is rendered in navigation
 - **THEN** the primary address SHALL be derived from an endpoint marked as primary
-- **AND** the model SHALL avoid conflicting primary URL state between `items` and `endpoints`
+- **AND** service URL fields such as `primary_url` and `internal_url` SHALL NOT be duplicated on `items`
+- **AND** all service addresses SHALL be stored in `endpoints`
+
+#### Scenario: Endpoint primary state is changed
+- **WHEN** an endpoint is marked as the primary endpoint for a service
+- **THEN** no other endpoint for the same service SHALL remain primary
+- **AND** every active service SHALL have exactly one primary endpoint before it appears in home navigation
 
 ### Requirement: Service CRUD API
 Dockmark SHALL expose authenticated API endpoints for managing service navigation data.

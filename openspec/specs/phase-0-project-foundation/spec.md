@@ -10,10 +10,25 @@ Dockmark SHALL use a TypeScript monorepo structure that separates web UI, Worker
 - **WHEN** a developer opens the repository
 - **THEN** the repository SHALL contain `apps/web`, `apps/worker`, `apps/extension`, `packages/shared`, and `migrations`
 - **AND** each app or package SHALL have a clear build/test entry point or placeholder documented in the root package configuration
+- **AND** package management SHALL use `pnpm` workspaces
 
 #### Scenario: Shared code is needed
 - **WHEN** schemas, API types, URL normalization, IDs, or cryptographic helpers are used by more than one app
 - **THEN** they SHALL live in `packages/shared` instead of being duplicated
+
+### Requirement: Frontend technology baseline
+Dockmark SHALL implement the web UI with Vue 3, TypeScript, Vite, Vue Router, and Tailwind CSS.
+
+#### Scenario: Web app is initialized
+- **WHEN** the web app is created
+- **THEN** it SHALL use Vue 3 single-file components with TypeScript
+- **AND** it SHALL use Vite for local development and production builds
+- **AND** it SHALL use Tailwind CSS for styling
+
+#### Scenario: Navigation is added
+- **WHEN** multiple web views are implemented
+- **THEN** routing SHALL use Vue Router
+- **AND** shared state SHALL be introduced only when it removes meaningful duplication or supports cross-view behavior
 
 ### Requirement: Cloudflare-first runtime baseline
 Dockmark SHALL target Cloudflare Workers as the backend runtime and Workers Assets as the web UI hosting path.
@@ -27,6 +42,23 @@ Dockmark SHALL target Cloudflare Workers as the backend runtime and Workers Asse
 - **WHEN** Wrangler reads the project configuration
 - **THEN** it SHALL define the Worker entry point, compatibility date, web assets directory, D1 binding, and KV binding
 - **AND** R2 SHALL NOT be required for the baseline deployment
+
+### Requirement: Adapter-based authentication foundation
+Dockmark SHALL define authentication behind an application-level adapter so Cloudflare Access is one supported production mode, not the only possible production authentication mechanism.
+
+#### Scenario: Cloudflare Access is used
+- **WHEN** Dockmark is deployed behind Cloudflare Access
+- **THEN** the Worker SHALL authenticate web UI and normal API requests through a Cloudflare Access auth adapter
+- **AND** application services SHALL consume a normalized authenticated user context instead of reading Access headers directly
+
+#### Scenario: Future self-hosted auth is added
+- **WHEN** Dockmark later supports deployment as a self-hosted host service
+- **THEN** the authentication implementation SHALL be replaceable without changing service navigation, import/export, bookmark import, or sync business logic
+
+#### Scenario: Local development runs
+- **WHEN** the application runs in local development
+- **THEN** it SHALL provide a documented development auth adapter or mock user path
+- **AND** that path SHALL NOT be enabled silently in production
 
 ### Requirement: Database migration baseline
 Dockmark SHALL manage D1 schema through SQL migration files committed to the repository.
@@ -49,7 +81,7 @@ Dockmark SHALL separate deploy-time Cloudflare bindings from application-level s
 - **THEN** the application SHALL still run with the Phase 1 through Phase 3 feature set
 
 ### Requirement: Development quality gates
-Dockmark SHALL provide basic commands for type checking, testing, linting or formatting, and local development.
+Dockmark SHALL provide pnpm commands for type checking, testing, linting or formatting, building, and local development.
 
 #### Scenario: Developer validates changes locally
 - **WHEN** the developer runs the documented validation command
