@@ -1,0 +1,22 @@
+{
+  "name": "dockmark",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.24.0",
+  "scripts": {
+    "dev": "corepack pnpm --filter @dockmark/worker dev",
+    "dev:web": "corepack pnpm --filter @dockmark/web dev",
+    "dev:worker": "corepack pnpm --filter @dockmark/worker dev",
+    "build": "corepack pnpm --filter @dockmark/web build && corepack pnpm --filter @dockmark/shared build && corepack pnpm --filter @dockmark/extension build && corepack pnpm --filter @dockmark/worker build",
+    "typecheck": "corepack pnpm -r --if-present typecheck",
+    "test": "corepack pnpm -r --if-present test",
+    "lint": "corepack pnpm -r --if-present lint",
+    "format": "corepack pnpm -r --if-present format",
+    "validate": "corepack pnpm typecheck && corepack pnpm test && corepack pnpm lint && corepack pnpm build"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.2",
+    "typescript": "~6.0.0"
+  }
+}
