@@ -1,0 +1,23 @@
+schema: spec-driven
+
+context: |
+  Project: Dockmark
+  Domain: Personal Homelab service navigation and browser bookmark synchronization.
+  Positioning: service navigation first, bookmark synchronization second, password storage never.
+  Tech stack: TypeScript, Vue 3, Vite, Cloudflare Workers, Hono, D1, KV, optional R2, browser extension MV3.
+  Data ownership: D1 is the source of truth. KV is cache only and must be rebuildable.
+  Security: Cloudflare Access protects the web UI and normal APIs. Browser extension sync uses per-client tokens. Store only token hashes server-side.
+  Credential boundary: store Vaultwarden lookup hints only. Do not store passwords, API keys, OTP seeds, session cookies, or other secrets.
+  Product boundary: Phase 1 must be useful as a Homelab dashboard before bookmark sync exists.
+
+rules:
+  specs:
+    - Each spec name must start with a phase prefix.
+    - Keep requirements testable with concrete scenarios.
+    - State explicit phase exclusions when a capability is intentionally deferred.
+  proposal:
+    - Include Non-goals for any change that touches sync, secrets, or deployment.
+    - Do not expand MVP scope without naming the impacted phase.
+  tasks:
+    - Break tasks by deployable milestone.
+    - Add regression tests for URL normalization, import parsing, cache invalidation, and sync idempotency when those capabilities are implemented.
