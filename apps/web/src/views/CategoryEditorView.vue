@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { createCategory, fetchCategories, updateCategory } from '../api/client'
+import { toChineseError } from '../api/errors'
 import AppButton from '../components/AppButton.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
 import ResponsiveEditorShell from '../components/ResponsiveEditorShell.vue'
@@ -45,7 +46,7 @@ async function load() {
     form.color = category.color ?? ''
     form.sortOrder = category.sortOrder
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '加载分类失败'
+    error.value = toChineseError(caught, '加载分类失败')
   } finally {
     isLoading.value = false
   }
@@ -66,13 +67,13 @@ async function submit() {
 
     if (categoryId.value) {
       await updateCategory(categoryId.value, input)
+      await router.push({ path: '/categories', query: { saved: 'updated' } })
     } else {
       await createCategory(input)
+      await router.push({ path: '/categories', query: { saved: 'created' } })
     }
-
-    await router.push('/categories')
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '保存分类失败'
+    error.value = toChineseError(caught, '保存分类失败')
   } finally {
     isSaving.value = false
   }

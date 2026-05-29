@@ -11,6 +11,7 @@ import {
   fetchTags,
   updateItem,
 } from '../api/client'
+import { toChineseError } from '../api/errors'
 import AppButton from '../components/AppButton.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
 import ResponsiveEditorShell from '../components/ResponsiveEditorShell.vue'
@@ -26,6 +27,13 @@ type EndpointForm = {
 }
 
 const endpointKinds: EndpointKind[] = ['public', 'lan', 'tailscale', 'admin', 'backup', 'docs', 'api']
+const endpointTemplates: Array<{ label: string; kind: EndpointKind }> = [
+  { label: '公网', kind: 'public' },
+  { label: '内网', kind: 'lan' },
+  { label: 'Tailscale', kind: 'tailscale' },
+  { label: '管理后台', kind: 'admin' },
+  { label: '文档', kind: 'docs' },
+]
 const route = useRoute()
 const router = useRouter()
 const categories = ref<Category[]>([])
@@ -90,17 +98,21 @@ async function load() {
       applyItem(await fetchItem(itemId.value))
     }
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '加载服务失败'
+    error.value = toChineseError(caught, '加载服务失败')
   } finally {
     isLoading.value = false
   }
 }
 
 function addEndpoint() {
+  addEndpointFromTemplate({ label: '访问地址', kind: 'public' })
+}
+
+function addEndpointFromTemplate(template: { label: string; kind: EndpointKind }) {
   form.endpoints.push({
-    label: '访问地址',
+    label: template.label,
     url: '',
-    kind: 'public',
+    kind: template.kind,
     isPrimary: form.endpoints.length === 0,
     sortOrder: form.endpoints.length,
   })
@@ -149,13 +161,13 @@ async function submit() {
 
     if (itemId.value) {
       await updateItem(itemId.value, input)
+      await router.push({ path: '/services', query: { saved: 'updated' } })
     } else {
       await createItem(input)
+      await router.push({ path: '/services', query: { saved: 'created' } })
     }
-
-    await router.push('/services')
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '保存服务失败'
+    error.value = toChineseError(caught, '保存服务失败')
   } finally {
     isSaving.value = false
   }
@@ -209,9 +221,22 @@ onMounted(load)
         </section>
 
         <section class="grid gap-3">
-          <div class="flex items-center justify-between gap-3">
-            <h2 class="text-sm font-semibold text-slate-950">访问地址</h2>
-            <AppButton type="button" @click="addEndpoint">添加地址</AppButton>
+          <div class="grid gap-3">
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="text-sm font-semibold text-slate-950">访问地址</h2>
+              <AppButton type="button" @click="addEndpoint">添加地址</AppButton>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <AppButton
+                v-for="template in endpointTemplates"
+                :key="template.kind"
+                type="button"
+                tone="ghost"
+                @click="addEndpointFromTemplate(template)"
+              >
+                + {{ template.label }}
+              </AppButton>
+            </div>
           </div>
 
           <div v-for="(endpoint, index) in form.endpoints" :key="index" class="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
@@ -266,9 +291,9 @@ onMounted(load)
           </label>
         </section>
 
-        <div class="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end">
-          <AppButton type="button" @click="router.push('/services')">取消</AppButton>
-          <AppButton tone="primary" type="submit" :disabled="isSaving">
+        <div class="grid gap-2 border-t border-slate-200 pt-4 sm:flex sm:flex-row sm:justify-end">
+          <AppButton class="w-full sm:w-auto" type="button" @click="router.push('/services')">取消</AppButton>
+          <AppButton class="w-full sm:w-auto" tone="primary" type="submit" :disabled="isSaving">
             {{ isSaving ? '保存中...' : '保存服务' }}
           </AppButton>
         </div>

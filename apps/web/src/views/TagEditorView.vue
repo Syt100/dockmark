@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { createTag, fetchTags, updateTag } from '../api/client'
+import { toChineseError } from '../api/errors'
 import AppButton from '../components/AppButton.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
 import ResponsiveEditorShell from '../components/ResponsiveEditorShell.vue'
@@ -39,7 +40,7 @@ async function load() {
     form.name = tag.name
     form.slug = tag.slug
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '加载标签失败'
+    error.value = toChineseError(caught, '加载标签失败')
   } finally {
     isLoading.value = false
   }
@@ -57,13 +58,13 @@ async function submit() {
 
     if (tagId.value) {
       await updateTag(tagId.value, input)
+      await router.push({ path: '/tags', query: { saved: 'updated' } })
     } else {
       await createTag(input)
+      await router.push({ path: '/tags', query: { saved: 'created' } })
     }
-
-    await router.push('/tags')
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '保存标签失败'
+    error.value = toChineseError(caught, '保存标签失败')
   } finally {
     isSaving.value = false
   }

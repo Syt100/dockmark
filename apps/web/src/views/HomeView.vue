@@ -5,6 +5,7 @@ import type { NavItem, NavResponse } from '@dockmark/shared'
 
 import { fetchNavigation } from '../api/client'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
+import AppLinkButton from '../components/AppLinkButton.vue'
 import { endpointKindLabels } from '../ui/labels'
 
 const nav = ref<NavResponse | null>(null)
@@ -84,6 +85,9 @@ onMounted(load)
     <section v-else-if="nav && totalItems === 0" class="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
       <p class="text-base font-medium text-slate-950">还没有服务</p>
       <p class="mt-1 text-sm text-slate-600">进入“服务”页面添加第一个自部署服务入口。</p>
+      <div class="mt-4">
+        <AppLinkButton to="/services/new" tone="primary">新建服务</AppLinkButton>
+      </div>
     </section>
 
     <section v-else-if="nav && !hasVisibleItems" class="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">

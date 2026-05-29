@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 
 import type { Category } from '@dockmark/shared'
 
 import { deleteCategory, fetchCategories } from '../api/client'
+import { toChineseError } from '../api/errors'
 import AppLinkButton from '../components/AppLinkButton.vue'
 import ConfirmAction from '../components/ConfirmAction.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
@@ -24,7 +25,7 @@ async function load() {
   try {
     categories.value = await fetchCategories()
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '加载分类失败'
+    error.value = toChineseError(caught, '加载分类失败')
   } finally {
     isLoading.value = false
   }
@@ -39,11 +40,27 @@ async function remove(id: string) {
     feedback.value = '分类已删除'
     await load()
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '删除分类失败'
+    error.value = toChineseError(caught, '删除分类失败')
   }
 }
 
-onMounted(load)
+function applyFlash(value: unknown) {
+  if (value === 'created') {
+    feedback.value = '分类已创建'
+  } else if (value === 'updated') {
+    feedback.value = '分类已保存'
+  }
+}
+
+onMounted(() => {
+  applyFlash(route.query.saved)
+  void load()
+})
+
+watch(
+  () => route.query.saved,
+  (value) => applyFlash(value),
+)
 </script>
 
 <template>
@@ -81,7 +98,7 @@ onMounted(load)
           </div>
           <div class="mt-4 flex flex-wrap gap-2">
             <AppLinkButton :to="`/categories/${category.id}/edit`">编辑</AppLinkButton>
-            <ConfirmAction message="确认删除这个分类？服务会变为未分类。" @confirm="remove(category.id)" />
+            <ConfirmAction :message="`确认删除分类“${category.name}”？服务会变为未分类。`" @confirm="remove(category.id)" />
           </div>
         </article>
       </section>

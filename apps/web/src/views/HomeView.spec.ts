@@ -79,4 +79,44 @@ describe('HomeView', () => {
 
     vi.unstubAllGlobals()
   })
+
+  it('links to service creation from the empty state', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          categories: [],
+          uncategorized: [],
+        }),
+        {
+          status: 200,
+          headers: {
+            'content-type': 'application/json',
+          },
+        },
+      ),
+    )
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    const wrapper = mount(HomeView, {
+      global: {
+        stubs: {
+          RouterLink: {
+            props: ['to'],
+            template: '<a :href="to"><slot /></a>',
+          },
+        },
+      },
+    })
+
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain('还没有服务')
+    })
+
+    const link = wrapper.find('a[href="/services/new"]')
+    expect(link.exists()).toBe(true)
+    expect(link.text()).toContain('新建服务')
+
+    vi.unstubAllGlobals()
+  })
 })

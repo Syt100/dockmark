@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 
 import type { Tag } from '@dockmark/shared'
 
 import { deleteTag, fetchTags } from '../api/client'
+import { toChineseError } from '../api/errors'
 import AppLinkButton from '../components/AppLinkButton.vue'
 import ConfirmAction from '../components/ConfirmAction.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
@@ -24,7 +25,7 @@ async function load() {
   try {
     tags.value = await fetchTags()
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '加载标签失败'
+    error.value = toChineseError(caught, '加载标签失败')
   } finally {
     isLoading.value = false
   }
@@ -39,11 +40,27 @@ async function remove(id: string) {
     feedback.value = '标签已删除'
     await load()
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '删除标签失败'
+    error.value = toChineseError(caught, '删除标签失败')
   }
 }
 
-onMounted(load)
+function applyFlash(value: unknown) {
+  if (value === 'created') {
+    feedback.value = '标签已创建'
+  } else if (value === 'updated') {
+    feedback.value = '标签已保存'
+  }
+}
+
+onMounted(() => {
+  applyFlash(route.query.saved)
+  void load()
+})
+
+watch(
+  () => route.query.saved,
+  (value) => applyFlash(value),
+)
 </script>
 
 <template>
@@ -73,7 +90,7 @@ onMounted(load)
           <p class="mt-1 text-sm text-slate-600">{{ tag.slug }}</p>
           <div class="mt-4 flex flex-wrap gap-2">
             <AppLinkButton :to="`/tags/${tag.id}/edit`">编辑</AppLinkButton>
-            <ConfirmAction message="确认删除这个标签？" @confirm="remove(tag.id)" />
+            <ConfirmAction :message="`确认删除标签“${tag.name}”？`" @confirm="remove(tag.id)" />
           </div>
         </article>
       </section>

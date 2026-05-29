@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 
 import type { Category, ServiceItem } from '@dockmark/shared'
 
 import { deleteItem, fetchCategories, fetchItems } from '../api/client'
+import { toChineseError } from '../api/errors'
 import AppLinkButton from '../components/AppLinkButton.vue'
+import AppButton from '../components/AppButton.vue'
 import ConfirmAction from '../components/ConfirmAction.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
 import PageHeader from '../components/PageHeader.vue'
@@ -18,25 +20,43 @@ const error = ref<string | null>(null)
 const feedback = ref<string | null>(null)
 const isLoading = ref(false)
 const query = ref('')
+const selectedCategoryId = ref('')
+const selectedStatus = ref('')
+const selectedTagId = ref('')
 const categoryById = computed(() => new Map(categories.value.map((category) => [category.id, category.name])))
 const hasEditor = computed(() => route.name === 'service-new' || route.name === 'service-edit')
+const hasFilters = computed(
+  () => query.value.trim().length > 0 || selectedCategoryId.value !== '' || selectedStatus.value !== '' || selectedTagId.value !== '',
+)
+const availableTags = computed(() => {
+  const map = new Map<string, ServiceItem['tags'][number]>()
+
+  for (const item of items.value) {
+    for (const tag of item.tags) {
+      map.set(tag.id, tag)
+    }
+  }
+
+  return [...map.values()].sort((left, right) => left.name.localeCompare(right.name))
+})
 
 const filteredItems = computed(() => {
   const q = query.value.trim().toLowerCase()
 
-  if (!q) {
-    return items.value
-  }
-
   return items.value.filter((item) =>
-    [
-      item.name,
-      item.description ?? '',
-      item.credentialHint ?? '',
-      categoryById.value.get(item.categoryId ?? '') ?? '',
-      ...item.tags.map((tag) => tag.name),
-      ...item.endpoints.map((endpoint) => `${endpoint.label} ${endpoint.url} ${endpoint.kind}`),
-    ].some((value) => value.toLowerCase().includes(q)),
+    (!q ||
+      [
+        item.name,
+        item.description ?? '',
+        item.credentialHint ?? '',
+        categoryById.value.get(item.categoryId ?? '') ?? '',
+        ...item.tags.map((tag) => tag.name),
+        ...item.endpoints.map((endpoint) => `${endpoint.label} ${endpoint.url} ${endpoint.kind}`),
+      ].some((value) => value.toLowerCase().includes(q))) &&
+    (!selectedCategoryId.value ||
+      (selectedCategoryId.value === '__uncategorized' ? item.categoryId === null : item.categoryId === selectedCategoryId.value)) &&
+    (!selectedStatus.value || item.status === selectedStatus.value) &&
+    (!selectedTagId.value || item.tags.some((tag) => tag.id === selectedTagId.value)),
   )
 })
 
@@ -49,7 +69,7 @@ async function load() {
     items.value = nextItems
     categories.value = nextCategories
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '加载服务失败'
+    error.value = toChineseError(caught, '加载服务失败')
   } finally {
     isLoading.value = false
   }
@@ -64,11 +84,34 @@ async function remove(id: string) {
     feedback.value = '服务已删除'
     await load()
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '删除服务失败'
+    error.value = toChineseError(caught, '删除服务失败')
   }
 }
 
-onMounted(load)
+function clearFilters() {
+  query.value = ''
+  selectedCategoryId.value = ''
+  selectedStatus.value = ''
+  selectedTagId.value = ''
+}
+
+function applyFlash(value: unknown) {
+  if (value === 'created') {
+    feedback.value = '服务已创建'
+  } else if (value === 'updated') {
+    feedback.value = '服务已保存'
+  }
+}
+
+onMounted(() => {
+  applyFlash(route.query.saved)
+  void load()
+})
+
+watch(
+  () => route.query.saved,
+  (value) => applyFlash(value),
+)
 </script>
 
 <template>
@@ -80,11 +123,36 @@ onMounted(load)
         </template>
       </PageHeader>
 
-      <section class="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-        <label class="grid gap-1 text-sm">
+      <section class="grid gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="grid gap-4 md:grid-cols-[2fr_1fr_1fr_1fr_auto] md:items-end">
+          <label class="grid gap-1 text-sm">
           <span class="font-medium text-slate-700">搜索服务</span>
           <input v-model="query" class="rounded-md border border-slate-300 px-3 py-2" placeholder="服务名称、URL、分类或标签" />
-        </label>
+          </label>
+          <label class="grid gap-1 text-sm">
+            <span class="font-medium text-slate-700">分类</span>
+            <select v-model="selectedCategoryId" class="rounded-md border border-slate-300 bg-white px-3 py-2">
+              <option value="">全部分类</option>
+              <option value="__uncategorized">未分类</option>
+              <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
+            </select>
+          </label>
+          <label class="grid gap-1 text-sm">
+            <span class="font-medium text-slate-700">状态</span>
+            <select v-model="selectedStatus" class="rounded-md border border-slate-300 bg-white px-3 py-2">
+              <option value="">全部状态</option>
+              <option v-for="(label, value) in statusLabels" :key="value" :value="value">{{ label }}</option>
+            </select>
+          </label>
+          <label class="grid gap-1 text-sm">
+            <span class="font-medium text-slate-700">标签</span>
+            <select v-model="selectedTagId" class="rounded-md border border-slate-300 bg-white px-3 py-2">
+              <option value="">全部标签</option>
+              <option v-for="tag in availableTags" :key="tag.id" :value="tag.id">{{ tag.name }}</option>
+            </select>
+          </label>
+          <AppButton :disabled="!hasFilters" type="button" @click="clearFilters">清空筛选</AppButton>
+        </div>
       </section>
 
       <FeedbackMessage tone="success" :message="feedback" />
@@ -95,8 +163,12 @@ onMounted(load)
       </section>
 
       <section v-else-if="filteredItems.length === 0" class="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
-        <p class="text-base font-medium text-slate-950">暂无匹配服务</p>
-        <p class="mt-1 text-sm text-slate-600">可以新建服务，或调整搜索条件。</p>
+        <p class="text-base font-medium text-slate-950">{{ hasFilters ? '没有符合筛选条件的服务' : '还没有服务' }}</p>
+        <p class="mt-1 text-sm text-slate-600">{{ hasFilters ? '清空筛选或换一个条件试试。' : '可以新建服务，开始整理自部署入口。' }}</p>
+        <div class="mt-4 flex justify-center gap-2">
+          <AppButton v-if="hasFilters" type="button" @click="clearFilters">清空筛选</AppButton>
+          <AppLinkButton to="/services/new" tone="primary">新建服务</AppLinkButton>
+        </div>
       </section>
 
       <section v-else class="grid gap-3">
@@ -118,7 +190,7 @@ onMounted(load)
 
             <div class="flex flex-wrap items-center gap-2 lg:justify-end">
               <AppLinkButton :to="`/services/${item.id}/edit`">编辑</AppLinkButton>
-              <ConfirmAction message="确认删除这个服务？" @confirm="remove(item.id)" />
+              <ConfirmAction :message="`确认删除服务“${item.name}”？`" @confirm="remove(item.id)" />
             </div>
           </div>
 
