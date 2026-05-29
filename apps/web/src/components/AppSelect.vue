@@ -1,4 +1,8 @@
 <script setup lang="ts">
+defineOptions({
+  inheritAttrs: false,
+})
+
 defineProps<{
   modelValue: string
   name?: string
@@ -15,7 +19,7 @@ function updateValue(event: Event) {
 </script>
 
 <template>
-  <select class="dm-control w-full" :name="name" :required="required" :value="modelValue" @change="updateValue">
+  <select v-bind="$attrs" class="dm-control w-full" :name="name" :required="required" :value="modelValue" @change="updateValue">
     <slot />
   </select>
 </template>

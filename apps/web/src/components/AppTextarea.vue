@@ -1,4 +1,8 @@
 <script setup lang="ts">
+defineOptions({
+  inheritAttrs: false,
+})
+
 defineProps<{
   modelValue: string
   placeholder?: string
@@ -14,5 +18,5 @@ function updateValue(event: Event) {
 </script>
 
 <template>
-  <textarea class="dm-control min-h-24 w-full resize-y" :placeholder="placeholder" :value="modelValue" @input="updateValue"></textarea>
+  <textarea v-bind="$attrs" class="dm-control min-h-24 w-full resize-y" :placeholder="placeholder" :value="modelValue" @input="updateValue"></textarea>
 </template>

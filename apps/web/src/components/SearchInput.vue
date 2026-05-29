@@ -1,4 +1,8 @@
 <script setup lang="ts">
+defineOptions({
+  inheritAttrs: false,
+})
+
 defineProps<{
   modelValue: string
   label: string
@@ -17,8 +21,10 @@ function updateValue(event: Event) {
 
 <template>
   <input
+    v-bind="$attrs"
     :aria-label="label"
     class="dm-control w-full"
+    type="search"
     :name="name"
     :placeholder="placeholder"
     :value="modelValue"

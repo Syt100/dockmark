@@ -35,6 +35,7 @@ const query = ref('')
 const selectedCategoryId = ref('')
 const selectedStatus = ref('')
 const selectedTagId = ref('')
+const areMobileFiltersOpen = ref(false)
 const categoryById = computed(() => new Map(categories.value.map((category) => [category.id, category.name])))
 const hasEditor = computed(() => route.name === 'service-new' || route.name === 'service-edit')
 const hasFilters = computed(
@@ -114,6 +115,10 @@ function clearFilters() {
   selectedTagId.value = ''
 }
 
+function toggleMobileFilters() {
+  areMobileFiltersOpen.value = !areMobileFiltersOpen.value
+}
+
 function applyFlash(value: unknown) {
   if (value === 'created') {
     feedback.value = '服务已创建'
@@ -155,23 +160,32 @@ watch(
       <section class="grid gap-3">
         <div class="grid gap-3 md:grid-cols-[minmax(14rem,2fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_auto] md:items-center">
           <SearchInput v-model="query" label="搜索服务" name="services-search" placeholder="搜索服务、URL、分类或标签" />
-          <AppSelect v-model="selectedCategoryId" aria-label="按分类筛选服务" name="services-category-filter">
-            <option value="">全部分类</option>
-            <option value="__uncategorized">未分类</option>
-            <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
-          </AppSelect>
-          <AppSelect v-model="selectedStatus" aria-label="按状态筛选服务" name="services-status-filter">
-            <option value="">全部状态</option>
-            <option v-for="(label, value) in statusLabels" :key="value" :value="value">{{ label }}</option>
-          </AppSelect>
-          <AppSelect v-model="selectedTagId" aria-label="按标签筛选服务" name="services-tag-filter">
-            <option value="">全部标签</option>
-            <option v-for="tag in availableTags" :key="tag.id" :value="tag.id">{{ tag.name }}</option>
-          </AppSelect>
-          <AppButton :disabled="!hasFilters" tone="ghost" type="button" @click="clearFilters">清空</AppButton>
+
+          <div class="grid gap-3 md:contents" :class="areMobileFiltersOpen ? 'grid' : 'hidden md:contents'">
+            <AppSelect v-model="selectedCategoryId" aria-label="按分类筛选服务" name="services-category-filter">
+              <option value="">全部分类</option>
+              <option value="__uncategorized">未分类</option>
+              <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
+            </AppSelect>
+            <AppSelect v-model="selectedStatus" aria-label="按状态筛选服务" name="services-status-filter">
+              <option value="">全部状态</option>
+              <option v-for="(label, value) in statusLabels" :key="value" :value="value">{{ label }}</option>
+            </AppSelect>
+            <AppSelect v-model="selectedTagId" aria-label="按标签筛选服务" name="services-tag-filter">
+              <option value="">全部标签</option>
+              <option v-for="tag in availableTags" :key="tag.id" :value="tag.id">{{ tag.name }}</option>
+            </AppSelect>
+            <AppButton class="hidden justify-self-start md:inline-flex" :disabled="!hasFilters" tone="ghost" type="button" @click="clearFilters">清空</AppButton>
+          </div>
+
+          <div class="flex items-center justify-between gap-2 md:hidden">
+            <AppButton tone="secondary" type="button" @click="toggleMobileFilters">
+              {{ areMobileFiltersOpen ? '收起筛选' : '筛选' }}
+            </AppButton>
+            <AppButton v-if="hasFilters" tone="ghost" type="button" @click="clearFilters">清空筛选</AppButton>
+          </div>
         </div>
       </section>
-
       <FeedbackMessage tone="success" :message="feedback" />
       <FeedbackMessage tone="error" :message="error" />
 
@@ -197,7 +211,7 @@ watch(
                 <th class="px-4 py-3 font-medium">主地址</th>
                 <th class="px-4 py-3 font-medium">标签</th>
                 <th class="px-4 py-3 font-medium">凭据与地址</th>
-                <th class="px-4 py-3 text-right font-medium">操作</th>
+                <th class="w-[12rem] px-4 py-3 text-right font-medium">操作</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-[var(--dm-border)]">
@@ -239,8 +253,8 @@ watch(
                   <p class="truncate text-sm text-[var(--dm-text-muted)]">{{ row.item.credentialHint || '无凭据提示' }}</p>
                   <p class="mt-1 text-xs text-[var(--dm-text-subtle)]">{{ row.item.endpoints.length }} 个地址</p>
                 </td>
-                <td class="px-4 py-3 align-middle">
-                  <div class="flex items-center justify-end gap-1">
+                <td class="w-[12rem] px-4 py-3 align-middle">
+                  <div class="flex items-center justify-end gap-1 whitespace-nowrap">
                     <a
                       v-if="row.primaryEndpoint"
                       class="inline-flex min-h-10 items-center justify-center rounded-[var(--dm-radius-control)] px-3.5 py-2 text-sm font-medium text-[var(--dm-text-muted)] transition hover:bg-[var(--dm-surface-muted)] hover:text-[var(--dm-text)]"

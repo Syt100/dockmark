@@ -1,6 +1,10 @@
 <script setup lang="ts">
+defineOptions({
+  inheritAttrs: false,
+})
+
 defineProps<{
-  modelValue: string
+  modelValue: number | string
   required?: boolean
   type?: string
   placeholder?: string
@@ -18,6 +22,7 @@ function updateValue(event: Event) {
 
 <template>
   <input
+    v-bind="$attrs"
     class="dm-control w-full"
     :placeholder="placeholder"
     :required="required"

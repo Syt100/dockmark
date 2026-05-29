@@ -152,6 +152,9 @@ describe('ServicesView', () => {
     expect(wrapper.find('select[aria-label="按分类筛选服务"]').exists()).toBe(true)
     expect(wrapper.find('select[aria-label="按状态筛选服务"]').exists()).toBe(true)
     expect(wrapper.find('select[aria-label="按标签筛选服务"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('筛选')
+    expect(wrapper.html()).toContain('whitespace-nowrap')
+    expect(wrapper.html()).toContain('w-[12rem]')
 
     const selects = wrapper.findAll('select')
     await selects[1]?.setValue('archived')

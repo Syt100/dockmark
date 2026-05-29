@@ -45,8 +45,20 @@ const selectedTagIds = ref<string[]>([])
 const error = ref<string | null>(null)
 const isLoading = ref(false)
 const isSaving = ref(false)
+const tagQuery = ref('')
 const itemId = computed(() => (typeof route.params.id === 'string' ? route.params.id : null))
 const isEditing = computed(() => itemId.value !== null)
+const normalizedTagQuery = computed(() => tagQuery.value.trim().toLowerCase())
+const filteredTags = computed(() => {
+  const query = normalizedTagQuery.value
+
+  if (!query) {
+    return tags.value
+  }
+
+  return tags.value.filter((tag) => [tag.name, tag.slug].some((value) => value.toLowerCase().includes(query)))
+})
+const selectedTagCount = computed(() => selectedTagIds.value.length)
 
 const form = reactive({
   name: '',
@@ -242,8 +254,15 @@ onMounted(load)
             </div>
           </div>
 
-          <div v-for="(endpoint, index) in form.endpoints" :key="index" class="dm-surface-muted grid gap-3 p-3">
-            <div class="grid gap-3 md:grid-cols-[1fr_2fr_1fr]">
+          <div class="grid gap-2">
+            <div
+              v-for="(endpoint, index) in form.endpoints"
+              :key="index"
+              class="grid gap-3 rounded-[var(--dm-radius-surface)] bg-[var(--dm-surface-muted)] p-3 md:grid-cols-[2.4rem_minmax(7rem,1fr)_minmax(12rem,2fr)_minmax(8rem,1fr)_auto] md:items-end"
+            >
+              <div class="hidden h-10 items-center justify-center rounded-[var(--dm-radius-control)] bg-[var(--dm-surface)] text-sm font-medium text-[var(--dm-text-muted)] md:flex">
+                {{ index + 1 }}
+              </div>
               <label class="grid gap-1 text-sm">
                 <span class="dm-label">名称</span>
                 <AppInput v-model="endpoint.label" required />
@@ -258,30 +277,40 @@ onMounted(load)
                   <option v-for="kind in endpointKinds" :key="kind" :value="kind">{{ endpointKindLabels[kind] }}</option>
                 </AppSelect>
               </label>
-            </div>
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <label class="flex items-center gap-2 text-sm text-[var(--dm-text-muted)]">
-                <input :checked="endpoint.isPrimary" type="radio" name="primaryEndpoint" @change="setPrimary(index)" />
-                设为主地址
-              </label>
-              <AppButton v-if="form.endpoints.length > 1" type="button" tone="ghost" @click="removeEndpoint(index)">
-                移除地址
-              </AppButton>
+              <div class="flex flex-wrap items-center gap-2 md:justify-end">
+                <label class="flex min-h-10 items-center gap-2 whitespace-nowrap text-sm text-[var(--dm-text-muted)]">
+                  <input :checked="endpoint.isPrimary" type="radio" name="primaryEndpoint" @change="setPrimary(index)" />
+                  主地址
+                </label>
+                <AppButton v-if="form.endpoints.length > 1" type="button" tone="ghost" @click="removeEndpoint(index)">
+                  移除
+                </AppButton>
+              </div>
             </div>
           </div>
         </section>
 
         <section class="grid gap-3">
-          <h2 class="dm-section-title">标签</h2>
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <h2 class="dm-section-title">标签</h2>
+            <span class="text-xs text-[var(--dm-text-subtle)]">已选 {{ selectedTagCount }} 个</span>
+          </div>
+          <AppInput v-if="tags.length > 8" v-model="tagQuery" aria-label="搜索标签" placeholder="搜索标签" type="search" />
           <div v-if="tags.length > 0" class="flex flex-wrap gap-2">
             <label
-              v-for="tag in tags"
+              v-for="tag in filteredTags"
               :key="tag.id"
-              class="flex min-h-10 items-center gap-2 rounded-[var(--dm-radius-control)] border border-[var(--dm-border)] bg-[var(--dm-surface)] px-3 py-2 text-sm text-[var(--dm-text-muted)]"
+              :class="[
+                'flex min-h-10 items-center gap-2 rounded-[var(--dm-radius-control)] border px-3 py-2 text-sm transition',
+                selectedTagIds.includes(tag.id)
+                  ? 'border-[var(--dm-primary)] bg-[var(--dm-primary-soft)] text-[var(--dm-primary)]'
+                  : 'border-[var(--dm-border)] bg-[var(--dm-surface)] text-[var(--dm-text-muted)] hover:bg-[var(--dm-surface-muted)]',
+              ]"
             >
               <input v-model="selectedTagIds" :value="tag.id" type="checkbox" />
               {{ tag.name }}
             </label>
+            <p v-if="filteredTags.length === 0" class="text-sm text-[var(--dm-text-muted)]">没有匹配的标签。</p>
           </div>
           <p v-else class="dm-surface-muted p-3 text-sm text-[var(--dm-text-muted)]">还没有标签。</p>
         </section>

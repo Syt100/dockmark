@@ -1,10 +1,102 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
 
-defineProps<{
+const props = defineProps<{
   title: string
   backTo: string
 }>()
+
+const router = useRouter()
+const dialog = ref<HTMLElement | null>(null)
+const previouslyFocused = ref<Element | null>(null)
+
+let mediaQuery: MediaQueryList | null = null
+let originalBodyOverflow = ''
+let isBodyLocked = false
+
+function close() {
+  void router.push(props.backTo)
+}
+
+function getDesktopMediaQuery() {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return null
+  }
+
+  return window.matchMedia('(min-width: 768px)')
+}
+
+function isDesktopEditor() {
+  if (typeof window === 'undefined') {
+    return false
+  }
+
+  return getDesktopMediaQuery()?.matches ?? window.innerWidth >= 768
+}
+
+function lockBodyScroll() {
+  if (typeof document === 'undefined' || isBodyLocked || !isDesktopEditor()) {
+    return
+  }
+
+  originalBodyOverflow = document.body.style.overflow
+  document.body.style.overflow = 'hidden'
+  isBodyLocked = true
+}
+
+function unlockBodyScroll() {
+  if (typeof document === 'undefined' || !isBodyLocked) {
+    return
+  }
+
+  document.body.style.overflow = originalBodyOverflow
+  isBodyLocked = false
+}
+
+function syncBodyScrollLock() {
+  if (isDesktopEditor()) {
+    lockBodyScroll()
+  } else {
+    unlockBodyScroll()
+  }
+}
+
+function focusDialog() {
+  const focusable = dialog.value?.querySelector<HTMLElement>(
+    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+  )
+
+  ;(focusable ?? dialog.value)?.focus()
+}
+
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && isDesktopEditor()) {
+    event.preventDefault()
+    close()
+  }
+}
+
+onMounted(async () => {
+  previouslyFocused.value = document.activeElement
+  mediaQuery = getDesktopMediaQuery()
+  mediaQuery?.addEventListener('change', syncBodyScrollLock)
+  document.addEventListener('keydown', handleKeydown)
+  syncBodyScrollLock()
+
+  await nextTick()
+  focusDialog()
+})
+
+onBeforeUnmount(() => {
+  mediaQuery?.removeEventListener('change', syncBodyScrollLock)
+  document.removeEventListener('keydown', handleKeydown)
+  unlockBodyScroll()
+
+  if (previouslyFocused.value instanceof HTMLElement) {
+    previouslyFocused.value.focus()
+  }
+})
 </script>
 
 <template>
@@ -19,16 +111,18 @@ defineProps<{
     </div>
 
     <div class="hidden md:block">
-      <div class="fixed inset-0 z-30 bg-[var(--dm-overlay)]" aria-hidden="true"></div>
+      <button class="fixed inset-0 z-30 cursor-default bg-[var(--dm-overlay)]" type="button" aria-label="关闭编辑器" @click="close"></button>
       <section
+        ref="dialog"
         class="fixed left-1/2 top-1/2 z-40 max-h-[calc(100dvh-4rem)] w-[min(760px,calc(100vw-3rem))] -translate-x-1/2 -translate-y-1/2 overflow-auto rounded-[var(--dm-radius-surface)] bg-[var(--dm-surface-elevated)] shadow-[var(--dm-shadow-elevated)]"
         role="dialog"
         aria-modal="true"
         :aria-label="title"
+        tabindex="-1"
       >
         <div class="sticky top-0 z-10 flex items-center justify-between border-b border-[var(--dm-border)] bg-[var(--dm-surface-elevated)] px-5 py-4">
           <h1 class="text-lg font-semibold text-[var(--dm-text)]">{{ title }}</h1>
-          <RouterLink class="text-sm font-medium text-[var(--dm-text-muted)] hover:text-[var(--dm-text)]" :to="backTo">关闭</RouterLink>
+          <button class="text-sm font-medium text-[var(--dm-text-muted)] hover:text-[var(--dm-text)]" type="button" @click="close">关闭</button>
         </div>
         <div class="p-5">
           <slot />

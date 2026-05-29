@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 
+import ServiceNavCard from '../components/ServiceNavCard.vue'
 import HomeView from './HomeView.vue'
 
 describe('HomeView', () => {
@@ -140,6 +141,7 @@ describe('HomeView', () => {
     expect(wrapper.text()).toContain('内网 · 内网')
     expect(wrapper.text()).toContain('Vaultwarden 搜 Dockmark')
     expect(wrapper.text()).toContain('内网')
+    expect(wrapper.findComponent(ServiceNavCard).exists()).toBe(true)
 
     vi.unstubAllGlobals()
   })
