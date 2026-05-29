@@ -203,20 +203,27 @@ watch(
       </section>
 
       <section v-else>
-        <div class="dm-list-shell hidden md:block">
-          <table class="w-full text-left text-sm">
+        <div class="dm-list-shell hidden lg:block">
+          <table class="w-full table-fixed text-left text-sm">
+            <colgroup>
+              <col class="w-[27%]" />
+              <col class="w-[22%]" />
+              <col class="w-[15%]" />
+              <col class="w-[18%]" />
+              <col class="w-[18%]" />
+            </colgroup>
             <thead class="dm-list-head text-xs font-medium">
               <tr>
-                <th class="px-4 py-3 font-medium">服务</th>
-                <th class="px-4 py-3 font-medium">主地址</th>
-                <th class="px-4 py-3 font-medium">标签</th>
-                <th class="px-4 py-3 font-medium">凭据与地址</th>
-                <th class="w-[12rem] px-4 py-3 text-right font-medium">操作</th>
+                <th class="px-3 py-3 font-medium">服务</th>
+                <th class="px-3 py-3 font-medium">主地址</th>
+                <th class="px-3 py-3 font-medium">标签</th>
+                <th class="px-3 py-3 font-medium">凭据与地址</th>
+                <th class="px-3 py-3 text-right font-medium">操作</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-[var(--dm-border)]">
               <tr v-for="row in serviceRows" :key="row.item.id" class="dm-list-row">
-                <td class="w-[30%] px-4 py-3 align-middle">
+                <td class="px-3 py-3 align-middle">
                   <div class="flex min-w-0 items-center gap-3">
                     <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--dm-radius-control)] bg-[var(--dm-surface-muted)] text-base font-semibold text-[var(--dm-text-muted)]">
                       {{ row.item.icon || '•' }}
@@ -233,38 +240,38 @@ watch(
                     </div>
                   </div>
                 </td>
-                <td class="w-[27%] px-4 py-3 align-middle">
+                <td class="px-3 py-3 align-middle">
                   <template v-if="row.primaryEndpoint">
-                    <a class="dm-link" :href="row.primaryEndpoint.url" target="_blank">
+                    <a class="dm-link block truncate" :href="row.primaryEndpoint.url" target="_blank">
                       {{ row.primaryEndpoint.label }} · {{ endpointKindLabels[row.primaryEndpoint.kind] }}
                     </a>
                     <p class="mt-1 truncate text-xs text-[var(--dm-text-subtle)]">{{ row.primaryEndpoint.url }}</p>
                   </template>
                   <span v-else class="text-sm text-[var(--dm-text-subtle)]">未配置地址</span>
                 </td>
-                <td class="w-[18%] px-4 py-3 align-middle">
+                <td class="px-3 py-3 align-middle">
                   <div v-if="row.visibleTags.length > 0" class="flex flex-wrap gap-1.5">
                     <AppBadge v-for="tag in row.visibleTags" :key="tag.id">{{ tag.name }}</AppBadge>
                     <AppBadge v-if="row.hiddenTagCount > 0">+{{ row.hiddenTagCount }}</AppBadge>
                   </div>
                   <span v-else class="text-sm text-[var(--dm-text-subtle)]">无标签</span>
                 </td>
-                <td class="w-[15%] px-4 py-3 align-middle">
+                <td class="px-3 py-3 align-middle">
                   <p class="truncate text-sm text-[var(--dm-text-muted)]">{{ row.item.credentialHint || '无凭据提示' }}</p>
                   <p class="mt-1 text-xs text-[var(--dm-text-subtle)]">{{ row.item.endpoints.length }} 个地址</p>
                 </td>
-                <td class="w-[12rem] px-4 py-3 align-middle">
+                <td class="px-3 py-3 align-middle">
                   <div class="flex items-center justify-end gap-1 whitespace-nowrap">
                     <a
                       v-if="row.primaryEndpoint"
-                      class="inline-flex min-h-10 items-center justify-center rounded-[var(--dm-radius-control)] px-3.5 py-2 text-sm font-medium text-[var(--dm-text-muted)] transition hover:bg-[var(--dm-surface-muted)] hover:text-[var(--dm-text)]"
+                      class="inline-flex min-h-8 items-center justify-center rounded-[var(--dm-radius-control)] px-2.5 py-1 text-sm font-medium text-[var(--dm-text-muted)] transition hover:bg-[var(--dm-surface-muted)] hover:text-[var(--dm-text)]"
                       :href="row.primaryEndpoint.url"
                       target="_blank"
                     >
                       打开 ↗
                     </a>
-                    <AppLinkButton :to="`/services/${row.item.id}/edit`" tone="ghost">编辑</AppLinkButton>
-                    <ConfirmAction :message="`确认删除服务“${row.item.name}”？`" @confirm="remove(row.item.id)" />
+                    <AppLinkButton :to="`/services/${row.item.id}/edit`" tone="ghost" size="sm">编辑</AppLinkButton>
+                    <ConfirmAction :message="`确认删除服务“${row.item.name}”？`" size="sm" @confirm="remove(row.item.id)" />
                   </div>
                 </td>
               </tr>
@@ -272,7 +279,7 @@ watch(
           </table>
         </div>
 
-        <div class="grid gap-2 md:hidden">
+        <div class="grid gap-2 lg:hidden">
           <article v-for="row in serviceRows" :key="row.item.id" class="dm-mobile-card">
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">

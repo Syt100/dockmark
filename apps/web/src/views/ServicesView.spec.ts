@@ -154,7 +154,8 @@ describe('ServicesView', () => {
     expect(wrapper.find('select[aria-label="按标签筛选服务"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('筛选')
     expect(wrapper.html()).toContain('whitespace-nowrap')
-    expect(wrapper.html()).toContain('w-[12rem]')
+    expect(wrapper.html()).toContain('table-fixed')
+    expect(wrapper.html()).toContain('lg:hidden')
 
     const selects = wrapper.findAll('select')
     await selects[1]?.setValue('archived')

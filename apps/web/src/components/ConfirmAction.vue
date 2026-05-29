@@ -9,6 +9,7 @@ withDefaults(
     confirmLabel?: string
     cancelLabel?: string
     message?: string
+    size?: 'sm' | 'md'
     disabled?: boolean
   }>(),
   {
@@ -16,6 +17,7 @@ withDefaults(
     confirmLabel: '确认删除',
     cancelLabel: '取消',
     message: '确认删除？',
+    size: 'md',
     disabled: false,
   },
 )
@@ -74,7 +76,7 @@ onBeforeUnmount(unlockBodyScroll)
 
 <template>
   <span class="relative inline-flex">
-    <AppButton tone="ghost" :disabled="disabled" @click="openConfirm">{{ label }}</AppButton>
+    <AppButton tone="ghost" :size="size" :disabled="disabled" @click="openConfirm">{{ label }}</AppButton>
   </span>
 
   <Teleport to="body">
