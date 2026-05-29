@@ -22,14 +22,23 @@ If your environment does not expose the `pnpm` shim, use:
 corepack pnpm install
 ```
 
-Run local Worker development:
+Run local development:
 
 ```sh
 pnpm db:migrate:local
 pnpm dev
 ```
 
+`pnpm dev` starts Vite on port `8788` and the Worker API on port `8789`. Open `http://127.0.0.1:8788`; Vite proxies `/api/*` to the Worker so frontend changes are hot-reloaded without rebuilding `apps/web/dist`.
+
 The local D1 database starts empty. Run `pnpm db:migrate:local` after pulling new migrations, otherwise API routes such as `/api/nav` will fail with missing-table errors.
+
+If you specifically need to test the Worker serving the production-built frontend assets, run:
+
+```sh
+pnpm build
+pnpm dev:worker
+```
 
 Run validation:
 
