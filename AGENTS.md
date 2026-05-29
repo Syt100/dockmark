@@ -10,7 +10,8 @@
 ## OpenSpec
 
 - 产品能力、阶段范围、数据模型、接口语义、安全边界发生变化时，先补 OpenSpec change，再实现。
-- OpenSpec spec 名称必须以 `phase-*` 开头。
+- OpenSpec spec/change 名称必须使用阶段前缀：主阶段使用 `phase-N-*`，例如 `phase-1-service-navigation`；同一主阶段下拆出的子阶段使用 `phase-N.M-*`，例如 `phase-1.1-service-navigation-ux`、`phase-1.2-service-navigation-usability`。
+- 每个主阶段只能有一个总 spec 继续使用 `phase-N-*`；后续拆分能力不要再创建多个 `phase-N-*` 同级名称。
 - 不在当前 phase 内偷偷扩展后续 phase 范围；确需扩展时，先说明影响的 phase。
 - 纯文档、注释、拼写、开发环境说明类变更可以不创建 OpenSpec change。
 

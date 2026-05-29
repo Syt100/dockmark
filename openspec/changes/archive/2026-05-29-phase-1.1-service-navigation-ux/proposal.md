@@ -26,7 +26,7 @@ Non-goals:
 
 ### New Capabilities
 
-- `phase-1-service-navigation-ux`: Defines Chinese UI, responsive create/edit behavior, management interaction quality, and mobile usability for the Phase 1 service navigation milestone.
+- `phase-1.1-service-navigation-ux`: Defines Chinese UI, responsive create/edit behavior, management interaction quality, and mobile usability for the Phase 1 service navigation milestone.
 
 ### Modified Capabilities
 

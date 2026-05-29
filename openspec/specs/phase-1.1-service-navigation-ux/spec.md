@@ -1,4 +1,4 @@
-# phase-1-service-navigation-ux Specification
+# phase-1.1-service-navigation-ux Specification
 
 ## Purpose
 Define Phase 1 user experience requirements for the Chinese default interface, responsive route-driven editors, mobile-friendly navigation, and management usability.

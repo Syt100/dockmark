@@ -1,4 +1,4 @@
-# phase-1-service-navigation-usability Specification
+# phase-1.2-service-navigation-usability Specification
 
 ## Purpose
 Define daily management usability requirements for service filtering, contextual confirmations, Chinese feedback, home empty-state actions, endpoint templates, and mobile form actions.

@@ -56,7 +56,10 @@ Dockmark 是个人 Homelab 服务导航与浏览器书签同步系统。
 
 OpenSpec 要求：
 
-- spec 名称必须以 `phase-*` 开头。
+- spec/change 名称必须以阶段前缀开头。
+- 主阶段使用 `phase-N-*`，例如 `phase-1-service-navigation`。一个主阶段只保留一个总 spec。
+- 同一主阶段下拆出的子阶段使用 `phase-N.M-*`，例如 `phase-1.1-service-navigation-ux`、`phase-1.2-service-navigation-usability`。
+- 子阶段编号按实施顺序递增；不要用多个 `phase-N-*` 同级名称表达同一主阶段下的拆分阶段。
 - requirement 必须能被测试或人工验收。
 - proposal 必须写清目标和 non-goals。
 - design 必须记录关键取舍。

@@ -12,7 +12,10 @@ context: |
 
 rules:
   specs:
-    - Each spec name must start with a phase prefix.
+    - Spec and change names must use phase prefixes.
+    - Main phase specs use phase-N-* names, for example phase-1-service-navigation.
+    - Sub-phases under the same main phase use phase-N.M-* names, for example phase-1.1-service-navigation-ux and phase-1.2-service-navigation-usability.
+    - Each main phase keeps only one phase-N-* umbrella spec; split capabilities use sub-phase names.
     - Keep requirements testable with concrete scenarios.
     - State explicit phase exclusions when a capability is intentionally deferred.
   proposal:

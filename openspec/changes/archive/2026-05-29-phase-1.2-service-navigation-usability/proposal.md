@@ -22,11 +22,11 @@ Non-goals:
 
 ### New Capabilities
 
-- `phase-1-service-navigation-usability`: Defines focused daily-use improvements for filtering, feedback, confirmation, empty states, and service form shortcuts.
+- `phase-1.2-service-navigation-usability`: Defines focused daily-use improvements for filtering, feedback, confirmation, empty states, and service form shortcuts.
 
 ### Modified Capabilities
 
-- `phase-1-service-navigation-ux`: Extends the existing UX behavior with stronger management usability requirements.
+- `phase-1.1-service-navigation-ux`: Extends the existing UX behavior with stronger management usability requirements.
 
 ## Impact
 
