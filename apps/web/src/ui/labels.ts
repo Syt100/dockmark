@@ -17,7 +17,7 @@ export const statusLabels: Record<ItemStatus, string> = {
 }
 
 export const statusToneClasses: Record<ItemStatus, string> = {
-  active: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-  hidden: 'border-amber-200 bg-amber-50 text-amber-700',
-  archived: 'border-slate-200 bg-slate-100 text-slate-600',
+  active: 'bg-[var(--dm-success-soft)] text-[var(--dm-success-text)]',
+  hidden: 'bg-[var(--dm-warning-soft)] text-[var(--dm-warning-text)]',
+  archived: 'bg-[var(--dm-surface-muted)] text-[var(--dm-text-muted)]',
 }

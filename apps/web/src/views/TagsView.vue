@@ -78,8 +78,8 @@ watch(
 </script>
 
 <template>
-  <main class="grid gap-6">
-    <div :class="hasEditor ? 'hidden md:grid md:gap-6' : 'grid gap-6'">
+  <main class="dm-page-grid">
+    <div :class="hasEditor ? 'hidden md:grid md:gap-[var(--dm-section-gap)]' : 'dm-page-grid'">
       <PageHeader title="标签" description="用标签补充分组维度，便于搜索服务用途、位置和访问方式。">
         <template #actions>
           <AppLinkButton to="/tags/new" tone="primary">新建标签</AppLinkButton>
@@ -90,38 +90,38 @@ watch(
       <FeedbackMessage tone="error" :message="error" />
 
       <section class="md:max-w-sm">
-        <SearchInput v-model="query" label="搜索标签" placeholder="搜索标签或 Slug" />
+        <SearchInput v-model="query" label="搜索标签" name="tags-search" placeholder="搜索标签或 Slug" />
       </section>
 
-      <section v-if="isLoading" class="rounded-lg bg-white p-5 text-sm text-slate-600">
+      <section v-if="isLoading" class="dm-surface p-[var(--dm-panel-padding)] text-sm text-[var(--dm-text-muted)]">
         正在加载标签...
       </section>
 
-      <section v-else-if="tags.length === 0" class="rounded-lg bg-white p-8 text-center">
-        <p class="text-base font-medium text-slate-950">还没有标签</p>
-        <p class="mt-1 text-sm text-slate-600">标签适合标记媒体、监控、内网、生产等服务属性。</p>
+      <section v-else-if="tags.length === 0" class="dm-surface p-8 text-center">
+        <p class="text-base font-medium text-[var(--dm-text)]">还没有标签</p>
+        <p class="mt-1 text-sm text-[var(--dm-text-muted)]">标签适合标记媒体、监控、内网、生产等服务属性。</p>
       </section>
 
-      <section v-else-if="filteredTags.length === 0" class="rounded-lg bg-white p-8 text-center">
-        <p class="text-base font-medium text-slate-950">没有符合搜索条件的标签</p>
-        <p class="mt-1 text-sm text-slate-600">清空搜索或换一个关键词试试。</p>
+      <section v-else-if="filteredTags.length === 0" class="dm-surface p-8 text-center">
+        <p class="text-base font-medium text-[var(--dm-text)]">没有符合搜索条件的标签</p>
+        <p class="mt-1 text-sm text-[var(--dm-text-muted)]">清空搜索或换一个关键词试试。</p>
       </section>
 
       <section v-else>
-        <div class="hidden overflow-hidden rounded-lg bg-white md:block">
-          <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_10rem] bg-slate-50 px-4 py-3 text-xs font-medium text-slate-500">
+        <div class="dm-list-shell hidden md:block">
+          <div class="dm-list-head grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_10rem] px-4 py-3 text-xs font-medium">
             <span>标签</span>
             <span>Slug</span>
             <span class="text-right">操作</span>
           </div>
-          <div class="divide-y divide-slate-100">
+          <div class="divide-y divide-[var(--dm-border)]">
             <article
               v-for="tag in filteredTags"
               :key="tag.id"
-              class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_10rem] items-center px-4 py-3 transition hover:bg-blue-50/60"
+              class="dm-list-row grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_10rem] items-center px-4 py-3"
             >
-              <p class="truncate font-semibold text-slate-950">{{ tag.name }}</p>
-              <p class="truncate text-sm text-slate-600">{{ tag.slug }}</p>
+              <p class="truncate font-semibold text-[var(--dm-text)]">{{ tag.name }}</p>
+              <p class="truncate text-sm text-[var(--dm-text-muted)]">{{ tag.slug }}</p>
               <div class="flex items-center justify-end gap-1">
                 <AppLinkButton :to="`/tags/${tag.id}/edit`" tone="ghost">编辑</AppLinkButton>
                 <ConfirmAction :message="`确认删除标签“${tag.name}”？`" @confirm="remove(tag.id)" />
@@ -131,9 +131,9 @@ watch(
         </div>
 
         <div class="grid gap-2 md:hidden">
-          <article v-for="tag in filteredTags" :key="tag.id" class="rounded-lg bg-white p-4 transition hover:bg-blue-50/60">
-            <p class="text-base font-semibold text-slate-950">{{ tag.name }}</p>
-            <p class="mt-1 break-all text-sm text-slate-600">{{ tag.slug }}</p>
+          <article v-for="tag in filteredTags" :key="tag.id" class="dm-mobile-card">
+            <p class="text-base font-semibold text-[var(--dm-text)]">{{ tag.name }}</p>
+            <p class="mt-1 break-all text-sm text-[var(--dm-text-muted)]">{{ tag.slug }}</p>
             <div class="mt-4 flex flex-wrap gap-2">
               <AppLinkButton :to="`/tags/${tag.id}/edit`" tone="ghost">编辑</AppLinkButton>
               <ConfirmAction :message="`确认删除标签“${tag.name}”？`" @confirm="remove(tag.id)" />

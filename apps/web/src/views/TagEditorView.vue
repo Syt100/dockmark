@@ -5,6 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { createTag, fetchTags, updateTag } from '../api/client'
 import { toChineseError } from '../api/errors'
 import AppButton from '../components/AppButton.vue'
+import AppInput from '../components/AppInput.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
 import ResponsiveEditorShell from '../components/ResponsiveEditorShell.vue'
 
@@ -75,26 +76,26 @@ onMounted(load)
 
 <template>
   <ResponsiveEditorShell :title="isEditing ? '编辑标签' : '新建标签'" back-to="/tags">
-    <form class="grid gap-5" @submit.prevent="submit">
+    <form class="grid gap-[var(--dm-section-gap)]" @submit.prevent="submit">
       <FeedbackMessage tone="error" :message="error" />
 
-      <div v-if="isLoading" class="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+      <div v-if="isLoading" class="dm-surface-muted p-4 text-sm text-[var(--dm-text-muted)]">
         正在加载标签...
       </div>
 
       <template v-else>
-        <div class="grid gap-4">
+        <div class="grid gap-[var(--dm-form-gap)]">
           <label class="grid gap-1 text-sm">
-            <span class="font-medium text-slate-700">标签名称</span>
-            <input v-model="form.name" class="rounded-md border border-slate-300 px-3 py-2" required />
+            <span class="dm-label">标签名称</span>
+            <AppInput v-model="form.name" required />
           </label>
           <label class="grid gap-1 text-sm">
-            <span class="font-medium text-slate-700">Slug</span>
-            <input v-model="form.slug" class="rounded-md border border-slate-300 px-3 py-2" placeholder="留空则自动生成" />
+            <span class="dm-label">Slug</span>
+            <AppInput v-model="form.slug" placeholder="留空则自动生成" />
           </label>
         </div>
 
-        <div class="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end">
+        <div class="flex flex-col-reverse gap-2 border-t border-[var(--dm-border)] pt-4 sm:flex-row sm:justify-end">
           <AppButton type="button" @click="router.push('/tags')">取消</AppButton>
           <AppButton tone="primary" type="submit" :disabled="isSaving">
             {{ isSaving ? '保存中...' : '保存标签' }}

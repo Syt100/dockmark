@@ -28,8 +28,8 @@ const isConfirming = ref(false)
 </script>
 
 <template>
-  <div v-if="isConfirming" class="flex flex-wrap items-center gap-2 rounded-md border border-rose-200 bg-rose-50 px-2 py-2">
-    <span class="text-sm text-rose-800">{{ message }}</span>
+  <div v-if="isConfirming" class="flex flex-wrap items-center gap-2 rounded-[var(--dm-radius-control)] bg-[var(--dm-danger-soft)] px-2 py-2">
+    <span class="text-sm text-[var(--dm-danger)]">{{ message }}</span>
     <AppButton tone="danger" :disabled="disabled" @click="emit('confirm')">{{ confirmLabel }}</AppButton>
     <AppButton tone="ghost" :disabled="disabled" @click="isConfirming = false">{{ cancelLabel }}</AppButton>
   </div>

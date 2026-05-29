@@ -1,9 +1,9 @@
 <script setup lang="ts">
 defineProps<{
   modelValue: string
-  label: string
-  name?: string
-  placeholder: string
+  required?: boolean
+  type?: string
+  placeholder?: string
 }>()
 
 const emit = defineEmits<{
@@ -11,16 +11,17 @@ const emit = defineEmits<{
 }>()
 
 function updateValue(event: Event) {
-  emit('update:modelValue', (event.target as HTMLInputElement).value)
+  const target = event.target as HTMLInputElement
+  emit('update:modelValue', target.value)
 }
 </script>
 
 <template>
   <input
-    :aria-label="label"
     class="dm-control w-full"
-    :name="name"
     :placeholder="placeholder"
+    :required="required"
+    :type="type ?? 'text'"
     :value="modelValue"
     @input="updateValue"
   />

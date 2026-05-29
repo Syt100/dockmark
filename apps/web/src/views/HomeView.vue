@@ -4,8 +4,10 @@ import { computed, onMounted, ref } from 'vue'
 import type { NavItem, NavResponse } from '@dockmark/shared'
 
 import { fetchNavigation } from '../api/client'
-import FeedbackMessage from '../components/FeedbackMessage.vue'
+import AppBadge from '../components/AppBadge.vue'
 import AppLinkButton from '../components/AppLinkButton.vue'
+import FeedbackMessage from '../components/FeedbackMessage.vue'
+import SearchInput from '../components/SearchInput.vue'
 import { endpointKindLabels } from '../ui/labels'
 
 const nav = ref<NavResponse | null>(null)
@@ -62,70 +64,69 @@ onMounted(load)
 </script>
 
 <template>
-  <main class="grid gap-6">
+  <main class="dm-page-grid">
     <section class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div>
-        <p class="text-sm font-medium text-blue-700">Dockmark</p>
-        <h1 class="mt-1 text-3xl font-semibold tracking-normal text-slate-950">服务导航</h1>
-        <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+        <p class="text-sm font-medium text-[var(--dm-primary)]">Dockmark</p>
+        <h1 class="mt-1 text-3xl font-semibold tracking-normal text-[var(--dm-text)]">服务导航</h1>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-[var(--dm-text-muted)]">
           集中打开公网、内网、Tailscale、管理后台、备份、文档和 API 地址。
         </p>
       </div>
-      <label class="grid gap-1 text-sm md:w-80">
-        <span class="font-medium text-slate-700">搜索</span>
-        <input v-model="query" class="rounded-md border border-slate-300 bg-white px-3 py-2" placeholder="服务、URL 或标签" />
-      </label>
+      <div class="md:w-80">
+        <SearchInput v-model="query" label="搜索服务导航" name="home-search" placeholder="服务、URL 或标签" />
+      </div>
     </section>
 
     <FeedbackMessage tone="error" :message="error" />
 
-    <section v-if="!nav && !error" class="rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
+    <section v-if="!nav && !error" class="dm-surface p-[var(--dm-panel-padding)] text-sm text-[var(--dm-text-muted)]">
       正在加载服务...
     </section>
 
-    <section v-else-if="nav && totalItems === 0" class="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
-      <p class="text-base font-medium text-slate-950">还没有服务</p>
-      <p class="mt-1 text-sm text-slate-600">进入“服务”页面添加第一个自部署服务入口。</p>
+    <section v-else-if="nav && totalItems === 0" class="dm-surface border-dashed p-8 text-center">
+      <p class="text-base font-medium text-[var(--dm-text)]">还没有服务</p>
+      <p class="mt-1 text-sm text-[var(--dm-text-muted)]">进入“服务”页面添加第一个自部署服务入口。</p>
       <div class="mt-4">
         <AppLinkButton to="/services/new" tone="primary">新建服务</AppLinkButton>
       </div>
     </section>
 
-    <section v-else-if="nav && !hasVisibleItems" class="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
-      <p class="text-base font-medium text-slate-950">没有匹配结果</p>
-      <p class="mt-1 text-sm text-slate-600">换一个关键词试试。</p>
+    <section v-else-if="nav && !hasVisibleItems" class="dm-surface border-dashed p-8 text-center">
+      <p class="text-base font-medium text-[var(--dm-text)]">没有匹配结果</p>
+      <p class="mt-1 text-sm text-[var(--dm-text-muted)]">换一个关键词试试。</p>
     </section>
 
     <section v-for="category in categories" :key="category.id" class="grid gap-3">
       <div class="flex items-center justify-between gap-3">
-        <h2 class="text-lg font-semibold text-slate-950">{{ category.icon || '' }} {{ category.name }}</h2>
-        <span class="text-xs text-slate-500">{{ category.items.length }} 个服务</span>
+        <h2 class="text-lg font-semibold text-[var(--dm-text)]">{{ category.icon || '' }} {{ category.name }}</h2>
+        <span class="text-xs text-[var(--dm-text-subtle)]">{{ category.items.length }} 个服务</span>
       </div>
 
       <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        <article v-for="item in category.items" :key="item.id" class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <article v-for="item in category.items" :key="item.id" class="dm-surface p-[var(--dm-panel-padding)]">
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
-              <h3 class="font-semibold text-slate-950">{{ item.icon || '•' }} {{ item.name }}</h3>
-              <p v-if="item.description" class="mt-1 text-sm leading-6 text-slate-600">{{ item.description }}</p>
+              <h3 class="font-semibold text-[var(--dm-text)]">{{ item.icon || '•' }} {{ item.name }}</h3>
+              <p v-if="item.description" class="mt-1 text-sm leading-6 text-[var(--dm-text-muted)]">{{ item.description }}</p>
             </div>
             <a
-              class="shrink-0 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+              class="shrink-0 rounded-[var(--dm-radius-control)] px-3 py-1.5 text-sm font-medium text-[var(--dm-text-muted)] transition hover:bg-[var(--dm-surface-muted)] hover:text-[var(--dm-text)]"
               :href="item.primaryEndpoint.url"
               target="_blank"
             >
-              打开
+              打开 ↗
             </a>
           </div>
 
           <div class="mt-4 grid gap-2">
-            <a class="break-all text-sm font-medium text-blue-700" :href="item.primaryEndpoint.url" target="_blank">
+            <a class="dm-link break-all text-sm" :href="item.primaryEndpoint.url" target="_blank">
               {{ item.primaryEndpoint.label }} · {{ endpointKindLabels[item.primaryEndpoint.kind] }}
             </a>
             <a
               v-for="endpoint in item.alternateEndpoints"
               :key="endpoint.id"
-              class="break-all text-sm text-slate-600 hover:text-slate-950"
+              class="break-all text-sm text-[var(--dm-text-muted)] hover:text-[var(--dm-text)]"
               :href="endpoint.url"
               target="_blank"
             >
@@ -133,14 +134,12 @@ onMounted(load)
             </a>
           </div>
 
-          <p v-if="item.credentialHint" class="mt-4 rounded-md bg-slate-100 p-2 text-xs leading-5 text-slate-700">
+          <p v-if="item.credentialHint" class="mt-4 rounded-[var(--dm-radius-control)] bg-[var(--dm-surface-muted)] p-2 text-xs leading-5 text-[var(--dm-text-muted)]">
             {{ item.credentialHint }}
           </p>
 
           <div v-if="item.tags.length > 0" class="mt-3 flex flex-wrap gap-2">
-            <span v-for="tag in item.tags" :key="tag.id" class="rounded bg-slate-100 px-2 py-1 text-xs text-slate-600">
-              {{ tag.name }}
-            </span>
+            <AppBadge v-for="tag in item.tags" :key="tag.id">{{ tag.name }}</AppBadge>
           </div>
         </article>
       </div>
@@ -148,29 +147,33 @@ onMounted(load)
 
     <section v-if="uncategorized.length > 0" class="grid gap-3">
       <div class="flex items-center justify-between gap-3">
-        <h2 class="text-lg font-semibold text-slate-950">未分类</h2>
-        <span class="text-xs text-slate-500">{{ uncategorized.length }} 个服务</span>
+        <h2 class="text-lg font-semibold text-[var(--dm-text)]">未分类</h2>
+        <span class="text-xs text-[var(--dm-text-subtle)]">{{ uncategorized.length }} 个服务</span>
       </div>
       <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        <article v-for="item in uncategorized" :key="item.id" class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <article v-for="item in uncategorized" :key="item.id" class="dm-surface p-[var(--dm-panel-padding)]">
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
-              <h3 class="font-semibold text-slate-950">{{ item.icon || '•' }} {{ item.name }}</h3>
-              <p v-if="item.description" class="mt-1 text-sm leading-6 text-slate-600">{{ item.description }}</p>
+              <h3 class="font-semibold text-[var(--dm-text)]">{{ item.icon || '•' }} {{ item.name }}</h3>
+              <p v-if="item.description" class="mt-1 text-sm leading-6 text-[var(--dm-text-muted)]">{{ item.description }}</p>
             </div>
-            <a class="shrink-0 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white" :href="item.primaryEndpoint.url" target="_blank">
-              打开
+            <a
+              class="shrink-0 rounded-[var(--dm-radius-control)] px-3 py-1.5 text-sm font-medium text-[var(--dm-text-muted)] transition hover:bg-[var(--dm-surface-muted)] hover:text-[var(--dm-text)]"
+              :href="item.primaryEndpoint.url"
+              target="_blank"
+            >
+              打开 ↗
             </a>
           </div>
 
           <div class="mt-4 grid gap-2">
-            <a class="break-all text-sm font-medium text-blue-700" :href="item.primaryEndpoint.url" target="_blank">
+            <a class="dm-link break-all text-sm" :href="item.primaryEndpoint.url" target="_blank">
               {{ item.primaryEndpoint.label }} · {{ endpointKindLabels[item.primaryEndpoint.kind] }}
             </a>
             <a
               v-for="endpoint in item.alternateEndpoints"
               :key="endpoint.id"
-              class="break-all text-sm text-slate-600 hover:text-slate-950"
+              class="break-all text-sm text-[var(--dm-text-muted)] hover:text-[var(--dm-text)]"
               :href="endpoint.url"
               target="_blank"
             >
@@ -178,14 +181,12 @@ onMounted(load)
             </a>
           </div>
 
-          <p v-if="item.credentialHint" class="mt-4 rounded-md bg-slate-100 p-2 text-xs leading-5 text-slate-700">
+          <p v-if="item.credentialHint" class="mt-4 rounded-[var(--dm-radius-control)] bg-[var(--dm-surface-muted)] p-2 text-xs leading-5 text-[var(--dm-text-muted)]">
             {{ item.credentialHint }}
           </p>
 
           <div v-if="item.tags.length > 0" class="mt-3 flex flex-wrap gap-2">
-            <span v-for="tag in item.tags" :key="tag.id" class="rounded bg-slate-100 px-2 py-1 text-xs text-slate-600">
-              {{ tag.name }}
-            </span>
+            <AppBadge v-for="tag in item.tags" :key="tag.id">{{ tag.name }}</AppBadge>
           </div>
         </article>
       </div>
