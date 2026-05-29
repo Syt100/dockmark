@@ -51,6 +51,13 @@ corepack pnpm install
 - `apps/extension`: browser extension placeholder for later phases.
 - `packages/shared`: shared TypeScript contracts and utilities.
 - `migrations`: Cloudflare D1 SQL migrations.
+- `docs`: design notes, project standards, API conventions, and deployment guidance.
+
+## Project Standards
+
+- [项目规范](docs/project-standards.md)
+- [API 约定](docs/api-conventions.md)
+- [部署与运维规范](docs/deployment.md)
 
 ## Authentication
 
