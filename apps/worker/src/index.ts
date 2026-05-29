@@ -5,6 +5,10 @@ import type { HealthResponse, SmokeResponse } from '@dockmark/shared'
 
 import { createAuthAdapter } from './lib/auth'
 import type { AppEnv } from './lib/env'
+import { categoriesRoute } from './routes/categories'
+import { itemsRoute } from './routes/items'
+import { navRoute } from './routes/nav'
+import { tagsRoute } from './routes/tags'
 
 const app = new Hono<AppEnv>()
 
@@ -63,5 +67,9 @@ app.get('/api/smoke', async (c) => {
   return c.json(payload)
 })
 
-export default app
+app.route('/api/categories', categoriesRoute)
+app.route('/api/tags', tagsRoute)
+app.route('/api/items', itemsRoute)
+app.route('/api/nav', navRoute)
 
+export default app

@@ -10,6 +10,9 @@ import { RouterLink, RouterView } from 'vue-router'
 
         <nav class="flex items-center gap-4 text-sm text-slate-600">
           <RouterLink class="hover:text-slate-950" to="/">Home</RouterLink>
+          <RouterLink class="hover:text-slate-950" to="/services">Services</RouterLink>
+          <RouterLink class="hover:text-slate-950" to="/categories">Categories</RouterLink>
+          <RouterLink class="hover:text-slate-950" to="/tags">Tags</RouterLink>
           <RouterLink class="hover:text-slate-950" to="/about">About</RouterLink>
         </nav>
       </div>
