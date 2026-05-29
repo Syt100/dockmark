@@ -8,6 +8,30 @@ async function json(response: Response): Promise<unknown> {
 }
 
 describe('navigation API', () => {
+  it('requires authentication for data read APIs outside health checks', async () => {
+    const env = createMockEnv({ AUTH_MODE: 'cloudflare-access' })
+
+    for (const path of ['/api/nav', '/api/categories', '/api/tags', '/api/items', '/api/items/item_missing']) {
+      const response = await app.request(path, {}, env)
+      expect(response.status).toBe(401)
+      await expect(response.text()).resolves.toContain('Cloudflare Access identity is required')
+    }
+  })
+
+  it('allows data read APIs when the auth adapter accepts the request', async () => {
+    const env = createMockEnv({ AUTH_MODE: 'cloudflare-access' })
+    const headers = {
+      'Cf-Access-Authenticated-User-Email': 'owner@example.com',
+      'Cf-Access-Authenticated-User-Id': 'user_1',
+      'Cf-Access-Jwt-Assertion': 'test-assertion',
+    }
+
+    for (const path of ['/api/nav', '/api/categories', '/api/tags', '/api/items']) {
+      const response = await app.request(path, { headers }, env)
+      expect(response.status).toBe(200)
+    }
+  })
+
   it('creates categories, tags, items, and navigation payloads', async () => {
     const env = createMockEnv()
 

@@ -318,7 +318,7 @@ class MockDb {
   }
 }
 
-export function createMockEnv(): Bindings {
+export function createMockEnv(overrides: Partial<Bindings> = {}): Bindings {
   const kv = new Map<string, string>()
   const store: Store = {
     categories: [],
@@ -352,5 +352,6 @@ export function createMockEnv(): Bindings {
       },
       get: (key: string) => Promise.resolve(kv.get(key) ?? null),
     } as unknown as KVNamespace,
+    ...overrides,
   }
 }

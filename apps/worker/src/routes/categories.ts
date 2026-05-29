@@ -15,7 +15,7 @@ import { requireAuth } from '../middleware/auth'
 
 export const categoriesRoute = new Hono<AppEnv>()
 
-categoriesRoute.get('/', async (c) => {
+categoriesRoute.get('/', requireAuth, async (c) => {
   const categories = await listCategories(c.env.DB)
   return c.json({ categories })
 })
@@ -50,4 +50,3 @@ categoriesRoute.delete('/:id', requireAuth, async (c) => {
   await incrementNavCacheVersion(c.env.KV)
   return c.body(null, 204)
 })
-

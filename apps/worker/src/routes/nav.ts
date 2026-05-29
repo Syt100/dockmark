@@ -3,10 +3,11 @@ import { Hono } from 'hono'
 import { getNavigation } from '../db/items'
 import { getCachedNavigation, putCachedNavigation } from '../lib/cache'
 import type { AppEnv } from '../lib/env'
+import { requireAuth } from '../middleware/auth'
 
 export const navRoute = new Hono<AppEnv>()
 
-navRoute.get('/', async (c) => {
+navRoute.get('/', requireAuth, async (c) => {
   const cached = await getCachedNavigation(c.env.KV)
 
   if (cached) {
@@ -22,4 +23,3 @@ navRoute.get('/', async (c) => {
     'X-Dockmark-Cache': 'miss',
   })
 })
-

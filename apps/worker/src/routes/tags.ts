@@ -10,7 +10,7 @@ import { requireAuth } from '../middleware/auth'
 
 export const tagsRoute = new Hono<AppEnv>()
 
-tagsRoute.get('/', async (c) => {
+tagsRoute.get('/', requireAuth, async (c) => {
   const tags = await listTags(c.env.DB)
   return c.json({ tags })
 })

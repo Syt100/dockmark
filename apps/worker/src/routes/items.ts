@@ -10,7 +10,7 @@ import { requireAuth } from '../middleware/auth'
 
 export const itemsRoute = new Hono<AppEnv>()
 
-itemsRoute.get('/', async (c) => {
+itemsRoute.get('/', requireAuth, async (c) => {
   const items = await listItems(c.env.DB)
   return c.json({ items })
 })
@@ -23,7 +23,7 @@ itemsRoute.post('/', requireAuth, async (c) => {
   return c.json({ item }, 201)
 })
 
-itemsRoute.get('/:id', async (c) => {
+itemsRoute.get('/:id', requireAuth, async (c) => {
   const item = await getItem(c.env.DB, c.req.param('id'))
 
   if (!item) {
@@ -55,4 +55,3 @@ itemsRoute.delete('/:id', requireAuth, async (c) => {
   await incrementNavCacheVersion(c.env.KV)
   return c.body(null, 204)
 })
-
