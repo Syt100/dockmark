@@ -13,6 +13,14 @@ import FeedbackMessage from '../components/FeedbackMessage.vue'
 import PageHeader from '../components/PageHeader.vue'
 import { endpointKindLabels, statusLabels, statusToneClasses } from '../ui/labels'
 
+type ServiceRow = {
+  item: ServiceItem
+  categoryName: string
+  primaryEndpoint: ServiceItem['endpoints'][number] | null
+  visibleTags: ServiceItem['tags']
+  hiddenTagCount: number
+}
+
 const route = useRoute()
 const items = ref<ServiceItem[]>([])
 const categories = ref<Category[]>([])
@@ -60,6 +68,16 @@ const filteredItems = computed(() => {
   )
 })
 
+const serviceRows = computed<ServiceRow[]>(() =>
+  filteredItems.value.map((item) => ({
+    item,
+    categoryName: categoryById.value.get(item.categoryId ?? '') ?? '未分类',
+    primaryEndpoint: item.endpoints.find((endpoint) => endpoint.isPrimary) ?? item.endpoints[0] ?? null,
+    visibleTags: item.tags.slice(0, 3),
+    hiddenTagCount: Math.max(item.tags.length - 3, 0),
+  })),
+)
+
 async function load() {
   isLoading.value = true
   error.value = null
@@ -103,14 +121,24 @@ function applyFlash(value: unknown) {
   }
 }
 
+function isSavedValue(value: unknown): boolean {
+  return value === 'created' || value === 'updated'
+}
+
 onMounted(() => {
   applyFlash(route.query.saved)
   void load()
 })
 
 watch(
-  () => route.query.saved,
-  (value) => applyFlash(value),
+  () => route.fullPath,
+  () => {
+    applyFlash(route.query.saved)
+
+    if (!hasEditor.value && isSavedValue(route.query.saved)) {
+      void load()
+    }
+  },
 )
 </script>
 
@@ -123,46 +151,51 @@ watch(
         </template>
       </PageHeader>
 
-      <section class="grid gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-        <div class="grid gap-4 md:grid-cols-[2fr_1fr_1fr_1fr_auto] md:items-end">
-          <label class="grid gap-1 text-sm">
-          <span class="font-medium text-slate-700">搜索服务</span>
-          <input v-model="query" class="rounded-md border border-slate-300 px-3 py-2" placeholder="服务名称、URL、分类或标签" />
-          </label>
-          <label class="grid gap-1 text-sm">
-            <span class="font-medium text-slate-700">分类</span>
-            <select v-model="selectedCategoryId" class="rounded-md border border-slate-300 bg-white px-3 py-2">
-              <option value="">全部分类</option>
-              <option value="__uncategorized">未分类</option>
-              <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
-            </select>
-          </label>
-          <label class="grid gap-1 text-sm">
-            <span class="font-medium text-slate-700">状态</span>
-            <select v-model="selectedStatus" class="rounded-md border border-slate-300 bg-white px-3 py-2">
-              <option value="">全部状态</option>
-              <option v-for="(label, value) in statusLabels" :key="value" :value="value">{{ label }}</option>
-            </select>
-          </label>
-          <label class="grid gap-1 text-sm">
-            <span class="font-medium text-slate-700">标签</span>
-            <select v-model="selectedTagId" class="rounded-md border border-slate-300 bg-white px-3 py-2">
-              <option value="">全部标签</option>
-              <option v-for="tag in availableTags" :key="tag.id" :value="tag.id">{{ tag.name }}</option>
-            </select>
-          </label>
-          <AppButton :disabled="!hasFilters" type="button" @click="clearFilters">清空筛选</AppButton>
+      <section class="grid gap-3">
+        <div class="grid gap-3 md:grid-cols-[minmax(14rem,2fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_auto] md:items-center">
+          <input
+            v-model="query"
+            aria-label="搜索服务"
+            class="min-h-10 rounded-md bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline outline-1 outline-slate-200 transition placeholder:text-slate-400 focus:outline-2 focus:outline-blue-500"
+            placeholder="搜索服务、URL、分类或标签"
+          />
+          <select
+            v-model="selectedCategoryId"
+            aria-label="按分类筛选服务"
+            class="min-h-10 rounded-md bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline outline-1 outline-slate-200 transition focus:outline-2 focus:outline-blue-500"
+          >
+            <option value="">全部分类</option>
+            <option value="__uncategorized">未分类</option>
+            <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
+          </select>
+          <select
+            v-model="selectedStatus"
+            aria-label="按状态筛选服务"
+            class="min-h-10 rounded-md bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline outline-1 outline-slate-200 transition focus:outline-2 focus:outline-blue-500"
+          >
+            <option value="">全部状态</option>
+            <option v-for="(label, value) in statusLabels" :key="value" :value="value">{{ label }}</option>
+          </select>
+          <select
+            v-model="selectedTagId"
+            aria-label="按标签筛选服务"
+            class="min-h-10 rounded-md bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline outline-1 outline-slate-200 transition focus:outline-2 focus:outline-blue-500"
+          >
+            <option value="">全部标签</option>
+            <option v-for="tag in availableTags" :key="tag.id" :value="tag.id">{{ tag.name }}</option>
+          </select>
+          <AppButton :disabled="!hasFilters" tone="ghost" type="button" @click="clearFilters">清空</AppButton>
         </div>
       </section>
 
       <FeedbackMessage tone="success" :message="feedback" />
       <FeedbackMessage tone="error" :message="error" />
 
-      <section v-if="isLoading" class="rounded-lg border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
+      <section v-if="isLoading" class="rounded-lg bg-white p-5 text-sm text-slate-600">
         正在加载服务...
       </section>
 
-      <section v-else-if="filteredItems.length === 0" class="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
+      <section v-else-if="filteredItems.length === 0" class="rounded-lg bg-white p-8 text-center">
         <p class="text-base font-medium text-slate-950">{{ hasFilters ? '没有符合筛选条件的服务' : '还没有服务' }}</p>
         <p class="mt-1 text-sm text-slate-600">{{ hasFilters ? '清空筛选或换一个条件试试。' : '可以新建服务，开始整理自部署入口。' }}</p>
         <div class="mt-4 flex justify-center gap-2">
@@ -171,50 +204,133 @@ watch(
         </div>
       </section>
 
-      <section v-else class="grid gap-3">
-        <article v-for="item in filteredItems" :key="item.id" class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-2">
-                <p class="text-lg font-semibold text-slate-950">{{ item.icon || '•' }} {{ item.name }}</p>
-                <span :class="['rounded-full border px-2 py-0.5 text-xs font-medium', statusToneClasses[item.status]]">
-                  {{ statusLabels[item.status] }}
-                </span>
+      <section v-else>
+        <div class="hidden overflow-hidden rounded-lg bg-white md:block">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50 text-xs font-medium text-slate-500">
+              <tr>
+                <th class="px-4 py-3 font-medium">服务</th>
+                <th class="px-4 py-3 font-medium">主地址</th>
+                <th class="px-4 py-3 font-medium">标签</th>
+                <th class="px-4 py-3 font-medium">凭据与地址</th>
+                <th class="px-4 py-3 text-right font-medium">操作</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr v-for="row in serviceRows" :key="row.item.id" class="transition hover:bg-blue-50/60">
+                <td class="w-[30%] px-4 py-3 align-middle">
+                  <div class="flex min-w-0 items-center gap-3">
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-slate-100 text-base font-semibold text-slate-700">
+                      {{ row.item.icon || '•' }}
+                    </span>
+                    <div class="min-w-0">
+                      <div class="flex min-w-0 items-center gap-2">
+                        <p class="truncate font-semibold text-slate-950">{{ row.item.name }}</p>
+                        <span :class="['shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium', statusToneClasses[row.item.status]]">
+                          {{ statusLabels[row.item.status] }}
+                        </span>
+                      </div>
+                      <p class="mt-1 truncate text-xs text-slate-500">{{ row.categoryName }}</p>
+                      <p v-if="row.item.description" class="mt-1 truncate text-xs text-slate-500">{{ row.item.description }}</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="w-[27%] px-4 py-3 align-middle">
+                  <template v-if="row.primaryEndpoint">
+                    <a class="font-medium text-blue-700 hover:text-blue-800" :href="row.primaryEndpoint.url" target="_blank">
+                      {{ row.primaryEndpoint.label }} · {{ endpointKindLabels[row.primaryEndpoint.kind] }}
+                    </a>
+                    <p class="mt-1 truncate text-xs text-slate-500">{{ row.primaryEndpoint.url }}</p>
+                  </template>
+                  <span v-else class="text-sm text-slate-400">未配置地址</span>
+                </td>
+                <td class="w-[18%] px-4 py-3 align-middle">
+                  <div v-if="row.visibleTags.length > 0" class="flex flex-wrap gap-1.5">
+                    <span v-for="tag in row.visibleTags" :key="tag.id" class="rounded bg-slate-100 px-2 py-1 text-xs text-slate-600">
+                      {{ tag.name }}
+                    </span>
+                    <span v-if="row.hiddenTagCount > 0" class="rounded bg-slate-100 px-2 py-1 text-xs text-slate-500">
+                      +{{ row.hiddenTagCount }}
+                    </span>
+                  </div>
+                  <span v-else class="text-sm text-slate-400">无标签</span>
+                </td>
+                <td class="w-[15%] px-4 py-3 align-middle">
+                  <p class="truncate text-sm text-slate-700">{{ row.item.credentialHint || '无凭据提示' }}</p>
+                  <p class="mt-1 text-xs text-slate-500">{{ row.item.endpoints.length }} 个地址</p>
+                </td>
+                <td class="px-4 py-3 align-middle">
+                  <div class="flex items-center justify-end gap-1">
+                    <a
+                      v-if="row.primaryEndpoint"
+                      class="inline-flex min-h-10 items-center justify-center rounded-md px-3.5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
+                      :href="row.primaryEndpoint.url"
+                      target="_blank"
+                    >
+                      打开
+                    </a>
+                    <AppLinkButton :to="`/services/${row.item.id}/edit`" tone="ghost">编辑</AppLinkButton>
+                    <ConfirmAction :message="`确认删除服务“${row.item.name}”？`" @confirm="remove(row.item.id)" />
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid gap-2 md:hidden">
+          <article v-for="row in serviceRows" :key="row.item.id" class="rounded-lg bg-white p-4 transition hover:bg-blue-50/60">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <div class="flex min-w-0 items-center gap-2">
+                  <p class="truncate text-base font-semibold text-slate-950">{{ row.item.icon || '•' }} {{ row.item.name }}</p>
+                  <span :class="['shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium', statusToneClasses[row.item.status]]">
+                    {{ statusLabels[row.item.status] }}
+                  </span>
+                </div>
+                <p class="mt-1 text-sm text-slate-600">{{ row.categoryName }}</p>
               </div>
-              <p class="mt-1 text-sm text-slate-600">{{ categoryById.get(item.categoryId || '') || '未分类' }}</p>
-              <p v-if="item.description" class="mt-2 text-sm leading-6 text-slate-600">{{ item.description }}</p>
-              <p v-if="item.credentialHint" class="mt-3 rounded-md bg-slate-100 px-3 py-2 text-xs text-slate-700">
-                {{ item.credentialHint }}
-              </p>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2 lg:justify-end">
-              <AppLinkButton :to="`/services/${item.id}/edit`">编辑</AppLinkButton>
-              <ConfirmAction :message="`确认删除服务“${item.name}”？`" @confirm="remove(item.id)" />
+            <p v-if="row.item.description" class="mt-3 text-sm leading-6 text-slate-600">{{ row.item.description }}</p>
+
+            <div class="mt-3">
+              <a
+                v-if="row.primaryEndpoint"
+                :href="row.primaryEndpoint.url"
+                class="break-all text-sm font-medium text-blue-700"
+                target="_blank"
+              >
+                {{ row.primaryEndpoint.label }} · {{ endpointKindLabels[row.primaryEndpoint.kind] }}
+              </a>
+              <p v-else class="text-sm text-slate-500">未配置地址</p>
             </div>
-          </div>
 
-          <div class="mt-4 flex flex-wrap gap-2">
-            <a
-              v-for="endpoint in item.endpoints"
-              :key="endpoint.id"
-              :href="endpoint.url"
-              class="rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-700 hover:bg-slate-200"
-              target="_blank"
-            >
-              {{ endpoint.label }} · {{ endpointKindLabels[endpoint.kind] }}{{ endpoint.isPrimary ? ' · 主地址' : '' }}
-            </a>
-          </div>
+            <p v-if="row.item.credentialHint" class="mt-3 rounded-md bg-slate-100 px-3 py-2 text-xs text-slate-700">
+              {{ row.item.credentialHint }}
+            </p>
 
-          <div v-if="item.tags.length > 0" class="mt-3 flex flex-wrap gap-2">
-            <span v-for="tag in item.tags" :key="tag.id" class="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600">
-              {{ tag.name }}
-            </span>
-          </div>
-        </article>
+            <div v-if="row.visibleTags.length > 0" class="mt-3 flex flex-wrap gap-2">
+              <span v-for="tag in row.visibleTags" :key="tag.id" class="rounded bg-slate-100 px-2 py-1 text-xs text-slate-600">
+                {{ tag.name }}
+              </span>
+              <span v-if="row.hiddenTagCount > 0" class="rounded bg-slate-100 px-2 py-1 text-xs text-slate-500">
+                +{{ row.hiddenTagCount }}
+              </span>
+            </div>
+
+            <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
+              <span class="text-xs text-slate-500">{{ row.item.endpoints.length }} 个地址</span>
+              <div class="flex flex-wrap gap-2">
+                <AppLinkButton :to="`/services/${row.item.id}/edit`" tone="ghost">编辑</AppLinkButton>
+                <ConfirmAction :message="`确认删除服务“${row.item.name}”？`" @confirm="remove(row.item.id)" />
+              </div>
+            </div>
+          </article>
+        </div>
       </section>
     </div>
 
-    <RouterView @vue:unmounted="load" />
+    <RouterView />
   </main>
 </template>

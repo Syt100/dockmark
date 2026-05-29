@@ -52,14 +52,24 @@ function applyFlash(value: unknown) {
   }
 }
 
+function isSavedValue(value: unknown): boolean {
+  return value === 'created' || value === 'updated'
+}
+
 onMounted(() => {
   applyFlash(route.query.saved)
   void load()
 })
 
 watch(
-  () => route.query.saved,
-  (value) => applyFlash(value),
+  () => route.fullPath,
+  () => {
+    applyFlash(route.query.saved)
+
+    if (!hasEditor.value && isSavedValue(route.query.saved)) {
+      void load()
+    }
+  },
 )
 </script>
 
@@ -75,27 +85,51 @@ watch(
       <FeedbackMessage tone="success" :message="feedback" />
       <FeedbackMessage tone="error" :message="error" />
 
-      <section v-if="isLoading" class="rounded-lg border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
+      <section v-if="isLoading" class="rounded-lg bg-white p-5 text-sm text-slate-600">
         正在加载标签...
       </section>
 
-      <section v-else-if="tags.length === 0" class="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
+      <section v-else-if="tags.length === 0" class="rounded-lg bg-white p-8 text-center">
         <p class="text-base font-medium text-slate-950">还没有标签</p>
         <p class="mt-1 text-sm text-slate-600">标签适合标记媒体、监控、内网、生产等服务属性。</p>
       </section>
 
-      <section v-else class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        <article v-for="tag in tags" :key="tag.id" class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <p class="text-lg font-semibold text-slate-950">{{ tag.name }}</p>
-          <p class="mt-1 text-sm text-slate-600">{{ tag.slug }}</p>
-          <div class="mt-4 flex flex-wrap gap-2">
-            <AppLinkButton :to="`/tags/${tag.id}/edit`">编辑</AppLinkButton>
-            <ConfirmAction :message="`确认删除标签“${tag.name}”？`" @confirm="remove(tag.id)" />
+      <section v-else>
+        <div class="hidden overflow-hidden rounded-lg bg-white md:block">
+          <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_10rem] bg-slate-50 px-4 py-3 text-xs font-medium text-slate-500">
+            <span>标签</span>
+            <span>Slug</span>
+            <span class="text-right">操作</span>
           </div>
-        </article>
+          <div class="divide-y divide-slate-100">
+            <article
+              v-for="tag in tags"
+              :key="tag.id"
+              class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_10rem] items-center px-4 py-3 transition hover:bg-blue-50/60"
+            >
+              <p class="truncate font-semibold text-slate-950">{{ tag.name }}</p>
+              <p class="truncate text-sm text-slate-600">{{ tag.slug }}</p>
+              <div class="flex items-center justify-end gap-1">
+                <AppLinkButton :to="`/tags/${tag.id}/edit`" tone="ghost">编辑</AppLinkButton>
+                <ConfirmAction :message="`确认删除标签“${tag.name}”？`" @confirm="remove(tag.id)" />
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <div class="grid gap-2 md:hidden">
+          <article v-for="tag in tags" :key="tag.id" class="rounded-lg bg-white p-4 transition hover:bg-blue-50/60">
+            <p class="text-base font-semibold text-slate-950">{{ tag.name }}</p>
+            <p class="mt-1 break-all text-sm text-slate-600">{{ tag.slug }}</p>
+            <div class="mt-4 flex flex-wrap gap-2">
+              <AppLinkButton :to="`/tags/${tag.id}/edit`" tone="ghost">编辑</AppLinkButton>
+              <ConfirmAction :message="`确认删除标签“${tag.name}”？`" @confirm="remove(tag.id)" />
+            </div>
+          </article>
+        </div>
       </section>
     </div>
 
-    <RouterView @vue:unmounted="load" />
+    <RouterView />
   </main>
 </template>
