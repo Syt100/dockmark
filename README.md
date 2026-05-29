@@ -56,6 +56,7 @@ corepack pnpm install
 ## Project Standards
 
 - [项目规范](docs/project-standards.md)
+- [代码规范](docs/code-conventions.md)
 - [API 约定](docs/api-conventions.md)
 - [部署与运维规范](docs/deployment.md)
 

@@ -70,6 +70,7 @@ OpenSpec 要求：
 - Worker 端所有 SQL 使用 prepared statement 和参数绑定。
 - 不把数据库 snake_case 字段直接泄漏给前端，API 返回对象使用 camelCase。
 - 注释只用于解释不明显的约束、取舍或复杂逻辑，不写复述代码的注释。
+- 具体代码编写细则见 [代码规范](code-conventions.md)。
 
 ## 6. 前端规范
 
