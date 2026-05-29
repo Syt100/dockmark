@@ -25,8 +25,11 @@ corepack pnpm install
 Run local Worker development:
 
 ```sh
+pnpm db:migrate:local
 pnpm dev
 ```
+
+The local D1 database starts empty. Run `pnpm db:migrate:local` after pulling new migrations, otherwise API routes such as `/api/nav` will fail with missing-table errors.
 
 Run validation:
 

@@ -8,6 +8,8 @@
     "test": "vitest run",
     "lint": "tsc -p tsconfig.json --noEmit",
     "format": "echo \"No worker format yet\"",
+    "db:migrate:local": "wrangler d1 migrations apply dockmark --local",
+    "db:migrate:remote": "wrangler d1 migrations apply dockmark --remote",
     "deploy": "wrangler deploy --minify",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"
   },
