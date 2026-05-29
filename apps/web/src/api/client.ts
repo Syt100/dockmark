@@ -71,6 +71,14 @@ export async function createTag(input: TagInput): Promise<Tag> {
   return body.tag
 }
 
+export async function updateTag(id: string, input: TagInput): Promise<Tag> {
+  const body = await request<{ tag: Tag }>(`/api/tags/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  })
+  return body.tag
+}
+
 export async function deleteTag(id: string): Promise<void> {
   await request<void>(`/api/tags/${id}`, { method: 'DELETE' })
 }
@@ -78,6 +86,11 @@ export async function deleteTag(id: string): Promise<void> {
 export async function fetchItems(): Promise<ServiceItem[]> {
   const body = await request<{ items: ServiceItem[] }>('/api/items')
   return body.items
+}
+
+export async function fetchItem(id: string): Promise<ServiceItem> {
+  const body = await request<{ item: ServiceItem }>(`/api/items/${id}`)
+  return body.item
 }
 
 export async function createItem(input: ServiceItemInput): Promise<ServiceItem> {
@@ -99,4 +112,3 @@ export async function updateItem(id: string, input: ServiceItemInput): Promise<S
 export async function deleteItem(id: string): Promise<void> {
   await request<void>(`/api/items/${id}`, { method: 'DELETE' })
 }
-

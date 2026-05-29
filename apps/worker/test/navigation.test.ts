@@ -123,4 +123,55 @@ describe('navigation API', () => {
     const refreshed = await app.request('/api/nav', {}, env)
     expect(refreshed.headers.get('X-Dockmark-Cache')).toBe('miss')
   })
+
+  it('updates tags and invalidates navigation cache', async () => {
+    const env = createMockEnv()
+
+    const tagResponse = await app.request(
+      '/api/tags',
+      {
+        method: 'POST',
+        body: JSON.stringify({ name: 'media' }),
+        headers: { 'content-type': 'application/json' },
+      },
+      env,
+    )
+    const tagBody = await json(tagResponse) as { tag: { id: string } }
+
+    await app.request('/api/nav', {}, env)
+    const cached = await app.request('/api/nav', {}, env)
+    expect(cached.headers.get('X-Dockmark-Cache')).toBe('hit')
+
+    const updateResponse = await app.request(
+      `/api/tags/${tagBody.tag.id}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ name: '媒体', slug: 'media-cn' }),
+        headers: { 'content-type': 'application/json' },
+      },
+      env,
+    )
+
+    expect(updateResponse.status).toBe(200)
+    const updateBody = await json(updateResponse) as { tag: { name: string; slug: string } }
+    expect(updateBody.tag.name).toBe('媒体')
+    expect(updateBody.tag.slug).toBe('media-cn')
+
+    const refreshed = await app.request('/api/nav', {}, env)
+    expect(refreshed.headers.get('X-Dockmark-Cache')).toBe('miss')
+  })
+
+  it('returns not found when updating a missing tag', async () => {
+    const response = await app.request(
+      '/api/tags/tag_missing',
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ name: 'missing' }),
+        headers: { 'content-type': 'application/json' },
+      },
+      createMockEnv(),
+    )
+
+    expect(response.status).toBe(404)
+  })
 })

@@ -1,40 +1,46 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { RouterView, useRoute } from 'vue-router'
 
 import type { Tag } from '@dockmark/shared'
 
-import { createTag, deleteTag, fetchTags } from '../api/client'
+import { deleteTag, fetchTags } from '../api/client'
+import AppLinkButton from '../components/AppLinkButton.vue'
+import ConfirmAction from '../components/ConfirmAction.vue'
+import FeedbackMessage from '../components/FeedbackMessage.vue'
+import PageHeader from '../components/PageHeader.vue'
 
+const route = useRoute()
 const tags = ref<Tag[]>([])
 const error = ref<string | null>(null)
-const form = reactive({
-  name: '',
-  slug: '',
-})
+const feedback = ref<string | null>(null)
+const isLoading = ref(false)
+const hasEditor = computed(() => route.name === 'tag-new' || route.name === 'tag-edit')
 
 async function load() {
-  tags.value = await fetchTags()
-}
-
-async function submit() {
+  isLoading.value = true
   error.value = null
 
   try {
-    await createTag({
-      name: form.name,
-      slug: form.slug || undefined,
-    })
-    form.name = ''
-    form.slug = ''
-    await load()
+    tags.value = await fetchTags()
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : 'Unable to save tag'
+    error.value = caught instanceof Error ? caught.message : '加载标签失败'
+  } finally {
+    isLoading.value = false
   }
 }
 
 async function remove(id: string) {
-  await deleteTag(id)
-  await load()
+  error.value = null
+  feedback.value = null
+
+  try {
+    await deleteTag(id)
+    feedback.value = '标签已删除'
+    await load()
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '删除标签失败'
+  }
 }
 
 onMounted(load)
@@ -42,39 +48,37 @@ onMounted(load)
 
 <template>
   <main class="grid gap-6">
-    <section>
-      <h1 class="text-2xl font-semibold text-slate-950">Tags</h1>
-      <p class="mt-1 text-sm text-slate-600">Use tags for filtering and searching service attributes.</p>
-    </section>
+    <div :class="hasEditor ? 'hidden md:grid md:gap-6' : 'grid gap-6'">
+      <PageHeader title="标签" description="用标签补充分组维度，便于搜索服务用途、位置和访问方式。">
+        <template #actions>
+          <AppLinkButton to="/tags/new" tone="primary">新建标签</AppLinkButton>
+        </template>
+      </PageHeader>
 
-    <form class="grid gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm" @submit.prevent="submit">
-      <div class="grid gap-4 md:grid-cols-2">
-        <label class="grid gap-1 text-sm">
-          <span class="font-medium text-slate-700">Name</span>
-          <input v-model="form.name" class="rounded-md border border-slate-300 px-3 py-2" required />
-        </label>
-        <label class="grid gap-1 text-sm">
-          <span class="font-medium text-slate-700">Slug</span>
-          <input v-model="form.slug" class="rounded-md border border-slate-300 px-3 py-2" />
-        </label>
-      </div>
+      <FeedbackMessage tone="success" :message="feedback" />
+      <FeedbackMessage tone="error" :message="error" />
 
-      <p v-if="error" class="rounded-md bg-amber-50 p-3 text-sm text-amber-900">{{ error }}</p>
+      <section v-if="isLoading" class="rounded-lg border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
+        正在加载标签...
+      </section>
 
-      <button class="w-fit rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white" type="submit">
-        Create tag
-      </button>
-    </form>
+      <section v-else-if="tags.length === 0" class="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
+        <p class="text-base font-medium text-slate-950">还没有标签</p>
+        <p class="mt-1 text-sm text-slate-600">标签适合标记媒体、监控、内网、生产等服务属性。</p>
+      </section>
 
-    <section class="grid gap-2 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <div v-for="tag in tags" :key="tag.id" class="flex items-center justify-between rounded-md bg-slate-50 px-3 py-2">
-        <div>
-          <p class="font-medium text-slate-950">{{ tag.name }}</p>
-          <p class="text-xs text-slate-500">{{ tag.slug }}</p>
-        </div>
-        <button class="text-sm text-rose-700" type="button" @click="remove(tag.id)">Delete</button>
-      </div>
-    </section>
+      <section v-else class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <article v-for="tag in tags" :key="tag.id" class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <p class="text-lg font-semibold text-slate-950">{{ tag.name }}</p>
+          <p class="mt-1 text-sm text-slate-600">{{ tag.slug }}</p>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <AppLinkButton :to="`/tags/${tag.id}/edit`">编辑</AppLinkButton>
+            <ConfirmAction message="确认删除这个标签？" @confirm="remove(tag.id)" />
+          </div>
+        </article>
+      </section>
+    </div>
+
+    <RouterView @vue:unmounted="load" />
   </main>
 </template>
-

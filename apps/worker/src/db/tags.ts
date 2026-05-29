@@ -27,8 +27,22 @@ export async function createTag(db: D1Database, input: TagInput): Promise<Tag> {
   return tag
 }
 
+export async function updateTag(db: D1Database, id: string, input: TagInput): Promise<Tag | null> {
+  const slug = input.slug || slugify(input.name)
+
+  const result = await db
+    .prepare('UPDATE tags SET name = ?, slug = ? WHERE id = ?')
+    .bind(input.name, slug, id)
+    .run()
+
+  if (result.meta.changes === 0) {
+    return null
+  }
+
+  return getTag(db, id)
+}
+
 export async function deleteTag(db: D1Database, id: string): Promise<boolean> {
   const result = await db.prepare('DELETE FROM tags WHERE id = ?').bind(id).run()
   return result.meta.changes > 0
 }
-

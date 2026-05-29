@@ -14,4 +14,26 @@ describe('worker health', () => {
       version: '0.1.0-test',
     })
   })
+
+  it('serves the SPA entry for non-API routes', async () => {
+    const response = await app.request('/services/new', {}, createMockEnv())
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toContain('text/html')
+    await expect(response.text()).resolves.toContain('id="app"')
+  })
+
+  it('serves the SPA entry for HEAD requests to non-API routes', async () => {
+    const response = await app.request('/services/new', { method: 'HEAD' }, createMockEnv())
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toContain('text/html')
+  })
+
+  it('keeps API not found responses separate from the SPA fallback', async () => {
+    const response = await app.request('/api/missing', {}, createMockEnv())
+
+    expect(response.status).toBe(404)
+    await expect(response.text()).resolves.toContain('Not found')
+  })
 })

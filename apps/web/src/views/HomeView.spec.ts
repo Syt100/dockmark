@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import HomeView from './HomeView.vue'
 
 describe('HomeView', () => {
-  it('renders navigation categories from the Worker API', async () => {
+  it('renders localized navigation categories from the Worker API', async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -66,6 +66,10 @@ describe('HomeView', () => {
     await vi.waitFor(() => {
       expect(wrapper.text()).toContain('Immich')
     })
+
+    expect(wrapper.text()).toContain('服务导航')
+    expect(wrapper.text()).toContain('打开')
+    expect(wrapper.text()).toContain('公网')
 
     expect(fetchMock).toHaveBeenCalledWith('/api/nav', {
       headers: {

@@ -1,71 +1,46 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { RouterView, useRoute } from 'vue-router'
 
 import type { Category } from '@dockmark/shared'
 
-import { createCategory, deleteCategory, fetchCategories, updateCategory } from '../api/client'
+import { deleteCategory, fetchCategories } from '../api/client'
+import AppLinkButton from '../components/AppLinkButton.vue'
+import ConfirmAction from '../components/ConfirmAction.vue'
+import FeedbackMessage from '../components/FeedbackMessage.vue'
+import PageHeader from '../components/PageHeader.vue'
 
+const route = useRoute()
 const categories = ref<Category[]>([])
-const editingId = ref<string | null>(null)
 const error = ref<string | null>(null)
-const form = reactive({
-  name: '',
-  slug: '',
-  icon: '',
-  color: '',
-  sortOrder: 0,
-})
+const feedback = ref<string | null>(null)
+const isLoading = ref(false)
+const hasEditor = computed(() => route.name === 'category-new' || route.name === 'category-edit')
 
 async function load() {
-  categories.value = await fetchCategories()
-}
-
-function reset() {
-  editingId.value = null
-  form.name = ''
-  form.slug = ''
-  form.icon = ''
-  form.color = ''
-  form.sortOrder = 0
-}
-
-function edit(category: Category) {
-  editingId.value = category.id
-  form.name = category.name
-  form.slug = category.slug
-  form.icon = category.icon ?? ''
-  form.color = category.color ?? ''
-  form.sortOrder = category.sortOrder
-}
-
-async function submit() {
+  isLoading.value = true
   error.value = null
 
   try {
-    const input = {
-      name: form.name,
-      slug: form.slug || undefined,
-      icon: form.icon || null,
-      color: form.color || null,
-      sortOrder: form.sortOrder,
-    }
-
-    if (editingId.value) {
-      await updateCategory(editingId.value, input)
-    } else {
-      await createCategory(input)
-    }
-
-    reset()
-    await load()
+    categories.value = await fetchCategories()
   } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : 'Unable to save category'
+    error.value = caught instanceof Error ? caught.message : '加载分类失败'
+  } finally {
+    isLoading.value = false
   }
 }
 
 async function remove(id: string) {
-  await deleteCategory(id)
-  await load()
+  error.value = null
+  feedback.value = null
+
+  try {
+    await deleteCategory(id)
+    feedback.value = '分类已删除'
+    await load()
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '删除分类失败'
+  }
 }
 
 onMounted(load)
@@ -73,70 +48,45 @@ onMounted(load)
 
 <template>
   <main class="grid gap-6">
-    <section class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-semibold text-slate-950">Categories</h1>
-        <p class="mt-1 text-sm text-slate-600">Group services for the home navigation view.</p>
-      </div>
-    </section>
+    <div :class="hasEditor ? 'hidden md:grid md:gap-6' : 'grid gap-6'">
+      <PageHeader title="分类" description="用分类组织首页服务入口，排序值越小越靠前。">
+        <template #actions>
+          <AppLinkButton to="/categories/new" tone="primary">新建分类</AppLinkButton>
+        </template>
+      </PageHeader>
 
-    <form class="grid gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm" @submit.prevent="submit">
-      <div class="grid gap-4 md:grid-cols-5">
-        <label class="grid gap-1 text-sm">
-          <span class="font-medium text-slate-700">Name</span>
-          <input v-model="form.name" class="rounded-md border border-slate-300 px-3 py-2" required />
-        </label>
-        <label class="grid gap-1 text-sm">
-          <span class="font-medium text-slate-700">Slug</span>
-          <input v-model="form.slug" class="rounded-md border border-slate-300 px-3 py-2" />
-        </label>
-        <label class="grid gap-1 text-sm">
-          <span class="font-medium text-slate-700">Icon</span>
-          <input v-model="form.icon" class="rounded-md border border-slate-300 px-3 py-2" />
-        </label>
-        <label class="grid gap-1 text-sm">
-          <span class="font-medium text-slate-700">Color</span>
-          <input v-model="form.color" class="rounded-md border border-slate-300 px-3 py-2" />
-        </label>
-        <label class="grid gap-1 text-sm">
-          <span class="font-medium text-slate-700">Sort</span>
-          <input v-model.number="form.sortOrder" class="rounded-md border border-slate-300 px-3 py-2" type="number" />
-        </label>
-      </div>
+      <FeedbackMessage tone="success" :message="feedback" />
+      <FeedbackMessage tone="error" :message="error" />
 
-      <p v-if="error" class="rounded-md bg-amber-50 p-3 text-sm text-amber-900">{{ error }}</p>
+      <section v-if="isLoading" class="rounded-lg border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
+        正在加载分类...
+      </section>
 
-      <div class="flex gap-2">
-        <button class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white" type="submit">
-          {{ editingId ? 'Save' : 'Create' }}
-        </button>
-        <button class="rounded-md border border-slate-300 px-4 py-2 text-sm" type="button" @click="reset">Reset</button>
-      </div>
-    </form>
+      <section v-else-if="categories.length === 0" class="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
+        <p class="text-base font-medium text-slate-950">还没有分类</p>
+        <p class="mt-1 text-sm text-slate-600">创建分类后，服务可以按区域、用途或系统分组。</p>
+      </section>
 
-    <section class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-      <table class="w-full text-left text-sm">
-        <thead class="bg-slate-100 text-slate-600">
-          <tr>
-            <th class="px-4 py-3">Name</th>
-            <th class="px-4 py-3">Slug</th>
-            <th class="px-4 py-3">Sort</th>
-            <th class="px-4 py-3"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="category in categories" :key="category.id" class="border-t border-slate-200">
-            <td class="px-4 py-3 font-medium text-slate-950">{{ category.name }}</td>
-            <td class="px-4 py-3 text-slate-600">{{ category.slug }}</td>
-            <td class="px-4 py-3 text-slate-600">{{ category.sortOrder }}</td>
-            <td class="px-4 py-3 text-right">
-              <button class="mr-2 text-blue-700" type="button" @click="edit(category)">Edit</button>
-              <button class="text-rose-700" type="button" @click="remove(category.id)">Delete</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
+      <section v-else class="grid gap-3 md:grid-cols-2">
+        <article v-for="category in categories" :key="category.id" class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="flex items-start justify-between gap-4">
+            <div class="min-w-0">
+              <p class="text-lg font-semibold text-slate-950">{{ category.icon || '•' }} {{ category.name }}</p>
+              <p class="mt-1 text-sm text-slate-600">{{ category.slug }}</p>
+              <div class="mt-3 flex flex-wrap gap-2 text-xs text-slate-600">
+                <span class="rounded-md bg-slate-100 px-2 py-1">排序 {{ category.sortOrder }}</span>
+                <span v-if="category.color" class="rounded-md bg-slate-100 px-2 py-1">{{ category.color }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <AppLinkButton :to="`/categories/${category.id}/edit`">编辑</AppLinkButton>
+            <ConfirmAction message="确认删除这个分类？服务会变为未分类。" @confirm="remove(category.id)" />
+          </div>
+        </article>
+      </section>
+    </div>
+
+    <RouterView @vue:unmounted="load" />
   </main>
 </template>
-

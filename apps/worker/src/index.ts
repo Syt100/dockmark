@@ -72,4 +72,26 @@ app.route('/api/tags', tagsRoute)
 app.route('/api/items', itemsRoute)
 app.route('/api/nav', navRoute)
 
+async function serveAssetOrSpaFallback(request: Request, assets: Fetcher): Promise<Response> {
+  const assetResponse = await assets.fetch(request)
+
+  if (assetResponse.status !== 404) {
+    return assetResponse
+  }
+
+  const url = new URL(request.url)
+  url.pathname = '/'
+  url.search = ''
+
+  return assets.fetch(new Request(url, request))
+}
+
+app.on(['GET', 'HEAD'], '*', (c) => {
+  if (c.req.path === '/api' || c.req.path.startsWith('/api/')) {
+    throw new HTTPException(404, { message: 'Not found' })
+  }
+
+  return serveAssetOrSpaFallback(c.req.raw, c.env.ASSETS)
+})
+
 export default app

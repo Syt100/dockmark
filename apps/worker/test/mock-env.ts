@@ -177,6 +177,15 @@ class MockStatement {
       return { meta: { changes: 1 } }
     }
 
+    if (sql.startsWith('UPDATE tags')) {
+      const id = this.values[2] as string
+      const tag = this.store.tags.find((record) => record.id === id)
+      if (!tag) return { meta: { changes: 0 } }
+      tag.name = this.values[0] as string
+      tag.slug = this.values[1] as string
+      return { meta: { changes: 1 } }
+    }
+
     if (sql.startsWith('DELETE FROM tags')) {
       const before = this.store.tags.length
       this.store.tags = this.store.tags.filter((tag) => tag.id !== this.values[0])
@@ -322,7 +331,19 @@ export function createMockEnv(): Bindings {
   return {
     AUTH_MODE: 'development',
     APP_VERSION: '0.1.0-test',
-    ASSETS: {} as Fetcher,
+    ASSETS: {
+      fetch: (request: Request) => {
+        const url = new URL(request.url)
+
+        if (url.pathname === '/' || url.pathname === '/index.html') {
+          return Promise.resolve(new Response('<!doctype html><div id="app"></div>', {
+            headers: { 'content-type': 'text/html' },
+          }))
+        }
+
+        return Promise.resolve(new Response('Not found', { status: 404 }))
+      },
+    } as Fetcher,
     DB: new MockDb(store) as unknown as D1Database,
     KV: {
       put: (key: string, value: string) => {
@@ -333,4 +354,3 @@ export function createMockEnv(): Bindings {
     } as unknown as KVNamespace,
   }
 }
-
