@@ -12,6 +12,8 @@ import ConfirmAction from '../components/ConfirmAction.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
 import PageHeader from '../components/PageHeader.vue'
 import { endpointKindLabels, statusLabels, statusToneClasses } from '../ui/labels'
+import SearchInput from '../components/SearchInput.vue'
+import { matchesSearchQuery } from '../ui/search'
 
 type ServiceRow = {
   item: ServiceItem
@@ -49,18 +51,15 @@ const availableTags = computed(() => {
 })
 
 const filteredItems = computed(() => {
-  const q = query.value.trim().toLowerCase()
-
   return items.value.filter((item) =>
-    (!q ||
-      [
+    matchesSearchQuery(query.value, [
         item.name,
         item.description ?? '',
         item.credentialHint ?? '',
         categoryById.value.get(item.categoryId ?? '') ?? '',
         ...item.tags.map((tag) => tag.name),
         ...item.endpoints.map((endpoint) => `${endpoint.label} ${endpoint.url} ${endpoint.kind}`),
-      ].some((value) => value.toLowerCase().includes(q))) &&
+      ]) &&
     (!selectedCategoryId.value ||
       (selectedCategoryId.value === '__uncategorized' ? item.categoryId === null : item.categoryId === selectedCategoryId.value)) &&
     (!selectedStatus.value || item.status === selectedStatus.value) &&
@@ -153,12 +152,7 @@ watch(
 
       <section class="grid gap-3">
         <div class="grid gap-3 md:grid-cols-[minmax(14rem,2fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_auto] md:items-center">
-          <input
-            v-model="query"
-            aria-label="搜索服务"
-            class="min-h-10 rounded-md bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline outline-1 outline-slate-200 transition placeholder:text-slate-400 focus:outline-2 focus:outline-blue-500"
-            placeholder="搜索服务、URL、分类或标签"
-          />
+          <SearchInput v-model="query" label="搜索服务" placeholder="搜索服务、URL、分类或标签" />
           <select
             v-model="selectedCategoryId"
             aria-label="按分类筛选服务"

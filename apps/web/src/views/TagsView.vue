@@ -10,13 +10,17 @@ import AppLinkButton from '../components/AppLinkButton.vue'
 import ConfirmAction from '../components/ConfirmAction.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
 import PageHeader from '../components/PageHeader.vue'
+import SearchInput from '../components/SearchInput.vue'
+import { matchesSearchQuery } from '../ui/search'
 
 const route = useRoute()
 const tags = ref<Tag[]>([])
 const error = ref<string | null>(null)
 const feedback = ref<string | null>(null)
 const isLoading = ref(false)
+const query = ref('')
 const hasEditor = computed(() => route.name === 'tag-new' || route.name === 'tag-edit')
+const filteredTags = computed(() => tags.value.filter((tag) => matchesSearchQuery(query.value, [tag.name, tag.slug])))
 
 async function load() {
   isLoading.value = true
@@ -85,6 +89,10 @@ watch(
       <FeedbackMessage tone="success" :message="feedback" />
       <FeedbackMessage tone="error" :message="error" />
 
+      <section class="md:max-w-sm">
+        <SearchInput v-model="query" label="搜索标签" placeholder="搜索标签或 Slug" />
+      </section>
+
       <section v-if="isLoading" class="rounded-lg bg-white p-5 text-sm text-slate-600">
         正在加载标签...
       </section>
@@ -92,6 +100,11 @@ watch(
       <section v-else-if="tags.length === 0" class="rounded-lg bg-white p-8 text-center">
         <p class="text-base font-medium text-slate-950">还没有标签</p>
         <p class="mt-1 text-sm text-slate-600">标签适合标记媒体、监控、内网、生产等服务属性。</p>
+      </section>
+
+      <section v-else-if="filteredTags.length === 0" class="rounded-lg bg-white p-8 text-center">
+        <p class="text-base font-medium text-slate-950">没有符合搜索条件的标签</p>
+        <p class="mt-1 text-sm text-slate-600">清空搜索或换一个关键词试试。</p>
       </section>
 
       <section v-else>
@@ -103,7 +116,7 @@ watch(
           </div>
           <div class="divide-y divide-slate-100">
             <article
-              v-for="tag in tags"
+              v-for="tag in filteredTags"
               :key="tag.id"
               class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_10rem] items-center px-4 py-3 transition hover:bg-blue-50/60"
             >
@@ -118,7 +131,7 @@ watch(
         </div>
 
         <div class="grid gap-2 md:hidden">
-          <article v-for="tag in tags" :key="tag.id" class="rounded-lg bg-white p-4 transition hover:bg-blue-50/60">
+          <article v-for="tag in filteredTags" :key="tag.id" class="rounded-lg bg-white p-4 transition hover:bg-blue-50/60">
             <p class="text-base font-semibold text-slate-950">{{ tag.name }}</p>
             <p class="mt-1 break-all text-sm text-slate-600">{{ tag.slug }}</p>
             <div class="mt-4 flex flex-wrap gap-2">

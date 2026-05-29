@@ -10,13 +10,21 @@ import AppLinkButton from '../components/AppLinkButton.vue'
 import ConfirmAction from '../components/ConfirmAction.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
 import PageHeader from '../components/PageHeader.vue'
+import SearchInput from '../components/SearchInput.vue'
+import { matchesSearchQuery } from '../ui/search'
 
 const route = useRoute()
 const categories = ref<Category[]>([])
 const error = ref<string | null>(null)
 const feedback = ref<string | null>(null)
 const isLoading = ref(false)
+const query = ref('')
 const hasEditor = computed(() => route.name === 'category-new' || route.name === 'category-edit')
+const filteredCategories = computed(() =>
+  categories.value.filter((category) =>
+    matchesSearchQuery(query.value, [category.name, category.slug, category.icon, category.color, String(category.sortOrder)]),
+  ),
+)
 
 async function load() {
   isLoading.value = true
@@ -85,6 +93,10 @@ watch(
       <FeedbackMessage tone="success" :message="feedback" />
       <FeedbackMessage tone="error" :message="error" />
 
+      <section class="md:max-w-sm">
+        <SearchInput v-model="query" label="搜索分类" placeholder="搜索分类、Slug 或颜色" />
+      </section>
+
       <section v-if="isLoading" class="rounded-lg bg-white p-5 text-sm text-slate-600">
         正在加载分类...
       </section>
@@ -92,6 +104,11 @@ watch(
       <section v-else-if="categories.length === 0" class="rounded-lg bg-white p-8 text-center">
         <p class="text-base font-medium text-slate-950">还没有分类</p>
         <p class="mt-1 text-sm text-slate-600">创建分类后，服务可以按区域、用途或系统分组。</p>
+      </section>
+
+      <section v-else-if="filteredCategories.length === 0" class="rounded-lg bg-white p-8 text-center">
+        <p class="text-base font-medium text-slate-950">没有符合搜索条件的分类</p>
+        <p class="mt-1 text-sm text-slate-600">清空搜索或换一个关键词试试。</p>
       </section>
 
       <section v-else>
@@ -104,7 +121,7 @@ watch(
           </div>
           <div class="divide-y divide-slate-100">
             <article
-              v-for="category in categories"
+              v-for="category in filteredCategories"
               :key="category.id"
               class="grid grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_8rem_10rem] items-center px-4 py-3 transition hover:bg-blue-50/60"
             >
@@ -128,7 +145,7 @@ watch(
         </div>
 
         <div class="grid gap-2 md:hidden">
-          <article v-for="category in categories" :key="category.id" class="rounded-lg bg-white p-4 transition hover:bg-blue-50/60">
+          <article v-for="category in filteredCategories" :key="category.id" class="rounded-lg bg-white p-4 transition hover:bg-blue-50/60">
             <div class="flex items-start justify-between gap-4">
               <div class="min-w-0">
                 <p class="text-base font-semibold text-slate-950">{{ category.icon || '•' }} {{ category.name }}</p>
