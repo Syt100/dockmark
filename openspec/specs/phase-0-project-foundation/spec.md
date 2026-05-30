@@ -1,8 +1,6 @@
 ## Purpose
 Define the initial Dockmark project foundation so implementation can start from a Cloudflare-first, TypeScript monorepo with clear app boundaries, bindings, migrations, and validation commands.
-
 ## Requirements
-
 ### Requirement: Monorepo project structure
 Dockmark SHALL use a TypeScript monorepo structure that separates web UI, Worker API, browser extension, shared code, and database migrations.
 
@@ -44,21 +42,26 @@ Dockmark SHALL target Cloudflare Workers as the backend runtime and Workers Asse
 - **AND** R2 SHALL NOT be required for the baseline deployment
 
 ### Requirement: Adapter-based authentication foundation
-Dockmark SHALL define authentication behind an application-level adapter so Cloudflare Access is one supported production mode, not the only possible production authentication mechanism.
+Dockmark SHALL define authentication behind an application-level adapter so built-in authentication is the default production mode and other production authentication mechanisms can be added without changing business logic.
 
-#### Scenario: Cloudflare Access is used
-- **WHEN** Dockmark is deployed behind Cloudflare Access
-- **THEN** the Worker SHALL authenticate web UI and normal API requests through a Cloudflare Access auth adapter
-- **AND** application services SHALL consume a normalized authenticated user context instead of reading Access headers directly
+#### Scenario: Built-in auth is used
+- **WHEN** Dockmark is deployed without an external identity provider
+- **THEN** the Worker SHALL authenticate web UI and normal API requests through the built-in auth adapter
+- **AND** application services SHALL consume a normalized authenticated user context instead of reading auth provider details directly.
 
-#### Scenario: Future self-hosted auth is added
-- **WHEN** Dockmark later supports deployment as a self-hosted host service
-- **THEN** the authentication implementation SHALL be replaceable without changing service navigation, import/export, bookmark import, or sync business logic
+#### Scenario: Future OIDC auth is added
+- **WHEN** Dockmark later supports standard OIDC login
+- **THEN** the authentication implementation SHALL be replaceable without changing service navigation, import/export, bookmark import, or sync business logic.
+
+#### Scenario: Future Cloudflare Access hardening is added
+- **WHEN** Dockmark later supports Cloudflare Access as a production adapter
+- **THEN** the adapter SHALL validate the Access JWT before producing a normalized authenticated user context
+- **AND** application services SHALL remain independent from raw Access headers.
 
 #### Scenario: Local development runs
 - **WHEN** the application runs in local development
 - **THEN** it SHALL provide a documented development auth adapter or mock user path
-- **AND** that path SHALL NOT be enabled silently in production
+- **AND** that path SHALL NOT be enabled silently in production.
 
 ### Requirement: Database migration baseline
 Dockmark SHALL manage D1 schema through SQL migration files committed to the repository.
@@ -87,3 +90,4 @@ Dockmark SHALL provide pnpm commands for type checking, testing, linting or form
 - **WHEN** the developer runs the documented validation command
 - **THEN** TypeScript checks SHALL pass for all apps and shared packages
 - **AND** tests SHALL run for shared utility behavior that is easy to regress
+
