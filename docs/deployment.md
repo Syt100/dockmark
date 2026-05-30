@@ -141,7 +141,7 @@ GitHub repository secrets：
 3. `deploy:dry-run` 检查 Worker 绑定。
 4. 首次真实部署，触发 Wrangler 自动创建 D1/KV。
 5. 写入 `SETUP_TOKEN` Worker secret。
-6. 执行 `wrangler d1 migrations apply DB --remote --env production`。
+6. 按 `dockmark-production` 解析远程 D1 `database_id`，生成临时 migration config，并执行远程 D1 迁移。
 7. 再次部署 Worker，确保迁移完成后的版本上线。
 
 建议给 GitHub Environment `production` 配置 required reviewers，避免每次 push 到 `main` 都立即更新生产。

@@ -98,8 +98,19 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           DOCKMARK_SETUP_TOKEN: ${{ secrets.DOCKMARK_SETUP_TOKEN }}
 
+      - name: Resolve D1 migration config
+        working-directory: apps/worker
+        run: |
+          corepack pnpm exec wrangler d1 list --json > "$RUNNER_TEMP/d1-list.json"
+          node scripts/write-d1-migration-config.mjs "$RUNNER_TEMP/d1-list.json" wrangler.d1.generated.jsonc
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_NAME: dockmark-production
+
       - name: Apply D1 migrations
-        run: corepack pnpm --filter @dockmark/worker db:migrate:production
+        working-directory: apps/worker
+        run: corepack pnpm exec wrangler d1 migrations apply DB --remote --config wrangler.d1.generated.jsonc
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
