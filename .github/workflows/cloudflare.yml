@@ -81,7 +81,7 @@ jobs:
         run: corepack pnpm --filter @dockmark/worker cf-typecheck
 
       - name: Deploy to provision Cloudflare resources
-        run: corepack pnpm --filter @dockmark/worker deploy
+        run: corepack pnpm --filter @dockmark/worker run deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -105,7 +105,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Deploy Worker
-        run: corepack pnpm --filter @dockmark/worker deploy
+        run: corepack pnpm --filter @dockmark/worker run deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
