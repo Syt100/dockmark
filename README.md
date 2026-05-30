@@ -47,6 +47,15 @@ pnpm validate
 openspec validate --specs --strict --no-interactive
 ```
 
+Production deploys use the Wrangler `production` environment:
+
+```sh
+pnpm db:migrate:production
+pnpm deploy:production
+```
+
+Before running those commands, replace the production D1/KV IDs in `apps/worker/wrangler.jsonc` and configure `SETUP_TOKEN` as a Wrangler secret.
+
 ## Structure
 
 - `apps/web`: Vue 3, Vite, Vue Router, Tailwind CSS web UI.

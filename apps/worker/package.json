@@ -3,14 +3,15 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "build": "wrangler deploy --dry-run --outdir dist",
+    "build": "wrangler deploy --env production --dry-run --outdir dist",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "lint": "tsc -p tsconfig.json --noEmit",
     "format": "echo \"No worker format yet\"",
     "db:migrate:local": "wrangler d1 migrations apply dockmark --local",
-    "db:migrate:remote": "wrangler d1 migrations apply dockmark --remote",
-    "deploy": "wrangler deploy --minify",
+    "db:migrate:production": "wrangler d1 migrations apply dockmark-production --remote --env production",
+    "deploy": "wrangler deploy --env production --minify",
+    "deploy:dry-run": "wrangler deploy --env production --dry-run --outdir dist",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"
   },
   "dependencies": {

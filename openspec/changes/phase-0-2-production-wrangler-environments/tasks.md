@@ -1,0 +1,4 @@
+- [x] 1. Add explicit production environment settings to `apps/worker/wrangler.jsonc`.
+- [x] 2. Add safe production deploy and remote migration scripts that use `--env production`.
+- [x] 3. Update deployment documentation with production resource creation, secret configuration, migration, deploy, and checklist steps.
+- [x] 4. Validate Wrangler dry-run output, OpenSpec, and project validation.

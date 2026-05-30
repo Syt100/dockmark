@@ -106,7 +106,7 @@ corepack pnpm db:migrate:local
 - 远程迁移只能在确认 Cloudflare 资源 ID 和环境后运行：
 
 ```sh
-corepack pnpm db:migrate:remote
+corepack pnpm db:migrate:production
 ```
 
 - 数据库字段命名使用 snake_case。

@@ -6,9 +6,9 @@
 
 建议至少区分：
 
-- 本地开发：Wrangler local D1、local KV、`AUTH_MODE=development`。
-- 预发布：独立 D1/KV，接近生产认证配置。
-- 生产：独立 D1/KV，禁止 development auth。
+- 本地开发：顶层 Wrangler 配置、local D1、local KV、`AUTH_MODE=development`。
+- 预发布：独立 Wrangler environment、独立 D1/KV，接近生产认证配置。
+- 生产：`env.production` Wrangler environment、独立 D1/KV，禁止 development auth。
 
 不同环境不得共用 D1 和 KV。
 
@@ -52,7 +52,7 @@ corepack pnpm dev
 
 ## 3. Cloudflare 资源
 
-生产部署前必须创建真实资源，并替换 `apps/worker/wrangler.jsonc` 中的占位值：
+生产部署前必须创建真实资源，并替换 `apps/worker/wrangler.jsonc` 的 `env.production` 中的占位值：
 
 - D1 database。
 - KV namespace。
@@ -65,7 +65,16 @@ corepack pnpm dev
 00000000000000000000000000000000
 ```
 
-占位值只允许用于项目初始化，不能用于生产发布。
+顶层 D1/KV 占位值只用于本地开发。`env.production` 的占位值必须在生产迁移和部署前替换。
+
+生产资源创建示例：
+
+```sh
+corepack pnpm --dir apps/worker exec wrangler d1 create dockmark-production
+corepack pnpm --dir apps/worker exec wrangler kv namespace create dockmark-production
+```
+
+创建后把输出的 D1 `database_id` 和 KV `id` 填入 `apps/worker/wrangler.jsonc` 的 `env.production`。
 
 ## 4. 认证配置
 
@@ -81,18 +90,25 @@ corepack pnpm dev
 
 ```json
 {
-  "AUTH_MODE": "builtin",
-  "SETUP_TOKEN": "生成一个高强度一次性随机字符串"
+  "AUTH_MODE": "builtin"
 }
+```
+
+`AUTH_MODE=builtin` 已提交在 `env.production.vars` 中。`SETUP_TOKEN` 不写入 `wrangler.jsonc`，应通过 Wrangler secret 配置：
+
+```sh
+corepack pnpm --dir apps/worker exec wrangler secret put SETUP_TOKEN --env production
 ```
 
 首次部署流程：
 
-1. 应用远程 D1 迁移。
-2. 部署 Worker。
-3. 打开站点后进入初始化页面。
-4. 输入 `SETUP_TOKEN`、管理员邮箱和密码创建管理员。
-5. 初始化完成后，移除或轮换 `SETUP_TOKEN`。
+1. 创建生产 D1/KV，并替换 `env.production` 的资源 ID。
+2. 配置 `SETUP_TOKEN` secret。
+3. 应用生产 D1 迁移。
+4. 部署 Worker。
+5. 打开站点后进入初始化页面。
+6. 输入 `SETUP_TOKEN`、管理员邮箱和密码创建管理员。
+7. 初始化完成后，移除或轮换 `SETUP_TOKEN`。
 
 可选配置：
 
@@ -108,6 +124,7 @@ corepack pnpm dev
 
 - 禁止使用 `AUTH_MODE=development`。
 - 当前生产默认使用 `AUTH_MODE=builtin`。
+- 生产迁移和部署命令必须显式选择 Wrangler `production` environment。
 - `AUTH_MODE=oidc` 和 `AUTH_MODE=cloudflare-access` 是预留模式，当前会拒绝访问并提示改用 builtin。
 - 业务代码只能依赖标准用户上下文。
 - OIDC 和 Cloudflare Access 需要后续 OpenSpec change 实现后才能用于生产。
@@ -122,15 +139,15 @@ corepack pnpm dev
 corepack pnpm db:migrate:local
 ```
 
-远程迁移：
+生产远程迁移：
 
 ```sh
-corepack pnpm db:migrate:remote
+corepack pnpm db:migrate:production
 ```
 
-远程迁移前检查：
+生产远程迁移前检查：
 
-- `wrangler.jsonc` 已指向目标环境 D1。
+- `wrangler.jsonc` 的 `env.production.d1_databases` 已指向目标环境 D1。
 - 已确认当前 git 分支和提交。
 - 已读过迁移 SQL。
 - 迁移不包含破坏性删除，或已经有备份和回滚方案。
@@ -160,13 +177,13 @@ corepack pnpm build
 部署 Worker：
 
 ```sh
-corepack pnpm --filter @dockmark/worker deploy
+corepack pnpm deploy:production
 ```
 
 发布顺序建议：
 
 1. 合并代码前运行测试和 OpenSpec 校验。
-2. 应用远程 D1 迁移。
+2. 应用生产 D1 迁移。
 3. 部署 Worker 和前端 assets。
 4. 打开 `/api/health` 检查版本和服务状态。
 5. 打开 `/api/smoke` 检查 D1/KV 连通性。
@@ -203,9 +220,9 @@ corepack pnpm --filter @dockmark/worker deploy
 
 - D1 database ID 已替换为真实生产 ID。
 - KV namespace ID 已替换为真实生产 ID。
-- `AUTH_MODE=builtin`，且没有误配为尚未实现的 `oidc` 或 `cloudflare-access`。
-- 已配置强随机 `SETUP_TOKEN` 并在管理员初始化后移除或轮换。
-- 已执行远程迁移。
+- `env.production.vars.AUTH_MODE=builtin`，且没有误配为尚未实现的 `oidc` 或 `cloudflare-access`。
+- 已用 Wrangler secret 配置强随机 `SETUP_TOKEN`，并在管理员初始化后移除或轮换。
+- 已执行生产迁移。
 - `corepack pnpm validate` 通过。
 - `openspec validate --all --strict --no-interactive` 通过。
 - `/api/health` 正常。

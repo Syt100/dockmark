@@ -14,10 +14,10 @@ The root `pnpm dev` command is usually preferred because it also starts the Web 
 
 ```sh
 corepack pnpm --filter @dockmark/worker db:migrate:local
-corepack pnpm --filter @dockmark/worker db:migrate:remote
+corepack pnpm --filter @dockmark/worker db:migrate:production
 ```
 
-Remote migrations require `apps/worker/wrangler.jsonc` to point at the intended D1 database.
+Production migrations use the Wrangler `production` environment. Replace the production D1 database ID in `apps/worker/wrangler.jsonc` before running them.
 
 ## Validation
 
@@ -32,6 +32,8 @@ corepack pnpm --filter @dockmark/worker lint
 ```sh
 corepack pnpm --filter @dockmark/worker deploy
 ```
+
+The deploy script targets the Wrangler `production` environment. Run `corepack pnpm --filter @dockmark/worker deploy:dry-run` to inspect bindings before uploading.
 
 ## Cloudflare Types
 

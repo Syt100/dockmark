@@ -8,8 +8,8 @@ Apply locally:
 pnpm db:migrate:local
 ```
 
-Apply remotely after configuring the real D1 database ID:
+Apply to production after configuring the real production D1 database ID:
 
 ```sh
-pnpm db:migrate:remote
+pnpm db:migrate:production
 ```
