@@ -109,7 +109,7 @@ corepack pnpm --dir apps/worker exec wrangler secret put SETUP_TOKEN --env produ
 {
   "SESSION_COOKIE_NAME": "dockmark_session",
   "SESSION_TTL_SECONDS": "604800",
-  "PASSWORD_PBKDF2_ITERATIONS": "310000"
+  "PASSWORD_PBKDF2_ITERATIONS": "100000"
 }
 ```
 

@@ -19,7 +19,7 @@ import {
   revokeAuthSession,
   markAuthUserLogin,
 } from '../db/auth'
-import { createPasswordVerifier, timingSafeEqual, verifyPassword } from '../lib/crypto'
+import { createPasswordVerifier, defaultPbkdf2Iterations, timingSafeEqual, verifyPassword } from '../lib/crypto'
 import { createAuthAdapter } from '../lib/auth'
 import type { AppEnv } from '../lib/env'
 import { readJson } from '../lib/http'
@@ -141,7 +141,7 @@ authRoute.post('/setup', async (c) => {
   const password = requirePassword(body.password)
   const name = optionalString(body.name)
   const verifier = await createPasswordVerifier(password, {
-    iterations: parsePositiveInteger(c.env.PASSWORD_PBKDF2_ITERATIONS, 310_000),
+    iterations: parsePositiveInteger(c.env.PASSWORD_PBKDF2_ITERATIONS, defaultPbkdf2Iterations),
   })
   const user = await createAuthUser(c.env.DB, {
     email,

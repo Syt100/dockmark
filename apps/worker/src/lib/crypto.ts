@@ -1,5 +1,7 @@
 const encoder = new TextEncoder()
 
+export const defaultPbkdf2Iterations = 100_000
+
 function toBase64Url(bytes: ArrayBuffer | Uint8Array): string {
   const array = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes)
   let binary = ''
@@ -59,7 +61,7 @@ export async function createPasswordVerifier(
   password: string,
   options: { iterations?: number } = {},
 ): Promise<{ hash: string; algo: string }> {
-  const iterations = options.iterations ?? 310_000
+  const iterations = options.iterations ?? defaultPbkdf2Iterations
   const salt = randomToken(16)
   const key = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits'])
   const bits = await crypto.subtle.deriveBits(
