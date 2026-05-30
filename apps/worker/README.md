@@ -17,7 +17,7 @@ corepack pnpm --filter @dockmark/worker db:migrate:local
 corepack pnpm --filter @dockmark/worker db:migrate:production
 ```
 
-Production migrations use the Wrangler `production` environment. Replace the production D1 database ID in `apps/worker/wrangler.jsonc` before running them.
+Production migrations use the Wrangler `production` environment and reference the D1 binding name `DB`.
 
 ## Validation
 
@@ -41,11 +41,7 @@ Generate Worker binding types from the Wrangler configuration:
 
 ```sh
 corepack pnpm --filter @dockmark/worker cf-typegen
+corepack pnpm --filter @dockmark/worker cf-typecheck
 ```
 
-Pass the `CloudflareBindings` as generics when instantiating `Hono`:
-
-```ts
-// src/index.ts
-const app = new Hono<{ Bindings: CloudflareBindings }>()
-```
+`cf-typecheck` verifies the generated binding declaration is up to date with `wrangler.jsonc`.

@@ -52,29 +52,22 @@ corepack pnpm dev
 
 ## 3. Cloudflare 资源
 
-生产部署前必须创建真实资源，并替换 `apps/worker/wrangler.jsonc` 的 `env.production` 中的占位值：
+Dockmark 的 Wrangler 配置默认使用自动资源创建。首次生产部署时，Wrangler 会根据 `env.production` 的绑定配置自动 provision：
 
-- D1 database。
-- KV namespace。
+- D1 database：绑定名 `DB`，资源名 `dockmark-production`。
+- KV namespace：绑定名 `KV`，由 Cloudflare/Wrangler 自动创建并绑定。
 - 后续如需要，再创建 R2 bucket。
 
-当前占位值：
+公开仓库不提交 D1 `database_id` 或 KV `id`。绑定名用于代码访问，例如 `env.DB` 和 `env.KV`；Cloudflare 资源 ID 由 Wrangler 管理。
 
-```text
-00000000-0000-0000-0000-000000000000
-00000000000000000000000000000000
-```
-
-顶层 D1/KV 占位值只用于本地开发。`env.production` 的占位值必须在生产迁移和部署前替换。
-
-生产资源创建示例：
+如需手动创建并绑定资源，也可以先创建资源：
 
 ```sh
 corepack pnpm --dir apps/worker exec wrangler d1 create dockmark-production
 corepack pnpm --dir apps/worker exec wrangler kv namespace create dockmark-production
 ```
 
-创建后把输出的 D1 `database_id` 和 KV `id` 填入 `apps/worker/wrangler.jsonc` 的 `env.production`。
+然后把输出的 D1 `database_id` 和 KV `id` 填入 `apps/worker/wrangler.jsonc` 的 `env.production`。一般情况下不需要这样做。
 
 ## 4. 认证配置
 
@@ -102,10 +95,10 @@ corepack pnpm --dir apps/worker exec wrangler secret put SETUP_TOKEN --env produ
 
 首次部署流程：
 
-1. 创建生产 D1/KV，并替换 `env.production` 的资源 ID。
+1. 部署 Worker，让 Wrangler 自动创建并绑定生产 D1/KV。
 2. 配置 `SETUP_TOKEN` secret。
 3. 应用生产 D1 迁移。
-4. 部署 Worker。
+4. 再次部署 Worker。
 5. 打开站点后进入初始化页面。
 6. 输入 `SETUP_TOKEN`、管理员邮箱和密码创建管理员。
 7. 初始化完成后，移除或轮换 `SETUP_TOKEN`。
@@ -131,7 +124,29 @@ corepack pnpm --dir apps/worker exec wrangler secret put SETUP_TOKEN --env produ
 - 生产必须使用 HTTPS，认证 cookie 使用 HttpOnly、SameSite=Lax，并在 HTTPS 请求下设置 Secure。
 - Dockmark 可以存储自身登录密码的哈希验证器，但仍禁止存储 Homelab 服务密码、API key、token、OTP seed、浏览器 session cookie 或其他服务秘密。
 
-## 5. 迁移流程
+## 5. GitHub Actions 自动部署
+
+`.github/workflows/cloudflare.yml` 会在 pull request 和 `main` push 时运行验证，在 `main` push 或手动触发时部署生产环境。
+
+GitHub repository secrets：
+
+- `CLOUDFLARE_API_TOKEN`：Cloudflare API token，至少需要部署 Worker、写 Worker secret、操作 D1 和自动创建绑定资源的权限。
+- `CLOUDFLARE_ACCOUNT_ID`：Cloudflare Account ID。
+- `DOCKMARK_SETUP_TOKEN`：首次初始化管理员使用的强随机 setup token。
+
+自动部署顺序：
+
+1. `corepack pnpm validate`。
+2. `cf-typecheck` 校验 Wrangler 生成的绑定类型。
+3. `deploy:dry-run` 检查 Worker 绑定。
+4. 首次真实部署，触发 Wrangler 自动创建 D1/KV。
+5. 写入 `SETUP_TOKEN` Worker secret。
+6. 执行 `wrangler d1 migrations apply DB --remote --env production`。
+7. 再次部署 Worker，确保迁移完成后的版本上线。
+
+建议给 GitHub Environment `production` 配置 required reviewers，避免每次 push 到 `main` 都立即更新生产。
+
+## 6. 迁移流程
 
 本地迁移：
 
@@ -147,7 +162,7 @@ corepack pnpm db:migrate:production
 
 生产远程迁移前检查：
 
-- `wrangler.jsonc` 的 `env.production.d1_databases` 已指向目标环境 D1。
+- `wrangler.jsonc` 的 `env.production.d1_databases` 已配置 `binding=DB` 和生产资源名。
 - 已确认当前 git 分支和提交。
 - 已读过迁移 SQL。
 - 迁移不包含破坏性删除，或已经有备份和回滚方案。
@@ -159,7 +174,7 @@ corepack pnpm db:migrate:production
 - 不修改已发布迁移。
 - 不在生产控制台手工改 schema 后忘记提交迁移。
 
-## 6. 发布流程
+## 7. 发布流程
 
 建议发布前运行：
 
@@ -183,13 +198,14 @@ corepack pnpm deploy:production
 发布顺序建议：
 
 1. 合并代码前运行测试和 OpenSpec 校验。
-2. 应用生产 D1 迁移。
-3. 部署 Worker 和前端 assets。
-4. 打开 `/api/health` 检查版本和服务状态。
-5. 打开 `/api/smoke` 检查 D1/KV 连通性。
-6. 打开首页确认 `/api/nav` 正常返回。
+2. 首次部署或确认生产 D1/KV 已存在。
+3. 应用生产 D1 迁移。
+4. 部署 Worker 和前端 assets。
+5. 打开 `/api/health` 检查版本和服务状态。
+6. 打开 `/api/smoke` 检查 D1/KV 连通性。
+7. 打开首页确认 `/api/nav` 正常返回。
 
-## 7. 回滚原则
+## 8. 回滚原则
 
 - Worker 代码可以回滚到上一稳定提交重新部署。
 - D1 迁移一旦远程执行，不能假设可以无损回滚。
@@ -201,25 +217,24 @@ corepack pnpm deploy:production
 
 当前阶段应尽量避免破坏性迁移。
 
-## 8. 缓存运维
+## 9. 缓存运维
 
 - KV 不是事实源。
 - 导航缓存异常时，应优先确认 D1 数据是否正确。
 - `/api/nav` 缓存通过版本 key 失效，正常情况下不需要手工清 KV。
 - 如果必须清理 KV，先确认不会影响其他环境。
 
-## 9. 网络与依赖
+## 10. 网络与依赖
 
 仓库不固定 npm registry、镜像源或代理地址。依赖安装应默认使用 pnpm/Corepack 的标准解析行为。
 
 如果开发者所在网络需要镜像源、离线缓存或代理，应通过用户级 npm/pnpm 配置、shell 环境变量或本机网络设置处理，不提交到仓库文档或项目配置。
 
-## 10. 生产上线检查清单
+## 11. 生产上线检查清单
 
 上线前至少确认：
 
-- D1 database ID 已替换为真实生产 ID。
-- KV namespace ID 已替换为真实生产 ID。
+- 生产 D1/KV 已由 Wrangler 自动创建并绑定，或已手动绑定真实资源 ID。
 - `env.production.vars.AUTH_MODE=builtin`，且没有误配为尚未实现的 `oidc` 或 `cloudflare-access`。
 - 已用 Wrangler secret 配置强随机 `SETUP_TOKEN`，并在管理员初始化后移除或轮换。
 - 已执行生产迁移。

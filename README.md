@@ -44,17 +44,17 @@ Run validation:
 
 ```sh
 pnpm validate
-openspec validate --specs --strict --no-interactive
+openspec validate --all --strict --no-interactive
 ```
 
-Production deploys use the Wrangler `production` environment:
+Production deploys use the Wrangler `production` environment. Wrangler can automatically provision the production D1 database and KV namespace from the binding configuration:
 
 ```sh
 pnpm db:migrate:production
 pnpm deploy:production
 ```
 
-Before running those commands, replace the production D1/KV IDs in `apps/worker/wrangler.jsonc` and configure `SETUP_TOKEN` as a Wrangler secret.
+Before running those commands, configure `SETUP_TOKEN` as a Wrangler secret.
 
 ## Structure
 
