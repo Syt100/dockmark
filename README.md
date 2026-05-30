@@ -47,12 +47,6 @@ pnpm validate
 openspec validate --specs --strict --no-interactive
 ```
 
-For slow registry access, use the configured npm mirror or run pnpm with a local proxy, for example:
-
-```sh
-corepack pnpm install
-```
-
 ## Structure
 
 - `apps/web`: Vue 3, Vite, Vue Router, Tailwind CSS web UI.
@@ -71,4 +65,4 @@ corepack pnpm install
 
 ## Authentication
 
-The Worker uses an auth adapter boundary. Cloudflare Access is the first production adapter, while local development uses an explicit development adapter. Business logic consumes normalized user context instead of raw provider headers.
+The Worker uses an auth adapter boundary. Production deployments should use the built-in administrator login unless another production adapter has been implemented and configured. Local development uses an explicit development adapter. Business logic consumes normalized user context instead of raw provider headers.

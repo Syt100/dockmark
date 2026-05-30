@@ -193,20 +193,9 @@ corepack pnpm --filter @dockmark/worker deploy
 
 ## 9. 网络与依赖
 
-项目 `.npmrc` 使用registry mirror：
+仓库不固定 npm registry、镜像源或代理地址。依赖安装应默认使用 pnpm/Corepack 的标准解析行为。
 
-```text
-registry=<custom-registry>
-prefer-offline=true
-```
-
-如遇网络慢或超时，可以使用代理：
-
-```sh
-corepack pnpm install
-```
-
-`git push` 如超时且代理可用，也可以考虑使用 `<local-proxy>`。
+如果开发者所在网络需要镜像源、离线缓存或代理，应通过用户级 npm/pnpm 配置、shell 环境变量或本机网络设置处理，不提交到仓库文档或项目配置。
 
 ## 10. 生产上线检查清单
 

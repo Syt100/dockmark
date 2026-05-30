@@ -22,7 +22,7 @@
 当前阶段允许：
 
 - 本地开发使用 `AUTH_MODE=development`。
-- 生产优先使用 `AUTH_MODE=cloudflare-access`。
+- 生产使用 `AUTH_MODE=builtin`。
 
 禁止：
 

@@ -119,8 +119,8 @@ corepack pnpm db:migrate:remote
 - 账号相关说明只能保存为 `credentialHint`，用于提示用户去 Vaultwarden 或其他密码管理器搜索。
 - 浏览器扩展后续如需 client token，服务端只能保存 hash，明文 token 只展示一次。
 - 生产认证不得依赖 `AUTH_MODE=development`。
-- Cloudflare Access 是第一种生产认证适配器，但不是唯一认证方案。
-- 后续上线前，Cloudflare Access JWT 必须做真实校验，不能只信任 header 存在。
+- 当前生产默认使用 `AUTH_MODE=builtin`。
+- OIDC、Cloudflare Access 或其他认证方式必须通过 auth adapter 接入，并在完整校验后才能作为生产模式启用。
 
 ## 10. 测试规范
 
@@ -152,12 +152,7 @@ openspec validate --all --strict --no-interactive
 
 ## 12. 网络与依赖规范
 
-- 优先使用项目 `.npmrc` 中的registry mirror。
-- 网络慢或超时时，可以为 pnpm 配置代理：
-
-```sh
-corepack pnpm install
-```
-
+- 仓库不固定 npm registry、镜像源或代理地址。
+- 网络慢或超时时，开发者可以在用户级 npm/pnpm 配置、shell 环境变量或本机网络设置中处理。
 - 新增依赖前必须判断是否真的需要，优先使用现有栈和标准库。
 - 创建新项目、子应用、扩展模板时，优先使用官方脚手架。

@@ -28,7 +28,7 @@ Dock + Bookmark
 
 # 2. 项目缘由
 
-你现在的实际需求不是普通书签管理，而是：
+Dockmark 面向的场景不是普通书签管理，而是：
 
 ```text
 1. 有很多自部署服务
@@ -53,7 +53,7 @@ R2 可选
 
 核心思想是：
 
-> Dockmark 不是密码管理器，不替代 Vaultwarden；它只负责告诉你“服务在哪里、怎么访问、账号应该去 Vaultwarden 搜什么”。
+> Dockmark 不是密码管理器，不替代 Vaultwarden；它只负责记录服务在哪里、怎么访问、账号应该去 Vaultwarden 搜什么。
 
 ---
 
@@ -71,7 +71,7 @@ Dockmark 负责：
 5. 管理浏览器同步来的书签
 6. 支持把浏览器书签提升为服务入口
 7. 支持 JSON 导入导出
-8. 支持 Cloudflare Access 保护后台
+8. 支持内置管理员登录，后续可扩展 OIDC 或 Cloudflare Access
 9. 支持浏览器扩展单向同步书签
 ```
 
@@ -115,7 +115,7 @@ Dockmark 推荐使用：
 Cloudflare Workers + D1 + KV + Vue 3 + TypeScript
 ```
 
-R2 作为可选对象存储。你之前说的 “R1” 我这里按 **Cloudflare R2** 理解。
+R2 作为可选对象存储。
 
 整体结构：
 
@@ -129,7 +129,7 @@ Cloudflare Worker API
 D1：主数据库
 KV：缓存与轻量配置
 R2：图标、截图、导入导出文件，可选
-Cloudflare Access：整站认证保护
+Auth adapter：内置认证，后续可扩展 OIDC / Cloudflare Access
 ```
 
 Cloudflare 官方目前支持用 Vue 创建并部署到 Workers，前端静态资源可以通过 Workers Assets 托管；Workers 也适合用 TypeScript 开发。([Cloudflare Docs][1])
@@ -144,8 +144,8 @@ Cloudflare 官方目前支持用 Vue 创建并部署到 Workers，前端静态�
                 │
                 ▼
 ┌──────────────────────────────┐
-│      Cloudflare Access        │
-│  登录保护 / 身份验证 / 策略控制 │
+│        Auth Adapter           │
+│  Built-in / OIDC / Access     │
 └───────────────┬──────────────┘
                 │
                 ▼
@@ -197,7 +197,7 @@ Tailwind CSS，可选
 Reka UI / Headless UI，可选
 ```
 
-你提到“无样式组件可选”，这个方向是对的。Dockmark 的 UI 核心不是复杂组件，而是：
+Dockmark 的 UI 核心不是复杂组件，而是：
 
 ```text
 搜索
@@ -560,7 +560,7 @@ MVP 支持：
 
 ## 8.1 为什么需要浏览器扩展
 
-服务端不能直接读取你的 Chrome / Edge / Firefox 云书签。实际可行方案是写一个浏览器扩展，让扩展通过浏览器提供的 bookmarks API 读取本地 profile 的书签树，然后推送给 Dockmark。
+服务端不能直接读取用户的 Chrome / Edge / Firefox 云书签。实际可行方案是写一个浏览器扩展，让扩展通过浏览器提供的 bookmarks API 读取本地 profile 的书签树，然后推送给 Dockmark。
 
 Chrome 的 `chrome.bookmarks` API 支持读取、创建、移动、更新、删除书签，并且书签以树结构组织；`getTree()` 可以获取整个书签树，`onCreated`、`onChanged`、`onMoved`、`onRemoved` 等事件可以监听变化。([Chrome for Developers][5])
 
@@ -1083,7 +1083,7 @@ GET  /api/me
 POST /api/auth/logout
 ```
 
-如果使用 Cloudflare Access，Worker 应该验证 Access 注入的 JWT。Cloudflare 官方建议验证 `Cf-Access-Jwt-Assertion` header，并用公钥确认请求确实来自 Access。([Cloudflare Docs][8])
+生产默认使用内置管理员认证。若后续启用 Cloudflare Access，Worker 应该验证 Access 注入的 JWT。Cloudflare 官方建议验证 `Cf-Access-Jwt-Assertion` header，并用公钥确认请求确实来自 Access。([Cloudflare Docs][8])
 
 ---
 
@@ -1241,7 +1241,7 @@ bookmarks:recent:v8
 推荐：
 
 ```text
-Cloudflare Access 保护整个 Dockmark 后台
+内置管理员登录保护 Dockmark 后台
 /api/sync/* 使用设备 token
 ```
 
@@ -1249,7 +1249,7 @@ Cloudflare Access 保护整个 Dockmark 后台
 
 ```text
 Web UI:
-  Cloudflare Access
+  built-in admin auth
 
 Browser Extension:
   sync_token
@@ -1580,7 +1580,7 @@ utils/
 1. Vue 3 前端
 2. Worker API
 3. D1 migration
-4. Cloudflare Access 保护
+4. 内置管理员登录
 5. 服务 CRUD
 6. 分类 CRUD
 7. 标签基础功能
@@ -1727,15 +1727,15 @@ https://dockmark.example.com
 
 # 19. 关键风险与取舍
 
-## 19.1 Cloudflare Worker 不能直接访问你的内网服务
+## 19.1 Cloudflare Worker 不能直接访问用户内网服务
 
-如果你的服务地址是：
+如果服务地址是：
 
 ```text
 http://192.168.1.10:8096
 ```
 
-Worker 在 Cloudflare 边缘运行，不能直接访问你家里的局域网地址。因此：
+Worker 在 Cloudflare 边缘运行，不能直接访问用户局域网地址。因此：
 
 ```text
 1. 服务健康检查只能检查公网地址
@@ -1785,7 +1785,7 @@ Dockmark = 服务目录与账号位置提示
 Browser → Dockmark
 ```
 
-否则你会很快遇到：
+否则会很快遇到：
 
 ```text
 谁覆盖谁
@@ -1807,7 +1807,7 @@ Browser → Dockmark
 3. 做服务导航 CRUD
 4. 做首页
 5. 加 KV 缓存
-6. 加 Cloudflare Access
+6. 加内置管理员登录
 7. 做 JSON 导入导出
 8. 做 bookmarks.html 导入
 9. 做浏览器扩展 pairing
@@ -1827,18 +1827,9 @@ Browser → Dockmark
 
 ---
 
-# 21. README 开头草案
+# 21. README 要点
 
-```markdown
-# Dockmark
-
-Dockmark is a serverless dock for your homelab services and browser bookmarks.
-
-It helps you manage self-hosted service entries, public and internal URLs, categories, tags, access notes, and Vaultwarden lookup hints — without storing any passwords.
-
-Dockmark runs on Cloudflare Workers, D1, and KV, with optional R2 support for icons, screenshots, and backups.
-
-## Features
+公开 README 应覆盖以下要点：
 
 - Homelab service dashboard
 - Public, LAN, Tailscale, and admin endpoints
@@ -1848,9 +1839,8 @@ Dockmark runs on Cloudflare Workers, D1, and KV, with optional R2 support for ic
 - Browser extension sync
 - Promote bookmark to service
 - JSON import/export
-- Cloudflare Access friendly
+- Built-in administrator login
 - Serverless-first architecture
-```
 
 ---
 
