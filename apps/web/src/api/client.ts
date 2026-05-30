@@ -1,4 +1,9 @@
 import type {
+  AuthLoginRequest,
+  AuthSetupRequest,
+  AuthSetupStatusResponse,
+  AuthSuccessResponse,
+  AuthUserResponse,
   Category,
   CategoryInput,
   NavResponse,
@@ -8,7 +13,17 @@ import type {
   TagInput,
 } from '@dockmark/shared'
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
+
+export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init,
     headers: {
@@ -19,7 +34,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     const message = await response.text()
-    throw new Error(message || `Request failed with ${response.status}`)
+    throw new ApiError(message || `Request failed with ${response.status}`, response.status)
   }
 
   if (response.status === 204) {
@@ -27,6 +42,32 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   return response.json() as Promise<T>
+}
+
+export async function fetchAuthSetupStatus(): Promise<AuthSetupStatusResponse> {
+  return request<AuthSetupStatusResponse>('/api/auth/setup')
+}
+
+export async function setupBuiltinAuth(input: AuthSetupRequest): Promise<AuthSuccessResponse> {
+  return request<AuthSuccessResponse>('/api/auth/setup', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+}
+
+export async function login(input: AuthLoginRequest): Promise<AuthSuccessResponse> {
+  return request<AuthSuccessResponse>('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+}
+
+export async function logout(): Promise<void> {
+  await request<void>('/api/auth/logout', { method: 'POST' })
+}
+
+export async function fetchCurrentUser(): Promise<AuthUserResponse> {
+  return request<AuthUserResponse>('/api/auth/me')
 }
 
 export async function fetchNavigation(): Promise<NavResponse> {

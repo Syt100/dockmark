@@ -5,6 +5,7 @@ import type { HealthResponse, SmokeResponse } from '@dockmark/shared'
 
 import { createAuthAdapter } from './lib/auth'
 import type { AppEnv } from './lib/env'
+import { authRoute, currentUserHandler } from './routes/auth'
 import { categoriesRoute } from './routes/categories'
 import { itemsRoute } from './routes/items'
 import { navRoute } from './routes/nav'
@@ -30,13 +31,6 @@ app.get('/api/health', (c) => {
   }
 
   return c.json(payload)
-})
-
-app.get('/api/me', async (c) => {
-  const auth = createAuthAdapter(c.env)
-  const user = await auth.authenticate(c.req.raw)
-
-  return c.json({ user })
 })
 
 app.get('/api/smoke', async (c) => {
@@ -71,6 +65,8 @@ app.route('/api/categories', categoriesRoute)
 app.route('/api/tags', tagsRoute)
 app.route('/api/items', itemsRoute)
 app.route('/api/nav', navRoute)
+app.route('/api/auth', authRoute)
+app.get('/api/me', currentUserHandler)
 
 async function serveAssetOrSpaFallback(request: Request, assets: Fetcher): Promise<Response> {
   const assetResponse = await assets.fetch(request)

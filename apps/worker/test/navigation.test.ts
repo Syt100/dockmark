@@ -7,27 +7,42 @@ async function json(response: Response): Promise<unknown> {
   return response.json()
 }
 
+async function createBuiltinSessionCookie(): Promise<{ env: ReturnType<typeof createMockEnv>; cookie: string }> {
+  const env = createMockEnv({ AUTH_MODE: 'builtin', SETUP_TOKEN: 'setup-secret' })
+  const response = await app.request('/api/auth/setup', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      setupToken: 'setup-secret',
+      email: 'owner@example.com',
+      password: 'correct horse battery staple',
+    }),
+  }, env)
+  const cookie = response.headers.get('set-cookie')?.split(';')[0]
+
+  if (!cookie) {
+    throw new Error('Expected setup to issue a session cookie')
+  }
+
+  return { env, cookie }
+}
+
 describe('navigation API', () => {
   it('requires authentication for data read APIs outside health checks', async () => {
-    const env = createMockEnv({ AUTH_MODE: 'cloudflare-access' })
+    const env = createMockEnv({ AUTH_MODE: 'builtin' })
 
     for (const path of ['/api/nav', '/api/categories', '/api/tags', '/api/items', '/api/items/item_missing']) {
       const response = await app.request(path, {}, env)
       expect(response.status).toBe(401)
-      await expect(response.text()).resolves.toContain('Cloudflare Access identity is required')
+      await expect(response.text()).resolves.toContain('Authentication required')
     }
   })
 
   it('allows data read APIs when the auth adapter accepts the request', async () => {
-    const env = createMockEnv({ AUTH_MODE: 'cloudflare-access' })
-    const headers = {
-      'Cf-Access-Authenticated-User-Email': 'owner@example.com',
-      'Cf-Access-Authenticated-User-Id': 'user_1',
-      'Cf-Access-Jwt-Assertion': 'test-assertion',
-    }
+    const { env, cookie } = await createBuiltinSessionCookie()
 
     for (const path of ['/api/nav', '/api/categories', '/api/tags', '/api/items']) {
-      const response = await app.request(path, { headers }, env)
+      const response = await app.request(path, { headers: { cookie } }, env)
       expect(response.status).toBe(200)
     }
   })

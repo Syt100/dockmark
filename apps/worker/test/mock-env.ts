@@ -50,12 +50,37 @@ type ItemTagRecord = {
   tag_id: string
 }
 
+type AuthUserRecord = {
+  id: string
+  email: string
+  display_name: string | null
+  password_hash: string
+  password_algo: string
+  is_admin: number
+  disabled_at: string | null
+  created_at: string
+  updated_at: string
+  last_login_at: string | null
+}
+
+type AuthSessionRecord = {
+  id: string
+  user_id: string
+  session_hash: string
+  expires_at: string
+  created_at: string
+  last_seen_at: string
+  revoked_at: string | null
+}
+
 type Store = {
   categories: CategoryRecord[]
   items: ItemRecord[]
   endpoints: EndpointRecord[]
   tags: TagRecord[]
   itemTags: ItemTagRecord[]
+  authUsers: AuthUserRecord[]
+  authSessions: AuthSessionRecord[]
 }
 
 type StatementResult = {
@@ -111,6 +136,104 @@ class MockStatement {
 
     if (sql.startsWith('SELECT value FROM app_metadata')) {
       return { results: [{ value: '0' }] }
+    }
+
+    if (sql.startsWith('SELECT COUNT(*) AS count FROM auth_users')) {
+      return { results: [{ count: this.store.authUsers.length }] }
+    }
+
+    if (sql.startsWith('SELECT * FROM auth_users WHERE email = ?')) {
+      return { results: this.store.authUsers.filter((user) => user.email === this.values[0]) }
+    }
+
+    if (sql.startsWith('INSERT INTO auth_users')) {
+      this.store.authUsers.push({
+        id: this.values[0] as string,
+        email: this.values[1] as string,
+        display_name: this.values[2] as string | null,
+        password_hash: this.values[3] as string,
+        password_algo: this.values[4] as string,
+        is_admin: 1,
+        disabled_at: null,
+        created_at: now(),
+        updated_at: now(),
+        last_login_at: null,
+      })
+      return { meta: { changes: 1 } }
+    }
+
+    if (sql.startsWith('SELECT * FROM auth_users WHERE id = ?')) {
+      return { results: this.store.authUsers.filter((user) => user.id === this.values[0]) }
+    }
+
+    if (sql.startsWith('UPDATE auth_users SET last_login_at')) {
+      const user = this.store.authUsers.find((record) => record.id === this.values[0])
+      if (!user) return { meta: { changes: 0 } }
+      user.last_login_at = now()
+      user.updated_at = now()
+      return { meta: { changes: 1 } }
+    }
+
+    if (sql.startsWith('INSERT INTO auth_sessions')) {
+      this.store.authSessions.push({
+        id: this.values[0] as string,
+        user_id: this.values[1] as string,
+        session_hash: this.values[2] as string,
+        expires_at: this.values[3] as string,
+        created_at: now(),
+        last_seen_at: now(),
+        revoked_at: null,
+      })
+      return { meta: { changes: 1 } }
+    }
+
+    if (sql.startsWith('SELECT * FROM auth_sessions WHERE id = ?')) {
+      return { results: this.store.authSessions.filter((session) => session.id === this.values[0]) }
+    }
+
+    if (sql.startsWith('SELECT auth_sessions.id AS session_id')) {
+      const session = this.store.authSessions.find((record) => record.session_hash === this.values[0])
+      const user = session ? this.store.authUsers.find((record) => record.id === session.user_id) : null
+
+      if (!session || !user) {
+        return { results: [] }
+      }
+
+      return {
+        results: [{
+          session_id: session.id,
+          user_id: session.user_id,
+          session_hash: session.session_hash,
+          expires_at: session.expires_at,
+          session_created_at: session.created_at,
+          last_seen_at: session.last_seen_at,
+          revoked_at: session.revoked_at,
+          user_id_value: user.id,
+          email: user.email,
+          display_name: user.display_name,
+          password_hash: user.password_hash,
+          password_algo: user.password_algo,
+          is_admin: user.is_admin,
+          disabled_at: user.disabled_at,
+          user_created_at: user.created_at,
+          updated_at: user.updated_at,
+          last_login_at: user.last_login_at,
+        }],
+      }
+    }
+
+    if (sql.startsWith('UPDATE auth_sessions SET last_seen_at')) {
+      const session = this.store.authSessions.find((record) => record.id === this.values[0] && !record.revoked_at)
+      if (!session) return { meta: { changes: 0 } }
+      session.last_seen_at = now()
+      return { meta: { changes: 1 } }
+    }
+
+    if (sql.startsWith('UPDATE auth_sessions SET revoked_at')) {
+      const session = this.store.authSessions.find((record) => record.session_hash === this.values[0] && !record.revoked_at)
+      if (!session) return { meta: { changes: 0 } }
+      session.revoked_at = now()
+      return { meta: { changes: 1 } }
     }
 
     if (sql.startsWith('SELECT * FROM categories WHERE id = ?')) {
@@ -326,6 +449,8 @@ export function createMockEnv(overrides: Partial<Bindings> = {}): Bindings {
     endpoints: [],
     tags: [],
     itemTags: [],
+    authUsers: [],
+    authSessions: [],
   }
 
   return {

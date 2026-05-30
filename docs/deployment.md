@@ -77,20 +77,42 @@ corepack pnpm dev
 }
 ```
 
-生产环境：
+生产环境默认使用内置认证：
 
 ```json
 {
-  "AUTH_MODE": "cloudflare-access"
+  "AUTH_MODE": "builtin",
+  "SETUP_TOKEN": "生成一个高强度一次性随机字符串"
+}
+```
+
+首次部署流程：
+
+1. 应用远程 D1 迁移。
+2. 部署 Worker。
+3. 打开站点后进入初始化页面。
+4. 输入 `SETUP_TOKEN`、管理员邮箱和密码创建管理员。
+5. 初始化完成后，移除或轮换 `SETUP_TOKEN`。
+
+可选配置：
+
+```json
+{
+  "SESSION_COOKIE_NAME": "dockmark_session",
+  "SESSION_TTL_SECONDS": "604800",
+  "PASSWORD_PBKDF2_ITERATIONS": "310000"
 }
 ```
 
 生产要求：
 
 - 禁止使用 `AUTH_MODE=development`。
-- Cloudflare Access 是第一种生产认证适配器，但不是唯一方案。
+- 当前生产默认使用 `AUTH_MODE=builtin`。
+- `AUTH_MODE=oidc` 和 `AUTH_MODE=cloudflare-access` 是预留模式，当前会拒绝访问并提示改用 builtin。
 - 业务代码只能依赖标准用户上下文。
-- 后续生产硬化必须校验 `Cf-Access-Jwt-Assertion`，不能只检查 header 是否存在。
+- OIDC 和 Cloudflare Access 需要后续 OpenSpec change 实现后才能用于生产。
+- 生产必须使用 HTTPS，认证 cookie 使用 HttpOnly、SameSite=Lax，并在 HTTPS 请求下设置 Secure。
+- Dockmark 可以存储自身登录密码的哈希验证器，但仍禁止存储 Homelab 服务密码、API key、token、OTP seed、浏览器 session cookie 或其他服务秘密。
 
 ## 5. 迁移流程
 
@@ -192,7 +214,8 @@ corepack pnpm install
 
 - D1 database ID 已替换为真实生产 ID。
 - KV namespace ID 已替换为真实生产 ID。
-- `AUTH_MODE` 不是 `development`。
+- `AUTH_MODE=builtin`，且没有误配为尚未实现的 `oidc` 或 `cloudflare-access`。
+- 已配置强随机 `SETUP_TOKEN` 并在管理员初始化后移除或轮换。
 - 已执行远程迁移。
 - `corepack pnpm validate` 通过。
 - `openspec validate --all --strict --no-interactive` 通过。

@@ -2,7 +2,13 @@ import { HTTPException } from 'hono/http-exception'
 
 import type { AuthenticatedUser } from '@dockmark/shared'
 
+import {
+  getAuthenticatedSession,
+  mapAuthUser,
+  touchAuthSession,
+} from '../db/auth'
 import type { Bindings } from './env'
+import { getRequestSessionTokenFromRequest, hashSessionToken } from './session'
 
 type AuthAdapter = {
   authenticate(request: Request): Promise<AuthenticatedUser>
@@ -25,29 +31,54 @@ class DevelopmentAuthAdapter implements AuthAdapter {
   }
 }
 
-class CloudflareAccessAuthAdapter implements AuthAdapter {
+class BuiltinAuthAdapter implements AuthAdapter {
+  constructor(private readonly env: Bindings) {}
+
   async authenticate(request: Request): Promise<AuthenticatedUser> {
-    const email = request.headers.get('Cf-Access-Authenticated-User-Email')
-    const subject = request.headers.get('Cf-Access-Authenticated-User-Id') ?? email
-    const assertion = request.headers.get('Cf-Access-Jwt-Assertion')
+    const token = getRequestSessionTokenFromRequest(request, this.env)
 
-    if (!email || !subject || !assertion) {
-      throw new HTTPException(401, { message: 'Cloudflare Access identity is required' })
+    if (!token) {
+      throw new HTTPException(401, { message: 'Authentication required' })
     }
 
-    // Phase 0 keeps JWT validation behind this adapter boundary. Production hardening
-    // should verify Cf-Access-Jwt-Assertion with the Access team public keys.
-    return {
-      id: subject,
-      email,
-      mode: 'cloudflare-access',
+    const session = await getAuthenticatedSession(this.env.DB, await hashSessionToken(token))
+
+    if (!session) {
+      throw new HTTPException(401, { message: 'Session is expired or invalid' })
     }
+
+    await touchAuthSession(this.env.DB, session.session.id)
+    return mapAuthUser(session.user, 'builtin')
+  }
+}
+
+class CloudflareAccessAuthAdapter implements AuthAdapter {
+  async authenticate(): Promise<AuthenticatedUser> {
+    throw new HTTPException(503, {
+      message: 'Cloudflare Access authentication is reserved but not implemented securely yet. Use AUTH_MODE=builtin.',
+    })
+  }
+}
+
+class OidcAuthAdapter implements AuthAdapter {
+  async authenticate(): Promise<AuthenticatedUser> {
+    throw new HTTPException(503, {
+      message: 'OIDC authentication is reserved but not implemented yet. Use AUTH_MODE=builtin.',
+    })
   }
 }
 
 export function createAuthAdapter(env: Bindings): AuthAdapter {
+  if (env.AUTH_MODE === 'builtin') {
+    return new BuiltinAuthAdapter(env)
+  }
+
   if (env.AUTH_MODE === 'cloudflare-access') {
     return new CloudflareAccessAuthAdapter()
+  }
+
+  if (env.AUTH_MODE === 'oidc') {
+    return new OidcAuthAdapter()
   }
 
   if (env.AUTH_MODE === 'development') {
@@ -56,4 +87,3 @@ export function createAuthAdapter(env: Bindings): AuthAdapter {
 
   throw new HTTPException(500, { message: `Unsupported auth mode: ${env.AUTH_MODE}` })
 }
-

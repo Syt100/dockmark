@@ -1,5 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import {
+  authSetupStatus,
+  currentUser,
+  ensureAuthState,
+} from '../auth/state'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -65,7 +70,46 @@ const router = createRouter({
       name: 'about',
       component: () => import('../views/AboutView.vue'),
     },
+    {
+      path: '/login',
+      name: 'login',
+      component: () => import('../views/LoginView.vue'),
+      meta: { public: true },
+    },
+    {
+      path: '/setup',
+      name: 'setup',
+      component: () => import('../views/SetupView.vue'),
+      meta: { public: true },
+    },
   ],
+})
+
+router.beforeEach(async (to) => {
+  await ensureAuthState()
+
+  const isPublic = to.meta.public === true
+
+  if (authSetupStatus.value?.needsSetup && to.name !== 'setup') {
+    return { name: 'setup' }
+  }
+
+  if (!authSetupStatus.value?.needsSetup && to.name === 'setup') {
+    return { name: currentUser.value ? 'home' : 'login' }
+  }
+
+  if (!currentUser.value && !isPublic) {
+    return {
+      name: 'login',
+      query: { redirect: to.fullPath },
+    }
+  }
+
+  if (currentUser.value && to.name === 'login') {
+    return { name: 'home' }
+  }
+
+  return true
 })
 
 export default router
