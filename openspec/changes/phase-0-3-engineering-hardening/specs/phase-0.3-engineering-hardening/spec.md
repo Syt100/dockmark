@@ -1,0 +1,92 @@
+## ADDED Requirements
+
+### Requirement: Structured API error contract
+Dockmark SHALL expose API failures using a shared structured error response with stable machine-readable codes.
+
+#### Scenario: Validation failure is returned
+- **WHEN** a request payload fails validation
+- **THEN** the Worker SHALL return a non-2xx response containing `error.code`, `error.message`, and optional field-level details
+- **AND** the web client SHALL localize the error from `error.code` instead of matching arbitrary response text.
+
+#### Scenario: Authentication failure is returned
+- **WHEN** a protected API request is missing valid authentication
+- **THEN** the Worker SHALL return an unauthorized structured error
+- **AND** the response SHALL NOT reveal sensitive session token, password, setup token, or provider details.
+
+#### Scenario: Internal error is returned
+- **WHEN** an unexpected Worker error occurs
+- **THEN** the Worker SHALL log the error server-side
+- **AND** the API response SHALL use a generic structured internal-error code without exposing stack traces or secrets.
+
+### Requirement: Generated Worker binding contract
+Dockmark SHALL use Wrangler-generated binding types as the primary source of truth for Worker binding access.
+
+#### Scenario: Wrangler configuration changes
+- **WHEN** bindings, vars, or environments are changed in `wrangler.jsonc`
+- **THEN** generated Worker type checks SHALL detect drift between configuration and application binding access.
+
+#### Scenario: Application code reads bindings
+- **WHEN** Worker code accesses D1, KV, assets, or configured vars
+- **THEN** it SHALL use typed bindings derived from the Wrangler configuration
+- **AND** it SHALL NOT rely on a separate hand-written binding interface that can silently diverge.
+
+### Requirement: Runtime-backed Worker integration tests
+Dockmark SHALL include Worker integration tests that exercise real Cloudflare Worker request handling and storage semantics for critical backend behavior.
+
+#### Scenario: Migrations and D1 behavior are tested
+- **WHEN** Worker integration tests run
+- **THEN** they SHALL apply committed D1 migrations or equivalent schema setup
+- **AND** they SHALL verify auth, service navigation writes, constraints, and not-found behavior against runtime-backed D1 semantics.
+
+#### Scenario: KV cache behavior is tested
+- **WHEN** navigation data is read, cached, mutated, and read again
+- **THEN** integration tests SHALL verify cache miss/hit behavior and invalidation using runtime-backed KV semantics.
+
+#### Scenario: Fast unit tests remain available
+- **WHEN** pure shared validation or helper logic changes
+- **THEN** it SHALL remain testable without requiring full Worker runtime setup.
+
+### Requirement: Service navigation mutation boundary
+Dockmark SHALL centralize service navigation mutations and cache invalidation behind application service functions.
+
+#### Scenario: Service item is mutated
+- **WHEN** a service item is created, updated, or deleted
+- **THEN** the application service SHALL perform the D1 mutation and navigation cache invalidation as one application-level operation
+- **AND** route handlers SHALL NOT need to remember separate cache invalidation calls.
+
+#### Scenario: Category or tag is mutated
+- **WHEN** a category or tag is created, updated, or deleted
+- **THEN** the application service SHALL invalidate navigation cache state after a successful D1 mutation
+- **AND** it SHALL NOT invalidate cache for failed or missing-record mutations.
+
+### Requirement: Deterministic navigation cache invalidation
+Dockmark SHALL invalidate navigation cache in a way that remains correct under concurrent writes while keeping D1 as the source of truth.
+
+#### Scenario: Concurrent writes occur
+- **WHEN** multiple service navigation mutations complete close together
+- **THEN** the effective navigation cache version SHALL advance or otherwise become invalid for all completed writes
+- **AND** a later `/api/nav` response SHALL be assembled from D1 rather than a stale pre-write payload.
+
+#### Scenario: KV data is missing or stale
+- **WHEN** KV lacks the cached navigation payload or contains an obsolete payload
+- **THEN** the Worker SHALL rebuild the navigation response from D1
+- **AND** it SHALL be safe to discard KV entries without losing source data.
+
+### Requirement: Bounded session touch writes
+Dockmark SHALL bound non-critical built-in session touch writes to avoid one D1 write per authenticated request.
+
+#### Scenario: Authenticated requests are frequent
+- **WHEN** several protected API requests use the same valid session within the touch threshold
+- **THEN** Dockmark SHALL authenticate the requests without updating `last_seen_at` for every request.
+
+#### Scenario: Session has not been touched recently
+- **WHEN** a valid session's `last_seen_at` is older than the configured threshold
+- **THEN** Dockmark SHALL update session activity without changing session token secrecy or expiration validation.
+
+### Requirement: Phase 0.3 excludes product scope expansion
+Phase 0.3 SHALL harden existing foundation behavior without adding later-phase product capabilities.
+
+#### Scenario: Engineering hardening is implemented
+- **WHEN** Phase 0.3 is complete
+- **THEN** Dockmark SHALL preserve existing service navigation, built-in auth, and production deployment behavior
+- **AND** it SHALL NOT add bookmark sync, extension sync, import/export, OIDC login, Cloudflare Access JWT validation, or Homelab credential storage.
