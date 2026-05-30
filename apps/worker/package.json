@@ -4,8 +4,10 @@
   "scripts": {
     "dev": "wrangler dev",
     "build": "wrangler deploy --env production --dry-run --outdir dist",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit && corepack pnpm run cf-typecheck",
+    "test": "vitest run --exclude \"test/**/*.integration.test.ts\" && vitest run -c vitest.integration.config.ts",
+    "test:unit": "vitest run --exclude \"test/**/*.integration.test.ts\"",
+    "test:integration": "vitest run -c vitest.integration.config.ts",
     "lint": "tsc -p tsconfig.json --noEmit",
     "format": "echo \"No worker format yet\"",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
@@ -20,6 +22,7 @@
     "hono": "^4.12.23"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.16.10",
     "@cloudflare/workers-types": "^4.20260530.1",
     "typescript": "~6.0.0",
     "vitest": "^4.1.4",

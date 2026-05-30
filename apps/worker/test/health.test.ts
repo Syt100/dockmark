@@ -34,6 +34,11 @@ describe('worker health', () => {
     const response = await app.request('/api/missing', {}, createMockEnv())
 
     expect(response.status).toBe(404)
-    await expect(response.text()).resolves.toContain('Not found')
+    await expect(response.json()).resolves.toMatchObject({
+      error: {
+        code: 'not_found',
+        message: 'Not found',
+      },
+    })
   })
 })

@@ -1,6 +1,5 @@
 import { Hono } from 'hono'
 import type { Context } from 'hono'
-import { HTTPException } from 'hono/http-exception'
 import type {
   AuthLoginRequest,
   AuthSetupRequest,
@@ -20,6 +19,7 @@ import {
   markAuthUserLogin,
 } from '../db/auth'
 import { createPasswordVerifier, defaultPbkdf2Iterations, timingSafeEqual, verifyPassword } from '../lib/crypto'
+import { apiError } from '../lib/errors'
 import { createAuthAdapter } from '../lib/auth'
 import type { AppEnv } from '../lib/env'
 import { readJson } from '../lib/http'
@@ -50,11 +50,11 @@ function requireBuiltinMode(authMode: AppEnv['Bindings']['AUTH_MODE']): void {
   const message = unsupportedModeMessage(authMode)
 
   if (message) {
-    throw new HTTPException(503, { message })
+    throw apiError(503, 'config_error', message)
   }
 
   if (authMode !== 'builtin') {
-    throw new HTTPException(400, { message: 'Built-in authentication is not enabled' })
+    throw apiError(400, 'config_error', 'Built-in authentication is not enabled')
   }
 }
 
@@ -65,7 +65,9 @@ function parsePositiveInteger(value: string | undefined, fallback: number): numb
 
 function requireString(value: unknown, field: string): string {
   if (typeof value !== 'string' || value.trim() === '') {
-    throw new HTTPException(400, { message: `${field} is required` })
+    throw apiError(400, 'validation_failed', `${field} is required`, {
+      [field]: [`${field} is required`],
+    })
   }
 
   return value.trim()
@@ -79,7 +81,9 @@ function requireEmail(value: unknown): string {
   const email = normalizeEmail(requireString(value, 'email'))
 
   if (!email.includes('@') || email.length > 254) {
-    throw new HTTPException(400, { message: 'email must be valid' })
+    throw apiError(400, 'validation_failed', 'email must be valid', {
+      email: ['email must be valid'],
+    })
   }
 
   return email
@@ -89,7 +93,9 @@ function requirePassword(value: unknown): string {
   const password = requireString(value, 'password')
 
   if (password.length < 12) {
-    throw new HTTPException(400, { message: 'password must be at least 12 characters' })
+    throw apiError(400, 'validation_failed', 'password must be at least 12 characters', {
+      password: ['password must be at least 12 characters'],
+    })
   }
 
   return password
@@ -121,20 +127,20 @@ authRoute.post('/setup', async (c) => {
   requireBuiltinMode(c.env.AUTH_MODE)
 
   if ((await countAuthUsers(c.env.DB)) > 0) {
-    throw new HTTPException(409, { message: 'Administrator is already configured' })
+    throw apiError(409, 'auth_setup_exists', 'Administrator is already configured')
   }
 
   const setupToken = c.env.SETUP_TOKEN
 
   if (!setupToken) {
-    throw new HTTPException(503, { message: 'SETUP_TOKEN is required before creating the administrator' })
+    throw apiError(503, 'config_error', 'SETUP_TOKEN is required before creating the administrator')
   }
 
   const body = await readJson(c) as Partial<AuthSetupRequest>
   const submittedToken = requireString(body.setupToken, 'setupToken')
 
   if (!timingSafeEqual(setupToken, submittedToken)) {
-    throw new HTTPException(401, { message: 'Setup token is invalid' })
+    throw apiError(401, 'auth_setup_token_invalid', 'Setup token is invalid')
   }
 
   const email = requireEmail(body.email)
@@ -168,7 +174,7 @@ authRoute.post('/login', async (c) => {
   const user = await getAuthUserByEmail(c.env.DB, email)
 
   if (!user || user.disabled_at || !(await verifyPassword(password, user.password_hash))) {
-    throw new HTTPException(401, { message: 'Invalid email or password' })
+    throw apiError(401, 'auth_invalid_credentials', 'Invalid email or password')
   }
   const response: AuthSuccessResponse = {
     user: mapAuthUser(user, 'builtin'),

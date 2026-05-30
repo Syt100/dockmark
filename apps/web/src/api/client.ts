@@ -1,4 +1,6 @@
 import type {
+  ApiErrorCode,
+  ApiErrorResponse,
   AuthLoginRequest,
   AuthSetupRequest,
   AuthSetupStatusResponse,
@@ -17,10 +19,41 @@ export class ApiError extends Error {
   constructor(
     message: string,
     readonly status: number,
+    readonly code?: ApiErrorCode,
+    readonly fields?: Record<string, string[]>,
   ) {
     super(message)
     this.name = 'ApiError'
   }
+}
+
+function isApiErrorResponse(value: unknown): value is ApiErrorResponse {
+  return typeof value === 'object' &&
+    value !== null &&
+    'error' in value &&
+    typeof (value as ApiErrorResponse).error === 'object' &&
+    (value as ApiErrorResponse).error !== null &&
+    typeof (value as ApiErrorResponse).error.code === 'string' &&
+    typeof (value as ApiErrorResponse).error.message === 'string'
+}
+
+async function readError(response: Response): Promise<ApiError> {
+  const message = await response.text()
+  const contentType = response.headers.get('content-type') ?? ''
+
+  if (contentType.includes('application/json')) {
+    try {
+      const body: unknown = JSON.parse(message)
+
+      if (isApiErrorResponse(body)) {
+        return new ApiError(body.error.message, response.status, body.error.code, body.error.fields)
+      }
+    } catch {
+      // Fall through to text fallback below.
+    }
+  }
+
+  return new ApiError(message || `Request failed with ${response.status}`, response.status)
 }
 
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -33,8 +66,7 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   })
 
   if (!response.ok) {
-    const message = await response.text()
-    throw new ApiError(message || `Request failed with ${response.status}`, response.status)
+    throw await readError(response)
   }
 
   if (response.status === 204) {

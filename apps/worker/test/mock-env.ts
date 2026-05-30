@@ -74,6 +74,7 @@ type AuthSessionRecord = {
 }
 
 type Store = {
+  metadata: Map<string, string>
   categories: CategoryRecord[]
   items: ItemRecord[]
   endpoints: EndpointRecord[]
@@ -81,6 +82,7 @@ type Store = {
   itemTags: ItemTagRecord[]
   authUsers: AuthUserRecord[]
   authSessions: AuthSessionRecord[]
+  authSessionTouchCount: number
 }
 
 type StatementResult = {
@@ -89,7 +91,7 @@ type StatementResult = {
 }
 
 function now(): string {
-  return '2026-05-29T00:00:00.000Z'
+  return new Date().toISOString()
 }
 
 function sortByOrderAndName<T extends { sort_order?: number; name?: string; label?: string }>(values: T[]): T[] {
@@ -101,6 +103,10 @@ function sortByOrderAndName<T extends { sort_order?: number; name?: string; labe
 
     return (left.name ?? left.label ?? '').localeCompare(right.name ?? right.label ?? '')
   })
+}
+
+function uniqueConstraintFailed(columns: string): Error {
+  return new Error(`D1_ERROR: UNIQUE constraint failed: ${columns}`)
 }
 
 class MockStatement {
@@ -135,7 +141,21 @@ class MockStatement {
     const sql = this.sql.replace(/\s+/g, ' ').trim()
 
     if (sql.startsWith('SELECT value FROM app_metadata')) {
-      return { results: [{ value: '0' }] }
+      const value = this.store.metadata.get(this.values[0] as string)
+      return { results: value ? [{ value }] : [] }
+    }
+
+    if (sql.startsWith('INSERT INTO app_metadata')) {
+      const key = this.values[0] as string
+      const current = this.store.metadata.get(key)
+
+      if (!current) {
+        this.store.metadata.set(key, '2')
+      } else {
+        this.store.metadata.set(key, String(Number.parseInt(current, 10) + 1))
+      }
+
+      return { meta: { changes: 1 } }
     }
 
     if (sql.startsWith('SELECT COUNT(*) AS count FROM auth_users')) {
@@ -226,6 +246,7 @@ class MockStatement {
       const session = this.store.authSessions.find((record) => record.id === this.values[0] && !record.revoked_at)
       if (!session) return { meta: { changes: 0 } }
       session.last_seen_at = now()
+      this.store.authSessionTouchCount += 1
       return { meta: { changes: 1 } }
     }
 
@@ -245,10 +266,15 @@ class MockStatement {
     }
 
     if (sql.startsWith('INSERT INTO categories')) {
+      const slug = this.values[2] as string
+      if (this.store.categories.some((category) => category.slug === slug)) {
+        throw uniqueConstraintFailed('categories.slug')
+      }
+
       this.store.categories.push({
         id: this.values[0] as string,
         name: this.values[1] as string,
-        slug: this.values[2] as string,
+        slug,
         icon: this.values[3] as string | null,
         color: this.values[4] as string | null,
         sort_order: this.values[5] as number,
@@ -262,8 +288,13 @@ class MockStatement {
       const id = this.values[5] as string
       const category = this.store.categories.find((record) => record.id === id)
       if (!category) return { meta: { changes: 0 } }
+      const slug = this.values[1] as string
+      if (this.store.categories.some((record) => record.id !== id && record.slug === slug)) {
+        throw uniqueConstraintFailed('categories.slug')
+      }
+
       category.name = this.values[0] as string
-      category.slug = this.values[1] as string
+      category.slug = slug
       category.icon = this.values[2] as string | null
       category.color = this.values[3] as string | null
       category.sort_order = this.values[4] as number
@@ -291,10 +322,19 @@ class MockStatement {
     }
 
     if (sql.startsWith('INSERT INTO tags')) {
+      const name = this.values[1] as string
+      const slug = this.values[2] as string
+      if (this.store.tags.some((tag) => tag.name === name)) {
+        throw uniqueConstraintFailed('tags.name')
+      }
+      if (this.store.tags.some((tag) => tag.slug === slug)) {
+        throw uniqueConstraintFailed('tags.slug')
+      }
+
       this.store.tags.push({
         id: this.values[0] as string,
-        name: this.values[1] as string,
-        slug: this.values[2] as string,
+        name,
+        slug,
         created_at: now(),
       })
       return { meta: { changes: 1 } }
@@ -304,8 +344,17 @@ class MockStatement {
       const id = this.values[2] as string
       const tag = this.store.tags.find((record) => record.id === id)
       if (!tag) return { meta: { changes: 0 } }
-      tag.name = this.values[0] as string
-      tag.slug = this.values[1] as string
+      const name = this.values[0] as string
+      const slug = this.values[1] as string
+      if (this.store.tags.some((record) => record.id !== id && record.name === name)) {
+        throw uniqueConstraintFailed('tags.name')
+      }
+      if (this.store.tags.some((record) => record.id !== id && record.slug === slug)) {
+        throw uniqueConstraintFailed('tags.slug')
+      }
+
+      tag.name = name
+      tag.slug = slug
       return { meta: { changes: 1 } }
     }
 
@@ -441,9 +490,14 @@ class MockDb {
   }
 }
 
-export function createMockEnv(overrides: Partial<Bindings> = {}): Bindings {
+export type MockBindings = Bindings & {
+  __testStore: Store
+}
+
+export function createMockEnv(overrides: Partial<Bindings> = {}): MockBindings {
   const kv = new Map<string, string>()
   const store: Store = {
+    metadata: new Map([['schema_version', '0']]),
     categories: [],
     items: [],
     endpoints: [],
@@ -451,6 +505,7 @@ export function createMockEnv(overrides: Partial<Bindings> = {}): Bindings {
     itemTags: [],
     authUsers: [],
     authSessions: [],
+    authSessionTouchCount: 0,
   }
 
   return {
@@ -477,6 +532,7 @@ export function createMockEnv(overrides: Partial<Bindings> = {}): Bindings {
       },
       get: (key: string) => Promise.resolve(kv.get(key) ?? null),
     } as unknown as KVNamespace,
+    __testStore: store,
     ...overrides,
   }
 }

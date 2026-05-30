@@ -5,6 +5,7 @@ import type { AppEnv, Bindings } from './env'
 import { randomToken, sha256Base64Url } from './crypto'
 
 export const defaultSessionTtlSeconds = 60 * 60 * 24 * 7
+export const defaultSessionTouchIntervalSeconds = 60 * 5
 
 export function getSessionCookieName(env: Pick<Bindings, 'SESSION_COOKIE_NAME'>): string {
   return env.SESSION_COOKIE_NAME || 'dockmark_session'
@@ -13,6 +14,21 @@ export function getSessionCookieName(env: Pick<Bindings, 'SESSION_COOKIE_NAME'>)
 export function getSessionTtlSeconds(env: Pick<Bindings, 'SESSION_TTL_SECONDS'>): number {
   const value = Number(env.SESSION_TTL_SECONDS)
   return Number.isSafeInteger(value) && value > 0 ? value : defaultSessionTtlSeconds
+}
+
+export function getSessionTouchIntervalSeconds(env: Pick<Bindings, 'SESSION_TOUCH_INTERVAL_SECONDS'>): number {
+  const value = Number(env.SESSION_TOUCH_INTERVAL_SECONDS)
+  return Number.isSafeInteger(value) && value > 0 ? value : defaultSessionTouchIntervalSeconds
+}
+
+export function shouldTouchSession(lastSeenAt: string, env: Pick<Bindings, 'SESSION_TOUCH_INTERVAL_SECONDS'>, now = new Date()): boolean {
+  const lastSeenTime = new Date(lastSeenAt).getTime()
+
+  if (!Number.isFinite(lastSeenTime)) {
+    return true
+  }
+
+  return now.getTime() - lastSeenTime >= getSessionTouchIntervalSeconds(env) * 1000
 }
 
 export function getSessionExpiresAt(env: Pick<Bindings, 'SESSION_TTL_SECONDS'>, now = new Date()): string {

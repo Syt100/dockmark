@@ -17,6 +17,38 @@ export const authLoading = ref(false)
 let bootstrapPromise: Promise<void> | null = null
 
 export function authMessage(caught: unknown, fallback: string): string {
+  if (caught instanceof ApiError) {
+    if (caught.code === 'auth_invalid_credentials') {
+      return '邮箱或密码不正确。'
+    }
+
+    if (caught.code === 'auth_setup_token_invalid') {
+      return '初始化令牌不正确。'
+    }
+
+    if (caught.code === 'auth_setup_exists') {
+      return '管理员已经初始化，请直接登录。'
+    }
+
+    if (caught.code === 'validation_failed' && caught.message.includes('password must be at least 12 characters')) {
+      return '密码至少需要 12 个字符。'
+    }
+
+    if (caught.code === 'validation_failed' && caught.message.includes('email must be valid')) {
+      return '请输入有效邮箱。'
+    }
+
+    if (caught.code === 'config_error') {
+      if (caught.message.includes('SETUP_TOKEN is required')) {
+        return '服务端未配置 SETUP_TOKEN，无法初始化管理员。'
+      }
+
+      if (caught.message.includes('Use AUTH_MODE=builtin')) {
+        return '当前认证模式尚未实现，请将 AUTH_MODE 设置为 builtin。'
+      }
+    }
+  }
+
   const message = caught instanceof Error ? caught.message : ''
 
   if (!message) {

@@ -1,9 +1,9 @@
 import { Hono } from 'hono'
-import { HTTPException } from 'hono/http-exception'
 
 import type { HealthResponse, SmokeResponse } from '@dockmark/shared'
 
 import { createAuthAdapter } from './lib/auth'
+import { apiError, apiErrorResponseFromUnknown } from './lib/errors'
 import type { AppEnv } from './lib/env'
 import { authRoute, currentUserHandler } from './routes/auth'
 import { categoriesRoute } from './routes/categories'
@@ -13,14 +13,8 @@ import { tagsRoute } from './routes/tags'
 
 const app = new Hono<AppEnv>()
 
-app.onError((error, c) => {
-  if (error instanceof HTTPException) {
-    return error.getResponse()
-  }
-
-  console.error(error)
-
-  return c.json({ error: 'Internal Server Error' }, 500)
+app.onError((error) => {
+  return apiErrorResponseFromUnknown(error)
 })
 
 app.get('/api/health', (c) => {
@@ -42,14 +36,14 @@ app.get('/api/smoke', async (c) => {
     .first<{ value: string }>()
 
   if (!row) {
-    throw new HTTPException(500, { message: 'D1 metadata is not initialized' })
+    throw apiError(500, 'internal_error', 'D1 metadata is not initialized')
   }
 
   await c.env.KV.put('smoke:last_checked_at', new Date().toISOString())
   const checkedAt = await c.env.KV.get('smoke:last_checked_at')
 
   if (!checkedAt) {
-    throw new HTTPException(500, { message: 'KV smoke write failed' })
+    throw apiError(500, 'internal_error', 'KV smoke write failed')
   }
 
   const payload: SmokeResponse = {
@@ -84,7 +78,7 @@ async function serveAssetOrSpaFallback(request: Request, assets: Fetcher): Promi
 
 app.on(['GET', 'HEAD'], '*', (c) => {
   if (c.req.path === '/api' || c.req.path.startsWith('/api/')) {
-    throw new HTTPException(404, { message: 'Not found' })
+    throw apiError(404, 'not_found', 'Not found')
   }
 
   return serveAssetOrSpaFallback(c.req.raw, c.env.ASSETS)

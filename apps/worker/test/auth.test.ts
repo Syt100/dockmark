@@ -117,6 +117,46 @@ describe('built-in auth API', () => {
     expect(login.headers.get('set-cookie')).toContain('dockmark_session=')
   })
 
+  it('does not touch sessions on every authenticated request inside the touch threshold', async () => {
+    const env = createMockEnv({ AUTH_MODE: 'builtin', SETUP_TOKEN: 'setup-secret' })
+    const created = await app.request('/api/auth/setup', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(setupBody),
+    }, env)
+    const cookie = cookieFrom(created)
+
+    await app.request('/api/nav', { headers: { cookie } }, env)
+    await app.request('/api/nav', { headers: { cookie } }, env)
+
+    expect(env.__testStore.authSessionTouchCount).toBe(0)
+  })
+
+  it('touches sessions when the last seen timestamp is outside the touch threshold', async () => {
+    const env = createMockEnv({
+      AUTH_MODE: 'builtin',
+      SETUP_TOKEN: 'setup-secret',
+      SESSION_TOUCH_INTERVAL_SECONDS: '1',
+    })
+    const created = await app.request('/api/auth/setup', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(setupBody),
+    }, env)
+    const cookie = cookieFrom(created)
+    const session = env.__testStore.authSessions[0]
+
+    if (!session) {
+      throw new Error('Expected setup to create a session')
+    }
+
+    session.last_seen_at = '2026-05-29T00:00:00.000Z'
+
+    await app.request('/api/nav', { headers: { cookie } }, env)
+
+    expect(env.__testStore.authSessionTouchCount).toBe(1)
+  })
+
   it('rejects invalid login credentials with a generic error', async () => {
     const env = createMockEnv({ AUTH_MODE: 'builtin', SETUP_TOKEN: 'setup-secret' })
     await app.request('/api/auth/setup', {
@@ -134,7 +174,12 @@ describe('built-in auth API', () => {
       }),
     }, env)
     expect(response.status).toBe(401)
-    await expect(response.text()).resolves.toContain('Invalid email or password')
+    await expect(response.json()).resolves.toMatchObject({
+      error: {
+        code: 'auth_invalid_credentials',
+        message: 'Invalid email or password',
+      },
+    })
   })
 
   it('rejects expired sessions', async () => {
@@ -170,7 +215,12 @@ describe('built-in auth API', () => {
 
       const protectedResponse = await app.request('/api/nav', {}, env)
       expect(protectedResponse.status).toBe(503)
-      await expect(protectedResponse.text()).resolves.toContain('Use AUTH_MODE=builtin')
+      await expect(protectedResponse.json()).resolves.toMatchObject({
+        error: {
+          code: 'config_error',
+          message: expect.stringContaining('Use AUTH_MODE=builtin'),
+        },
+      })
     }
   })
 })

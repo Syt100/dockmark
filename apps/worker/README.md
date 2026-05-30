@@ -24,8 +24,12 @@ Production migrations use the Wrangler `production` environment and reference th
 ```sh
 corepack pnpm --filter @dockmark/worker typecheck
 corepack pnpm --filter @dockmark/worker test
+corepack pnpm --filter @dockmark/worker test:unit
+corepack pnpm --filter @dockmark/worker test:integration
 corepack pnpm --filter @dockmark/worker lint
 ```
+
+`test` runs both the fast Hono/module tests and the runtime-backed Workers integration tests. The integration suite uses `@cloudflare/vitest-pool-workers`, applies committed D1 migrations, and exercises D1/KV behavior through Miniflare.
 
 ## Deployment
 
@@ -45,3 +49,5 @@ corepack pnpm --filter @dockmark/worker cf-typecheck
 ```
 
 `cf-typecheck` verifies the generated binding declaration is up to date with `wrangler.jsonc`.
+
+Application code derives its Worker binding type from the Wrangler-generated `CloudflareBindings` declaration and adds only application-level optional vars in `src/lib/env.ts`.

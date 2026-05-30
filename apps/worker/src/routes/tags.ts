@@ -1,12 +1,16 @@
 import { Hono } from 'hono'
-import { HTTPException } from 'hono/http-exception'
 import { validateTagInput } from '@dockmark/shared'
 
-import { createTag, deleteTag, listTags, updateTag } from '../db/tags'
-import { incrementNavCacheVersion } from '../lib/cache'
+import { listTags } from '../db/tags'
+import { apiError } from '../lib/errors'
 import type { AppEnv } from '../lib/env'
 import { readJson, requireValidation } from '../lib/http'
 import { requireAuth } from '../middleware/auth'
+import {
+  createTagWithNavInvalidation,
+  deleteTagWithNavInvalidation,
+  updateTagWithNavInvalidation,
+} from '../services/navigation'
 
 export const tagsRoute = new Hono<AppEnv>()
 
@@ -17,31 +21,28 @@ tagsRoute.get('/', requireAuth, async (c) => {
 
 tagsRoute.post('/', requireAuth, async (c) => {
   const input = requireValidation(validateTagInput(await readJson(c)))
-  const tag = await createTag(c.env.DB, input)
-  await incrementNavCacheVersion(c.env.KV)
+  const tag = await createTagWithNavInvalidation(c.env, input)
 
   return c.json({ tag }, 201)
 })
 
 tagsRoute.patch('/:id', requireAuth, async (c) => {
   const input = requireValidation(validateTagInput(await readJson(c)))
-  const tag = await updateTag(c.env.DB, c.req.param('id'), input)
+  const tag = await updateTagWithNavInvalidation(c.env, c.req.param('id'), input)
 
   if (!tag) {
-    throw new HTTPException(404, { message: 'Tag not found' })
+    throw apiError(404, 'not_found', 'Tag not found')
   }
 
-  await incrementNavCacheVersion(c.env.KV)
   return c.json({ tag })
 })
 
 tagsRoute.delete('/:id', requireAuth, async (c) => {
-  const deleted = await deleteTag(c.env.DB, c.req.param('id'))
+  const deleted = await deleteTagWithNavInvalidation(c.env, c.req.param('id'))
 
   if (!deleted) {
-    throw new HTTPException(404, { message: 'Tag not found' })
+    throw apiError(404, 'not_found', 'Tag not found')
   }
 
-  await incrementNavCacheVersion(c.env.KV)
   return c.body(null, 204)
 })

@@ -8,7 +8,7 @@ import { requireAuth } from '../middleware/auth'
 export const navRoute = new Hono<AppEnv>()
 
 navRoute.get('/', requireAuth, async (c) => {
-  const cached = await getCachedNavigation(c.env.KV)
+  const cached = await getCachedNavigation(c.env.DB, c.env.KV)
 
   if (cached) {
     return c.json(cached, 200, {
@@ -17,7 +17,7 @@ navRoute.get('/', requireAuth, async (c) => {
   }
 
   const payload = await getNavigation(c.env.DB)
-  await putCachedNavigation(c.env.KV, payload)
+  await putCachedNavigation(c.env.DB, c.env.KV, payload)
 
   return c.json(payload, 200, {
     'X-Dockmark-Cache': 'miss',

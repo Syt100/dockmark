@@ -1,5 +1,3 @@
-import { HTTPException } from 'hono/http-exception'
-
 import type { AuthenticatedUser } from '@dockmark/shared'
 
 import {
@@ -8,7 +6,8 @@ import {
   touchAuthSession,
 } from '../db/auth'
 import type { Bindings } from './env'
-import { getRequestSessionTokenFromRequest, hashSessionToken } from './session'
+import { apiError } from './errors'
+import { getRequestSessionTokenFromRequest, hashSessionToken, shouldTouchSession } from './session'
 
 type AuthAdapter = {
   authenticate(request: Request): Promise<AuthenticatedUser>
@@ -19,7 +18,7 @@ class DevelopmentAuthAdapter implements AuthAdapter {
 
   async authenticate(): Promise<AuthenticatedUser> {
     if (this.env.AUTH_MODE !== 'development') {
-      throw new HTTPException(500, { message: 'Development auth adapter is not enabled' })
+      throw apiError(500, 'internal_error', 'Development auth adapter is not enabled')
     }
 
     return {
@@ -38,33 +37,32 @@ class BuiltinAuthAdapter implements AuthAdapter {
     const token = getRequestSessionTokenFromRequest(request, this.env)
 
     if (!token) {
-      throw new HTTPException(401, { message: 'Authentication required' })
+      throw apiError(401, 'authentication_required', 'Authentication required')
     }
 
     const session = await getAuthenticatedSession(this.env.DB, await hashSessionToken(token))
 
     if (!session) {
-      throw new HTTPException(401, { message: 'Session is expired or invalid' })
+      throw apiError(401, 'authentication_required', 'Session is expired or invalid')
     }
 
-    await touchAuthSession(this.env.DB, session.session.id)
+    if (shouldTouchSession(session.session.last_seen_at, this.env)) {
+      await touchAuthSession(this.env.DB, session.session.id)
+    }
+
     return mapAuthUser(session.user, 'builtin')
   }
 }
 
 class CloudflareAccessAuthAdapter implements AuthAdapter {
   async authenticate(): Promise<AuthenticatedUser> {
-    throw new HTTPException(503, {
-      message: 'Cloudflare Access authentication is reserved but not implemented securely yet. Use AUTH_MODE=builtin.',
-    })
+    throw apiError(503, 'config_error', 'Cloudflare Access authentication is reserved but not implemented securely yet. Use AUTH_MODE=builtin.')
   }
 }
 
 class OidcAuthAdapter implements AuthAdapter {
   async authenticate(): Promise<AuthenticatedUser> {
-    throw new HTTPException(503, {
-      message: 'OIDC authentication is reserved but not implemented yet. Use AUTH_MODE=builtin.',
-    })
+    throw apiError(503, 'config_error', 'OIDC authentication is reserved but not implemented yet. Use AUTH_MODE=builtin.')
   }
 }
 
@@ -85,5 +83,5 @@ export function createAuthAdapter(env: Bindings): AuthAdapter {
     return new DevelopmentAuthAdapter(env)
   }
 
-  throw new HTTPException(500, { message: `Unsupported auth mode: ${env.AUTH_MODE}` })
+  throw apiError(500, 'internal_error', `Unsupported auth mode: ${env.AUTH_MODE}`)
 }

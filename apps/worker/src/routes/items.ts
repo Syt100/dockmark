@@ -1,12 +1,16 @@
 import { Hono } from 'hono'
-import { HTTPException } from 'hono/http-exception'
 import { validateServiceItemInput } from '@dockmark/shared'
 
-import { createItem, deleteItem, getItem, listItems, updateItem } from '../db/items'
-import { incrementNavCacheVersion } from '../lib/cache'
+import { getItem, listItems } from '../db/items'
+import { apiError } from '../lib/errors'
 import type { AppEnv } from '../lib/env'
 import { readJson, requireValidation } from '../lib/http'
 import { requireAuth } from '../middleware/auth'
+import {
+  createItemWithNavInvalidation,
+  deleteItemWithNavInvalidation,
+  updateItemWithNavInvalidation,
+} from '../services/navigation'
 
 export const itemsRoute = new Hono<AppEnv>()
 
@@ -17,8 +21,7 @@ itemsRoute.get('/', requireAuth, async (c) => {
 
 itemsRoute.post('/', requireAuth, async (c) => {
   const input = requireValidation(validateServiceItemInput(await readJson(c)))
-  const item = await createItem(c.env.DB, input)
-  await incrementNavCacheVersion(c.env.KV)
+  const item = await createItemWithNavInvalidation(c.env, input)
 
   return c.json({ item }, 201)
 })
@@ -27,7 +30,7 @@ itemsRoute.get('/:id', requireAuth, async (c) => {
   const item = await getItem(c.env.DB, c.req.param('id'))
 
   if (!item) {
-    throw new HTTPException(404, { message: 'Item not found' })
+    throw apiError(404, 'not_found', 'Item not found')
   }
 
   return c.json({ item })
@@ -35,23 +38,21 @@ itemsRoute.get('/:id', requireAuth, async (c) => {
 
 itemsRoute.patch('/:id', requireAuth, async (c) => {
   const input = requireValidation(validateServiceItemInput(await readJson(c)))
-  const item = await updateItem(c.env.DB, c.req.param('id'), input)
+  const item = await updateItemWithNavInvalidation(c.env, c.req.param('id'), input)
 
   if (!item) {
-    throw new HTTPException(404, { message: 'Item not found' })
+    throw apiError(404, 'not_found', 'Item not found')
   }
 
-  await incrementNavCacheVersion(c.env.KV)
   return c.json({ item })
 })
 
 itemsRoute.delete('/:id', requireAuth, async (c) => {
-  const deleted = await deleteItem(c.env.DB, c.req.param('id'))
+  const deleted = await deleteItemWithNavInvalidation(c.env, c.req.param('id'))
 
   if (!deleted) {
-    throw new HTTPException(404, { message: 'Item not found' })
+    throw apiError(404, 'not_found', 'Item not found')
   }
 
-  await incrementNavCacheVersion(c.env.KV)
   return c.body(null, 204)
 })

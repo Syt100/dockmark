@@ -16,7 +16,7 @@ function toBase64Url(bytes: ArrayBuffer | Uint8Array): string {
     .replaceAll('=', '')
 }
 
-function fromBase64Url(value: string): Uint8Array {
+function fromBase64Url(value: string): ArrayBuffer {
   const base64 = value.replaceAll('-', '+').replaceAll('_', '/')
   const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=')
   const binary = atob(padded)
@@ -26,7 +26,7 @@ function fromBase64Url(value: string): Uint8Array {
     bytes[index] = binary.charCodeAt(index)
   }
 
-  return bytes
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
 }
 
 function randomBytes(length: number): Uint8Array {

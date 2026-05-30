@@ -1,6 +1,5 @@
-import { HTTPException } from 'hono/http-exception'
-
 import type { AppEnv } from './env'
+import { apiError } from './errors'
 
 type ContextLike = {
   req: {
@@ -12,7 +11,7 @@ export async function readJson(c: ContextLike): Promise<unknown> {
   try {
     return await c.req.json()
   } catch {
-    throw new HTTPException(400, { message: 'Request body must be valid JSON' })
+    throw apiError(400, 'invalid_json', 'Request body must be valid JSON')
   }
 }
 
@@ -23,7 +22,9 @@ export function requireValidation<T>(
     return result.value
   }
 
-  throw new HTTPException(400, { message: result.errors.join('; ') })
+  throw apiError(400, 'validation_failed', result.errors.join('; '), {
+    body: result.errors,
+  })
 }
 
 export async function requireUser(c: {
@@ -32,9 +33,8 @@ export async function requireUser(c: {
   const user = c.get('user')
 
   if (!user) {
-    throw new HTTPException(401, { message: 'Authentication required' })
+    throw apiError(401, 'authentication_required', 'Authentication required')
   }
 
   return user
 }
-

@@ -34,7 +34,12 @@ describe('navigation API', () => {
     for (const path of ['/api/nav', '/api/categories', '/api/tags', '/api/items', '/api/items/item_missing']) {
       const response = await app.request(path, {}, env)
       expect(response.status).toBe(401)
-      await expect(response.text()).resolves.toContain('Authentication required')
+      await expect(response.json()).resolves.toMatchObject({
+        error: {
+          code: 'authentication_required',
+          message: 'Authentication required',
+        },
+      })
     }
   })
 
@@ -139,7 +144,15 @@ describe('navigation API', () => {
     )
 
     expect(response.status).toBe(400)
-    await expect(response.text()).resolves.toContain('exactly one endpoint must be primary')
+    await expect(response.json()).resolves.toMatchObject({
+      error: {
+        code: 'validation_failed',
+        message: expect.stringContaining('exactly one endpoint must be primary'),
+        fields: {
+          body: ['exactly one endpoint must be primary'],
+        },
+      },
+    })
   })
 
   it('invalidates navigation cache after writes', async () => {
@@ -161,6 +174,52 @@ describe('navigation API', () => {
 
     const refreshed = await app.request('/api/nav', {}, env)
     expect(refreshed.headers.get('X-Dockmark-Cache')).toBe('miss')
+  })
+
+  it('does not invalidate navigation cache after failed mutations', async () => {
+    const env = createMockEnv()
+
+    await app.request('/api/nav', {}, env)
+    const cached = await app.request('/api/nav', {}, env)
+    expect(cached.headers.get('X-Dockmark-Cache')).toBe('hit')
+
+    const missingUpdate = await app.request(
+      '/api/tags/tag_missing',
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ name: 'missing' }),
+        headers: { 'content-type': 'application/json' },
+      },
+      env,
+    )
+    expect(missingUpdate.status).toBe(404)
+
+    const stillCached = await app.request('/api/nav', {}, env)
+    expect(stillCached.headers.get('X-Dockmark-Cache')).toBe('hit')
+  })
+
+  it('does not reuse stale navigation payloads after consecutive writes', async () => {
+    const env = createMockEnv()
+
+    await app.request('/api/nav', {}, env)
+
+    for (const name of ['Infra', 'Media']) {
+      const response = await app.request(
+        '/api/categories',
+        {
+          method: 'POST',
+          body: JSON.stringify({ name }),
+          headers: { 'content-type': 'application/json' },
+        },
+        env,
+      )
+      expect(response.status).toBe(201)
+    }
+
+    const refreshed = await app.request('/api/nav', {}, env)
+    expect(refreshed.headers.get('X-Dockmark-Cache')).toBe('miss')
+    const body = await json(refreshed) as { categories: Array<{ name: string }> }
+    expect(body.categories.map((category) => category.name)).toEqual(['Infra', 'Media'])
   })
 
   it('updates tags and invalidates navigation cache', async () => {
@@ -212,5 +271,66 @@ describe('navigation API', () => {
     )
 
     expect(response.status).toBe(404)
+    await expect(response.json()).resolves.toMatchObject({
+      error: {
+        code: 'not_found',
+        message: 'Tag not found',
+      },
+    })
+  })
+
+  it('returns structured conflict errors for D1 unique constraints', async () => {
+    const env = createMockEnv()
+    const headers = { 'content-type': 'application/json' }
+
+    const first = await app.request('/api/tags', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'media' }),
+      headers,
+    }, env)
+    expect(first.status).toBe(201)
+
+    const duplicate = await app.request('/api/tags', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'media' }),
+      headers,
+    }, env)
+
+    expect(duplicate.status).toBe(409)
+    await expect(duplicate.json()).resolves.toMatchObject({
+      error: {
+        code: 'conflict',
+        message: expect.stringContaining('UNIQUE constraint failed: tags.name'),
+      },
+    })
+  })
+
+  it('returns structured JSON errors for invalid JSON and missing API routes', async () => {
+    const invalidJson = await app.request(
+      '/api/tags',
+      {
+        method: 'POST',
+        body: '{',
+        headers: { 'content-type': 'application/json' },
+      },
+      createMockEnv(),
+    )
+
+    expect(invalidJson.status).toBe(400)
+    await expect(invalidJson.json()).resolves.toMatchObject({
+      error: {
+        code: 'invalid_json',
+        message: 'Request body must be valid JSON',
+      },
+    })
+
+    const missing = await app.request('/api/missing', {}, createMockEnv())
+    expect(missing.status).toBe(404)
+    await expect(missing.json()).resolves.toMatchObject({
+      error: {
+        code: 'not_found',
+        message: 'Not found',
+      },
+    })
   })
 })
