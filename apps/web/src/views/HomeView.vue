@@ -66,8 +66,7 @@ onMounted(load)
   <main class="dm-page-grid">
     <section class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div>
-        <p class="text-sm font-medium text-[var(--dm-primary)]">Dockmark</p>
-        <h1 class="mt-1 text-3xl font-semibold tracking-normal text-[var(--dm-text)]">服务导航</h1>
+        <h1 class="text-3xl font-semibold tracking-normal text-[var(--dm-text)]">服务导航</h1>
         <p class="mt-2 max-w-2xl text-sm leading-6 text-[var(--dm-text-muted)]">
           集中打开公网、内网、Tailscale、管理后台、备份、文档和 API 地址。
         </p>
