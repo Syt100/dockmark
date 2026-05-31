@@ -513,6 +513,7 @@ export function createMockEnv(overrides: Partial<Bindings> = {}): MockBindings {
   return {
     AUTH_MODE: 'development',
     APP_VERSION: '0.1.0-test',
+    SETUP_TOKEN: 'setup-secret',
     ASSETS: {
       fetch: (request: Request) => {
         const url = new URL(request.url)

@@ -87,18 +87,22 @@ corepack pnpm --dir apps/worker exec wrangler kv namespace create dockmark-produ
 }
 ```
 
-`AUTH_MODE=builtin` 已提交在 `env.production.vars` 中。`SETUP_TOKEN` 不写入 `wrangler.jsonc`，应通过 Wrangler secret 配置：
+`AUTH_MODE=builtin` 已提交在 `env.production.vars` 中。`SETUP_TOKEN` 不写入 `wrangler.jsonc`，只通过 GitHub Actions secret 或 Wrangler secret/secret file 注入。`wrangler.jsonc` 仅声明该 secret 为必需项：
 
-```sh
-corepack pnpm --dir apps/worker exec wrangler secret put SETUP_TOKEN --env production
+```json
+{
+  "secrets": {
+    "required": ["SETUP_TOKEN"]
+  }
+}
 ```
 
 首次部署流程：
 
-1. 部署 Worker，让 Wrangler 自动创建并绑定生产 D1/KV。
-2. 配置 `SETUP_TOKEN` secret。
-3. 应用生产 D1 迁移。
-4. 再次部署 Worker。
+1. 如生产 D1 不存在，先创建 `dockmark-production`。
+2. 应用生产 D1 迁移。
+3. 使用 `wrangler deploy --secrets-file` 部署 Worker 和前端 assets。
+4. Wrangler 根据 `env.production` 自动创建并绑定 KV。
 5. 打开站点后进入初始化页面。
 6. 输入 `SETUP_TOKEN`、管理员邮箱和密码创建管理员。
 7. 初始化完成后，移除或轮换 `SETUP_TOKEN`。
@@ -130,7 +134,7 @@ corepack pnpm --dir apps/worker exec wrangler secret put SETUP_TOKEN --env produ
 
 GitHub repository secrets：
 
-- `CLOUDFLARE_API_TOKEN`：Cloudflare API token，至少需要部署 Worker、写 Worker secret、操作 D1 和自动创建绑定资源的权限。
+- `CLOUDFLARE_API_TOKEN`：Cloudflare API token，至少需要部署 Worker、操作 D1 和自动创建绑定资源的权限。
 - `CLOUDFLARE_ACCOUNT_ID`：Cloudflare Account ID。
 - `DOCKMARK_SETUP_TOKEN`：首次初始化管理员使用的强随机 setup token。
 
@@ -139,10 +143,12 @@ GitHub repository secrets：
 1. `corepack pnpm validate`。
 2. `cf-typecheck` 校验 Wrangler 生成的绑定类型。
 3. `deploy:dry-run` 检查 Worker 绑定。
-4. 首次真实部署，触发 Wrangler 自动创建 D1/KV。
-5. 写入 `SETUP_TOKEN` Worker secret。
-6. 按 `dockmark-production` 解析远程 D1 `database_id`，生成临时 migration config，并执行远程 D1 迁移。
-7. 再次部署 Worker，确保迁移完成后的版本上线。
+4. 生成临时 `worker-secrets.json`，只在 runner 内保存 `SETUP_TOKEN`。
+5. 通过 `wrangler d1 list --json` 检查生产 D1 是否存在；不存在时自动创建 `dockmark-production`。
+6. 生成临时 D1 migration config，只在 runner 内补入远程 D1 ID，并执行生产 D1 迁移。
+7. 使用 `wrangler deploy --secrets-file` 单次部署 Worker 和前端 assets。
+
+该流程不把个人 Cloudflare 资源 ID 写入公开仓库；D1 ID 只存在于 GitHub Actions runner 的临时文件中。日常 push 只产生一次 Worker 部署版本。
 
 建议给 GitHub Environment `production` 配置 required reviewers，避免每次 push 到 `main` 都立即更新生产。
 
@@ -163,6 +169,7 @@ corepack pnpm db:migrate:production
 生产远程迁移前检查：
 
 - `wrangler.jsonc` 的 `env.production.d1_databases` 已配置 `binding=DB` 和生产资源名。
+- 生产 D1 `dockmark-production` 已存在；GitHub Actions 会在缺失时自动创建。
 - 已确认当前 git 分支和提交。
 - 已读过迁移 SQL。
 - 迁移不包含破坏性删除，或已经有备份和回滚方案。
@@ -234,9 +241,9 @@ corepack pnpm deploy:production
 
 上线前至少确认：
 
-- 生产 D1/KV 已由 Wrangler 自动创建并绑定，或已手动绑定真实资源 ID。
+- 生产 D1 已存在或将由 GitHub Actions 自动创建，KV 将由 Wrangler 部署时自动创建并绑定。
 - `env.production.vars.AUTH_MODE=builtin`，且没有误配为尚未实现的 `oidc` 或 `cloudflare-access`。
-- 已用 Wrangler secret 配置强随机 `SETUP_TOKEN`，并在管理员初始化后移除或轮换。
+- GitHub repository secret `DOCKMARK_SETUP_TOKEN` 已配置为强随机值，并在管理员初始化后移除或轮换。
 - 已执行生产迁移。
 - `corepack pnpm validate` 通过。
 - `openspec validate --all --strict --no-interactive` 通过。

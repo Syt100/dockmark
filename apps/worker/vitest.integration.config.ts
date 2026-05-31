@@ -2,6 +2,8 @@ import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-pool-worker
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig(async () => {
+  process.env.SETUP_TOKEN ??= 'setup-secret'
+
   const migrations = await readD1Migrations('../../migrations')
 
   return {

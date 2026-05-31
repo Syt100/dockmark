@@ -24,6 +24,9 @@
       "binding": "KV"
     }
   ],
+  "secrets": {
+    "required": ["SETUP_TOKEN"]
+  },
   "observability": {
     "enabled": true
   },
@@ -48,7 +51,10 @@
         {
           "binding": "KV"
         }
-      ]
+      ],
+      "secrets": {
+        "required": ["SETUP_TOKEN"]
+      }
     }
   }
 }

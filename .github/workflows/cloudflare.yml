@@ -80,43 +80,42 @@ jobs:
       - name: Check Cloudflare generated types
         run: corepack pnpm --filter @dockmark/worker cf-typecheck
 
-      - name: Deploy to provision Cloudflare resources
-        run: corepack pnpm --filter @dockmark/worker run deploy
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-
-      - name: Configure setup token
+      - name: Prepare deployment secrets
+        working-directory: apps/worker
         run: |
           if [ -z "$DOCKMARK_SETUP_TOKEN" ]; then
             echo "::error::DOCKMARK_SETUP_TOKEN is required"
             exit 1
           fi
-          printf '%s' "$DOCKMARK_SETUP_TOKEN" | corepack pnpm --dir apps/worker exec wrangler secret put SETUP_TOKEN --env production
+          node scripts/write-worker-secrets.mjs "$RUNNER_TEMP/worker-secrets.json"
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           DOCKMARK_SETUP_TOKEN: ${{ secrets.DOCKMARK_SETUP_TOKEN }}
 
-      - name: Resolve D1 migration config
+      - name: Ensure production D1 exists
         working-directory: apps/worker
         run: |
           corepack pnpm exec wrangler d1 list --json > "$RUNNER_TEMP/d1-list.json"
-          node scripts/write-d1-migration-config.mjs "$RUNNER_TEMP/d1-list.json" wrangler.d1.generated.jsonc
+          if node scripts/d1-exists.mjs "$RUNNER_TEMP/d1-list.json" dockmark-production; then
+            echo "D1 database dockmark-production already exists."
+          else
+            echo "Creating D1 database dockmark-production."
+            corepack pnpm exec wrangler d1 create dockmark-production
+            corepack pnpm exec wrangler d1 list --json > "$RUNNER_TEMP/d1-list.json"
+          fi
+          node scripts/write-d1-migration-config.mjs "$RUNNER_TEMP/d1-list.json" "$RUNNER_TEMP/wrangler.d1.generated.jsonc"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          D1_DATABASE_NAME: dockmark-production
 
       - name: Apply D1 migrations
         working-directory: apps/worker
-        run: corepack pnpm exec wrangler d1 migrations apply DB --remote --config wrangler.d1.generated.jsonc
+        run: corepack pnpm exec wrangler d1 migrations apply DB --remote --config "$RUNNER_TEMP/wrangler.d1.generated.jsonc"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Deploy Worker
-        run: corepack pnpm --filter @dockmark/worker run deploy
+        run: corepack pnpm --filter @dockmark/worker run deploy -- --secrets-file "$RUNNER_TEMP/worker-secrets.json"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

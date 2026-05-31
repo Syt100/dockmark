@@ -12,14 +12,14 @@ if (!listPath || !outputPath) {
   console.error(
     "Usage: node scripts/write-d1-migration-config.mjs <d1-list.json> <output-wrangler.jsonc>",
   );
-  process.exit(1);
+  process.exit(2);
 }
 
 const databases = JSON.parse(await readFile(listPath, "utf8"));
 
 if (!Array.isArray(databases)) {
   console.error("Expected wrangler d1 list --json to return an array.");
-  process.exit(1);
+  process.exit(2);
 }
 
 const database = databases.find((candidate) => candidate?.name === databaseName);
