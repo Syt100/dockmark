@@ -16,6 +16,7 @@ import AppButton from '../components/AppButton.vue'
 import AppInput from '../components/AppInput.vue'
 import AppSelect from '../components/AppSelect.vue'
 import AppTextarea from '../components/AppTextarea.vue'
+import EditorLoadingState from '../components/EditorLoadingState.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
 import ResponsiveEditorShell from '../components/ResponsiveEditorShell.vue'
 import { endpointKindLabels, statusLabels } from '../ui/labels'
@@ -161,9 +162,7 @@ onMounted(load)
     <form class="grid gap-[var(--dm-section-gap)]" @submit.prevent="submit">
       <FeedbackMessage tone="error" :message="error" />
 
-      <div v-if="isLoading" class="dm-surface-muted p-4 text-sm text-[var(--dm-text-muted)]">
-        正在加载服务信息...
-      </div>
+      <EditorLoadingState v-if="isLoading" message="正在加载服务信息..." variant="service" />
 
       <template v-else>
         <section class="dm-form-section">

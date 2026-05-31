@@ -55,6 +55,22 @@ describe('CategoryEditorView', () => {
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('媒体')
   })
 
+  it('shows a stable loading skeleton while loading an edited category', async () => {
+    vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockReturnValue(new Promise<Response>(() => {})))
+
+    const router = createTestRouter()
+    await router.isReady()
+    const wrapper = mount(CategoryEditorView, { global: { plugins: [router] } })
+
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain('正在加载分类...')
+    })
+
+    expect(wrapper.find('.dm-editor-loading').exists()).toBe(true)
+    expect(wrapper.findAll('.dm-skeleton').length).toBeGreaterThan(4)
+    expect(wrapper.text()).not.toContain('分类名称')
+  })
+
   it('shows not found feedback for a missing category', async () => {
     vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockResolvedValue(
       new Response(

@@ -5,6 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { createCategory, fetchCategory, updateCategory } from '../api/client'
 import { toChineseError } from '../api/errors'
 import AppButton from '../components/AppButton.vue'
+import EditorLoadingState from '../components/EditorLoadingState.vue'
 import AppInput from '../components/AppInput.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
 import ResponsiveEditorShell from '../components/ResponsiveEditorShell.vue'
@@ -72,9 +73,7 @@ onMounted(load)
     <form class="grid gap-[var(--dm-section-gap)]" @submit.prevent="submit">
       <FeedbackMessage tone="error" :message="error" />
 
-      <div v-if="isLoading" class="dm-surface-muted p-4 text-sm text-[var(--dm-text-muted)]">
-        正在加载分类...
-      </div>
+      <EditorLoadingState v-if="isLoading" message="正在加载分类..." variant="category" />
 
       <template v-else>
         <div class="grid gap-[var(--dm-form-gap)] md:grid-cols-2">

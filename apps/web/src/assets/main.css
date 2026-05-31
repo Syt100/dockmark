@@ -233,6 +233,34 @@ a {
   border-color: var(--dm-border);
 }
 
+.dm-editor-loading {
+  display: grid;
+  gap: var(--dm-section-gap);
+}
+
+.dm-editor-loading-section {
+  display: grid;
+  gap: var(--dm-form-gap);
+}
+
+.dm-skeleton {
+  display: block;
+  border-radius: var(--dm-radius-control);
+  background: linear-gradient(90deg, var(--dm-surface-muted), var(--dm-surface), var(--dm-surface-muted));
+  background-size: 220% 100%;
+  animation: dm-skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes dm-skeleton-pulse {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: -100% 0;
+  }
+}
+
 .dm-fade-enter-active,
 .dm-fade-leave-active {
   transition: opacity var(--dm-motion-base) var(--dm-motion-ease);
@@ -344,5 +372,9 @@ a {
   .dm-collapse-enter-from,
   .dm-collapse-leave-to {
     transform: none;
+  }
+
+  .dm-skeleton {
+    animation: none;
   }
 }

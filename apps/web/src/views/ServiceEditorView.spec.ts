@@ -96,6 +96,8 @@ describe('ServiceEditorView', () => {
     })
 
     expect(wrapper.text()).toContain('正在加载服务信息...')
+    expect(wrapper.find('.dm-editor-loading').exists()).toBe(true)
+    expect(wrapper.findAll('.dm-skeleton').length).toBeGreaterThan(8)
     expect(wrapper.text()).not.toContain('访问地址')
 
     vi.unstubAllGlobals()

@@ -51,6 +51,22 @@ describe('TagEditorView', () => {
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('公网')
   })
 
+  it('shows a stable loading skeleton while loading an edited tag', async () => {
+    vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockReturnValue(new Promise<Response>(() => {})))
+
+    const router = createTestRouter()
+    await router.isReady()
+    const wrapper = mount(TagEditorView, { global: { plugins: [router] } })
+
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain('正在加载标签...')
+    })
+
+    expect(wrapper.find('.dm-editor-loading').exists()).toBe(true)
+    expect(wrapper.findAll('.dm-skeleton').length).toBeGreaterThan(2)
+    expect(wrapper.text()).not.toContain('标签名称')
+  })
+
   it('shows not found feedback for a missing tag', async () => {
     vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockResolvedValue(
       new Response(
