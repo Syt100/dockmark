@@ -2,6 +2,7 @@ import type { NavResponse } from '@dockmark/shared'
 
 const NAV_VERSION_KEY = 'cache_version:nav'
 const NAV_CACHE_VERSION_BASELINE = 2
+const NAV_CACHE_TTL_SECONDS = 60 * 60 * 24 * 7
 
 export async function getNavCacheVersion(db: D1Database): Promise<number> {
   const row = await db.prepare('SELECT value FROM app_metadata WHERE key = ?').bind(NAV_VERSION_KEY).first<{ value: string }>()
@@ -36,5 +37,7 @@ export async function getCachedNavigation(db: D1Database, kv: KVNamespace): Prom
 
 export async function putCachedNavigation(db: D1Database, kv: KVNamespace, payload: NavResponse): Promise<void> {
   const version = await getNavCacheVersion(db)
-  await kv.put(`nav:home:v${version}`, JSON.stringify(payload))
+  await kv.put(`nav:home:v${version}`, JSON.stringify(payload), {
+    expirationTtl: NAV_CACHE_TTL_SECONDS,
+  })
 }

@@ -75,6 +75,7 @@ type AuthSessionRecord = {
 
 type Store = {
   metadata: Map<string, string>
+  kvPutOptions: Map<string, KVNamespacePutOptions>
   categories: CategoryRecord[]
   items: ItemRecord[]
   endpoints: EndpointRecord[]
@@ -498,6 +499,7 @@ export function createMockEnv(overrides: Partial<Bindings> = {}): MockBindings {
   const kv = new Map<string, string>()
   const store: Store = {
     metadata: new Map([['schema_version', '0']]),
+    kvPutOptions: new Map(),
     categories: [],
     items: [],
     endpoints: [],
@@ -526,8 +528,11 @@ export function createMockEnv(overrides: Partial<Bindings> = {}): MockBindings {
     } as Fetcher,
     DB: new MockDb(store) as unknown as D1Database,
     KV: {
-      put: (key: string, value: string) => {
+      put: (key: string, value: string, options?: KVNamespacePutOptions) => {
         kv.set(key, value)
+        if (options) {
+          store.kvPutOptions.set(key, options)
+        }
         return Promise.resolve()
       },
       get: (key: string) => Promise.resolve(kv.get(key) ?? null),

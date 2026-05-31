@@ -237,6 +237,17 @@ describe('navigation API', () => {
     expect(refreshed.headers.get('X-Dockmark-Cache')).toBe('miss')
   })
 
+  it('writes navigation cache entries with a TTL so obsolete versions expire', async () => {
+    const env = createMockEnv()
+
+    const response = await app.request('/api/nav', {}, env)
+    expect(response.headers.get('X-Dockmark-Cache')).toBe('miss')
+
+    expect(env.__testStore.kvPutOptions.get('nav:home:v2')).toMatchObject({
+      expirationTtl: 60 * 60 * 24 * 7,
+    })
+  })
+
   it('ignores pre-versioned navigation cache entries after upgrading cache metadata', async () => {
     const env = createMockEnv()
 
