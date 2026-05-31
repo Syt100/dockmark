@@ -166,6 +166,65 @@ describe('ServicesView', () => {
     vi.unstubAllGlobals()
   })
 
+  it('discloses mobile filters only after the filter toggle is activated', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation((input) => {
+      const path = String(input)
+
+      if (path === '/api/items') {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              items: [serviceItem()],
+            }),
+            { status: 200 },
+          ),
+        )
+      }
+
+      if (path === '/api/categories') {
+        return Promise.resolve(new Response(JSON.stringify({ categories: [] }), { status: 200 }))
+      }
+
+      return Promise.resolve(new Response('{}', { status: 404 }))
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    const router = createTestRouter('/services')
+    await router.isReady()
+
+    const wrapper = mount(ServicesView, {
+      global: {
+        plugins: [router],
+        stubs: {
+          RouterView: true,
+        },
+      },
+    })
+
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain('Immich')
+    })
+
+    expect(wrapper.find('select[name="services-category-filter-mobile"]').exists()).toBe(false)
+
+    const filterToggle = () => wrapper.findAll('button').find((button) => button.text() === '筛选' || button.text() === '收起筛选')
+
+    await filterToggle()?.trigger('click')
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('select[name="services-category-filter-mobile"]').exists()).toBe(true)
+    expect(wrapper.find('select[name="services-status-filter-mobile"]').exists()).toBe(true)
+    expect(wrapper.find('select[name="services-tag-filter-mobile"]').exists()).toBe(true)
+
+    await filterToggle()?.trigger('click')
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('select[name="services-category-filter-mobile"]').exists()).toBe(false)
+
+    vi.unstubAllGlobals()
+  })
+
   it('reloads services after returning from a successful create flow', async () => {
     let itemsRequestCount = 0
     const fetchMock = vi.fn<typeof fetch>().mockImplementation((input) => {

@@ -113,27 +113,33 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="hidden md:block">
-      <button class="fixed inset-0 z-30 cursor-default bg-[var(--dm-overlay)]" type="button" aria-label="关闭编辑器" @click="close"></button>
-      <section
-        ref="dialog"
-        class="fixed left-1/2 top-1/2 z-40 max-h-[calc(100dvh-4rem)] w-[min(760px,calc(100vw-3rem))] -translate-x-1/2 -translate-y-1/2 overflow-auto rounded-[var(--dm-radius-surface)] bg-[var(--dm-surface-elevated)] shadow-[var(--dm-shadow-elevated)]"
-        role="dialog"
-        aria-modal="true"
-        :aria-label="title"
-        tabindex="-1"
-      >
-        <div class="sticky top-0 z-10 flex items-center justify-between border-b border-[var(--dm-border)] bg-[var(--dm-surface-elevated)] px-5 py-4">
-          <h1 class="text-lg font-semibold text-[var(--dm-text)]">{{ title }}</h1>
-          <AppIconButton label="关闭" type="button" @click="close">
-            <svg aria-hidden="true" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-              <path d="m6 6 12 12M18 6 6 18" stroke-linecap="round" />
-            </svg>
-          </AppIconButton>
+      <Transition appear name="dm-fade">
+        <button class="fixed inset-0 z-30 cursor-default bg-[var(--dm-overlay)]" type="button" aria-label="关闭编辑器" @click="close"></button>
+      </Transition>
+      <Transition appear name="dm-panel">
+        <div class="fixed inset-0 z-40 grid place-items-center p-6 pointer-events-none">
+          <section
+            ref="dialog"
+            class="pointer-events-auto max-h-[calc(100dvh-4rem)] w-[min(760px,calc(100vw-3rem))] overflow-auto rounded-[var(--dm-radius-surface)] bg-[var(--dm-surface-elevated)] shadow-[var(--dm-shadow-elevated)]"
+            role="dialog"
+            aria-modal="true"
+            :aria-label="title"
+            tabindex="-1"
+          >
+            <div class="sticky top-0 z-10 flex items-center justify-between border-b border-[var(--dm-border)] bg-[var(--dm-surface-elevated)] px-5 py-4">
+              <h1 class="text-lg font-semibold text-[var(--dm-text)]">{{ title }}</h1>
+              <AppIconButton label="关闭" type="button" @click="close">
+                <svg aria-hidden="true" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                  <path d="m6 6 12 12M18 6 6 18" stroke-linecap="round" />
+                </svg>
+              </AppIconButton>
+            </div>
+            <div class="p-5">
+              <slot />
+            </div>
+          </section>
         </div>
-        <div class="p-5">
-          <slot />
-        </div>
-      </section>
+      </Transition>
     </div>
   </div>
 </template>

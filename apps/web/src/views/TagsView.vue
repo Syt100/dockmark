@@ -91,7 +91,7 @@ watch(
             <span>Slug</span>
             <span class="text-right">操作</span>
           </div>
-          <div class="divide-y divide-[var(--dm-border)]">
+          <TransitionGroup class="divide-y divide-[var(--dm-border)]" name="dm-list" tag="div">
             <article
               v-for="tag in filteredTags"
               :key="tag.id"
@@ -104,10 +104,10 @@ watch(
                 <ConfirmAction :message="`确认删除标签“${tag.name}”？`" @confirm="remove(tag.id)" />
               </div>
             </article>
-          </div>
+          </TransitionGroup>
         </div>
 
-        <div class="grid gap-2 md:hidden">
+        <TransitionGroup class="grid gap-2 md:hidden" name="dm-list" tag="div">
           <article v-for="tag in filteredTags" :key="tag.id" class="dm-mobile-card">
             <p class="text-base font-semibold text-[var(--dm-text)]">{{ tag.name }}</p>
             <p class="mt-1 break-all text-sm text-[var(--dm-text-muted)]">{{ tag.slug }}</p>
@@ -116,7 +116,7 @@ watch(
               <ConfirmAction :message="`确认删除标签“${tag.name}”？`" @confirm="remove(tag.id)" />
             </div>
           </article>
-        </div>
+        </TransitionGroup>
       </section>
     </div>
 

@@ -152,7 +152,7 @@ watch(
         <div class="grid gap-3 md:grid-cols-[minmax(14rem,2fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_auto] md:items-center">
           <SearchInput v-model="query" label="搜索服务" name="services-search" placeholder="搜索服务、URL、分类或标签" />
 
-          <div class="grid gap-3 md:contents" :class="areMobileFiltersOpen ? 'grid' : 'hidden md:contents'">
+          <div class="hidden md:contents">
             <AppSelect v-model="selectedCategoryId" aria-label="按分类筛选服务" name="services-category-filter">
               <option value="">全部分类</option>
               <option value="__uncategorized">未分类</option>
@@ -166,8 +166,26 @@ watch(
               <option value="">全部标签</option>
               <option v-for="tag in availableTags" :key="tag.id" :value="tag.id">{{ tag.name }}</option>
             </AppSelect>
-            <AppButton class="hidden justify-self-start md:inline-flex" :disabled="!hasFilters" tone="ghost" type="button" @click="clearFilters">清空</AppButton>
+            <AppButton class="justify-self-start" :disabled="!hasFilters" tone="ghost" type="button" @click="clearFilters">清空</AppButton>
           </div>
+
+          <Transition name="dm-collapse">
+            <div v-if="areMobileFiltersOpen" class="grid gap-3 md:hidden">
+              <AppSelect v-model="selectedCategoryId" aria-label="按分类筛选服务" name="services-category-filter-mobile">
+                <option value="">全部分类</option>
+                <option value="__uncategorized">未分类</option>
+                <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
+              </AppSelect>
+              <AppSelect v-model="selectedStatus" aria-label="按状态筛选服务" name="services-status-filter-mobile">
+                <option value="">全部状态</option>
+                <option v-for="(label, value) in statusLabels" :key="value" :value="value">{{ label }}</option>
+              </AppSelect>
+              <AppSelect v-model="selectedTagId" aria-label="按标签筛选服务" name="services-tag-filter-mobile">
+                <option value="">全部标签</option>
+                <option v-for="tag in availableTags" :key="tag.id" :value="tag.id">{{ tag.name }}</option>
+              </AppSelect>
+            </div>
+          </Transition>
 
           <div class="flex items-center justify-between gap-2 md:hidden">
             <AppButton tone="secondary" type="button" @click="toggleMobileFilters">
@@ -212,7 +230,7 @@ watch(
                 <th class="px-3 py-3 text-right font-medium">操作</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-[var(--dm-border)]">
+            <TransitionGroup class="divide-y divide-[var(--dm-border)]" name="dm-list" tag="tbody">
               <tr v-for="row in serviceRows" :key="row.item.id" :class="['dm-list-row', rowStateClass(row.item.status)]">
                 <td class="px-3 py-3 align-middle">
                   <div class="flex min-w-0 items-center gap-3">
@@ -273,11 +291,11 @@ watch(
                   </div>
                 </td>
               </tr>
-            </tbody>
+            </TransitionGroup>
           </table>
         </div>
 
-        <div class="grid gap-2 lg:hidden">
+        <TransitionGroup class="grid gap-2 lg:hidden" name="dm-list" tag="div">
           <article v-for="row in serviceRows" :key="row.item.id" :class="['dm-mobile-card', rowStateClass(row.item.status)]">
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
@@ -330,7 +348,7 @@ watch(
               </div>
             </div>
           </article>
-        </div>
+        </TransitionGroup>
       </section>
     </div>
 

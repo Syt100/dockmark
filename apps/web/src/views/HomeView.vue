@@ -101,9 +101,9 @@ onMounted(load)
         <span class="text-xs text-[var(--dm-text-subtle)]">{{ category.items.length }} 个服务</span>
       </div>
 
-      <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <TransitionGroup class="grid gap-3 md:grid-cols-2 xl:grid-cols-3" name="dm-list" tag="div">
         <ServiceNavCard v-for="item in category.items" :key="item.id" :item="item" />
-      </div>
+      </TransitionGroup>
     </section>
 
     <section v-if="uncategorized.length > 0" class="grid gap-3">
@@ -111,9 +111,9 @@ onMounted(load)
         <h2 class="text-lg font-semibold text-[var(--dm-text)]">未分类</h2>
         <span class="text-xs text-[var(--dm-text-subtle)]">{{ uncategorized.length }} 个服务</span>
       </div>
-      <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <TransitionGroup class="grid gap-3 md:grid-cols-2 xl:grid-cols-3" name="dm-list" tag="div">
         <ServiceNavCard v-for="item in uncategorized" :key="item.id" :item="item" />
-      </div>
+      </TransitionGroup>
     </section>
   </main>
 </template>

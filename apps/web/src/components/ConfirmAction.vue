@@ -80,20 +80,22 @@ onBeforeUnmount(unlockBodyScroll)
   </span>
 
   <Teleport to="body">
-    <div v-if="isConfirming" class="fixed inset-0 z-50 grid place-items-center p-4" @keydown.esc.stop.prevent="closeConfirm">
-      <button class="absolute inset-0 cursor-default bg-[var(--dm-overlay)]" type="button" aria-label="取消删除" @click="closeConfirm"></button>
-      <section
-        class="relative grid w-[min(22rem,calc(100vw-2rem))] gap-4 rounded-[var(--dm-radius-surface)] border border-[var(--dm-border)] bg-[var(--dm-surface-elevated)] p-4 text-left shadow-[var(--dm-shadow-elevated)]"
-        role="dialog"
-        aria-modal="true"
-        aria-label="确认删除"
-      >
-        <p class="text-sm leading-6 text-[var(--dm-text)]">{{ message }}</p>
-        <div class="flex justify-end gap-2">
-          <AppButton type="button" tone="ghost" :disabled="disabled" @click="closeConfirm">{{ cancelLabel }}</AppButton>
-          <AppButton ref="confirmButton" type="button" tone="danger" :disabled="disabled" @click="confirm">{{ confirmLabel }}</AppButton>
-        </div>
-      </section>
-    </div>
+    <Transition name="dm-panel">
+      <div v-if="isConfirming" class="fixed inset-0 z-50 grid place-items-center p-4" @keydown.esc.stop.prevent="closeConfirm">
+        <button class="absolute inset-0 cursor-default bg-[var(--dm-overlay)]" type="button" aria-label="取消删除" @click="closeConfirm"></button>
+        <section
+          class="relative grid w-[min(22rem,calc(100vw-2rem))] gap-4 rounded-[var(--dm-radius-surface)] border border-[var(--dm-border)] bg-[var(--dm-surface-elevated)] p-4 text-left shadow-[var(--dm-shadow-elevated)]"
+          role="dialog"
+          aria-modal="true"
+          aria-label="确认删除"
+        >
+          <p class="text-sm leading-6 text-[var(--dm-text)]">{{ message }}</p>
+          <div class="flex justify-end gap-2">
+            <AppButton type="button" tone="ghost" :disabled="disabled" @click="closeConfirm">{{ cancelLabel }}</AppButton>
+            <AppButton ref="confirmButton" type="button" tone="danger" :disabled="disabled" @click="confirm">{{ confirmLabel }}</AppButton>
+          </div>
+        </section>
+      </div>
+    </Transition>
   </Teleport>
 </template>

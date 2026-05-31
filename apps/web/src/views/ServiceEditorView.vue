@@ -213,7 +213,7 @@ onMounted(load)
             </div>
           </div>
 
-          <div class="grid gap-2">
+          <TransitionGroup class="grid gap-2" name="dm-list" tag="div">
             <div
               v-for="(endpoint, index) in form.endpoints"
               :key="index"
@@ -246,7 +246,7 @@ onMounted(load)
                 </AppButton>
               </div>
             </div>
-          </div>
+          </TransitionGroup>
         </section>
 
         <section class="dm-form-section">
