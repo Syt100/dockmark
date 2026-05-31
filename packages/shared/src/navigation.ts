@@ -67,6 +67,14 @@ export type NavResponse = {
   uncategorized: NavItem[]
 }
 
+export type CategoryResponse = {
+  category: Category
+}
+
+export type TagResponse = {
+  tag: Tag
+}
+
 export type CategoryInput = {
   name: string
   slug?: string

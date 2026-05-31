@@ -19,15 +19,7 @@ import AppTextarea from '../components/AppTextarea.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
 import ResponsiveEditorShell from '../components/ResponsiveEditorShell.vue'
 import { endpointKindLabels, statusLabels } from '../ui/labels'
-
-type EndpointForm = {
-  id?: string
-  label: string
-  url: string
-  kind: EndpointKind
-  isPrimary: boolean
-  sortOrder: number
-}
+import { serviceFormToInput, serviceToForm, type EndpointForm } from './managementForms'
 
 const endpointKinds: EndpointKind[] = ['public', 'lan', 'tailscale', 'admin', 'backup', 'docs', 'api']
 const endpointTemplates: Array<{ label: string; kind: EndpointKind }> = [
@@ -81,23 +73,8 @@ const form = reactive({
 })
 
 function applyItem(item: ServiceItem) {
-  form.name = item.name
-  form.categoryId = item.categoryId ?? ''
-  form.description = item.description ?? ''
-  form.icon = item.icon ?? ''
-  form.credentialHint = item.credentialHint ?? ''
-  form.note = item.note ?? ''
-  form.status = item.status
-  form.sortOrder = item.sortOrder
+  Object.assign(form, serviceToForm(item))
   selectedTagIds.value = item.tags.map((tag) => tag.id)
-  form.endpoints = item.endpoints.map((endpoint) => ({
-    id: endpoint.id,
-    label: endpoint.label,
-    url: endpoint.url,
-    kind: endpoint.kind,
-    isPrimary: endpoint.isPrimary,
-    sortOrder: endpoint.sortOrder,
-  }))
 }
 
 async function load() {
@@ -153,26 +130,7 @@ async function submit() {
   error.value = null
 
   try {
-    const input = {
-      name: form.name,
-      categoryId: form.categoryId || null,
-      description: form.description || null,
-      icon: form.icon || null,
-      iconType: 'emoji' as const,
-      credentialHint: form.credentialHint || null,
-      note: form.note || null,
-      status: form.status,
-      sortOrder: form.sortOrder,
-      endpoints: form.endpoints.map((endpoint, index) => ({
-        ...endpoint,
-        label: endpoint.label,
-        url: endpoint.url,
-        kind: endpoint.kind,
-        isPrimary: endpoint.isPrimary,
-        sortOrder: index,
-      })),
-      tagIds: selectedTagIds.value,
-    }
+    const input = serviceFormToInput(form, selectedTagIds.value)
 
     if (itemId.value) {
       await updateItem(itemId.value, input)

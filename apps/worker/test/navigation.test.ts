@@ -123,6 +123,67 @@ describe('navigation API', () => {
     expect(cachedResponse.headers.get('X-Dockmark-Cache')).toBe('hit')
   })
 
+  it('reads one category and one tag by id', async () => {
+    const env = createMockEnv()
+    const headers = { 'content-type': 'application/json' }
+
+    const categoryResponse = await app.request('/api/categories', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'Media', icon: 'play' }),
+      headers,
+    }, env)
+    const categoryBody = await json(categoryResponse) as { category: { id: string } }
+
+    const tagResponse = await app.request('/api/tags', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'photos' }),
+      headers,
+    }, env)
+    const tagBody = await json(tagResponse) as { tag: { id: string } }
+
+    const readCategory = await app.request(`/api/categories/${categoryBody.category.id}`, {}, env)
+    expect(readCategory.status).toBe(200)
+    await expect(readCategory.json()).resolves.toMatchObject({
+      category: {
+        id: categoryBody.category.id,
+        name: 'Media',
+        slug: 'media',
+      },
+    })
+
+    const readTag = await app.request(`/api/tags/${tagBody.tag.id}`, {}, env)
+    expect(readTag.status).toBe(200)
+    await expect(readTag.json()).resolves.toMatchObject({
+      tag: {
+        id: tagBody.tag.id,
+        name: 'photos',
+        slug: 'photos',
+      },
+    })
+  })
+
+  it('returns not found for missing category and tag reads', async () => {
+    const env = createMockEnv()
+
+    const categoryResponse = await app.request('/api/categories/cat_missing', {}, env)
+    expect(categoryResponse.status).toBe(404)
+    await expect(categoryResponse.json()).resolves.toMatchObject({
+      error: {
+        code: 'not_found',
+        message: 'Category not found',
+      },
+    })
+
+    const tagResponse = await app.request('/api/tags/tag_missing', {}, env)
+    expect(tagResponse.status).toBe(404)
+    await expect(tagResponse.json()).resolves.toMatchObject({
+      error: {
+        code: 'not_found',
+        message: 'Tag not found',
+      },
+    })
+  })
+
   it('rejects items without exactly one primary endpoint', async () => {
     const response = await app.request(
       '/api/items',

@@ -5,72 +5,49 @@ import { RouterView, useRoute } from 'vue-router'
 import type { Tag } from '@dockmark/shared'
 
 import { deleteTag, fetchTags } from '../api/client'
-import { toChineseError } from '../api/errors'
 import AppLinkButton from '../components/AppLinkButton.vue'
 import ConfirmAction from '../components/ConfirmAction.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
 import PageHeader from '../components/PageHeader.vue'
 import SearchInput from '../components/SearchInput.vue'
+import { useManagementList } from '../composables/managementList'
 import { matchesSearchQuery } from '../ui/search'
 
 const route = useRoute()
-const tags = ref<Tag[]>([])
-const error = ref<string | null>(null)
-const feedback = ref<string | null>(null)
-const isLoading = ref(false)
 const query = ref('')
+const {
+  records: tags,
+  error,
+  feedback,
+  isLoading,
+  load,
+  applySavedFlash,
+  remove,
+} = useManagementList<Tag>({
+  loadRecords: fetchTags,
+  deleteRecord: deleteTag,
+  loadErrorMessage: '加载标签失败',
+  deleteErrorMessage: '删除标签失败',
+  deleteSuccessMessage: '标签已删除',
+  savedMessages: {
+    created: '标签已创建',
+    updated: '标签已保存',
+  },
+})
 const hasEditor = computed(() => route.name === 'tag-new' || route.name === 'tag-edit')
 const filteredTags = computed(() => tags.value.filter((tag) => matchesSearchQuery(query.value, [tag.name, tag.slug])))
 
-async function load() {
-  isLoading.value = true
-  error.value = null
-
-  try {
-    tags.value = await fetchTags()
-  } catch (caught) {
-    error.value = toChineseError(caught, '加载标签失败')
-  } finally {
-    isLoading.value = false
-  }
-}
-
-async function remove(id: string) {
-  error.value = null
-  feedback.value = null
-
-  try {
-    await deleteTag(id)
-    feedback.value = '标签已删除'
-    await load()
-  } catch (caught) {
-    error.value = toChineseError(caught, '删除标签失败')
-  }
-}
-
-function applyFlash(value: unknown) {
-  if (value === 'created') {
-    feedback.value = '标签已创建'
-  } else if (value === 'updated') {
-    feedback.value = '标签已保存'
-  }
-}
-
-function isSavedValue(value: unknown): boolean {
-  return value === 'created' || value === 'updated'
-}
-
 onMounted(() => {
-  applyFlash(route.query.saved)
+  applySavedFlash(route.query.saved)
   void load()
 })
 
 watch(
   () => route.fullPath,
   () => {
-    applyFlash(route.query.saved)
+    const hasSavedFlash = applySavedFlash(route.query.saved)
 
-    if (!hasEditor.value && isSavedValue(route.query.saved)) {
+    if (!hasEditor.value && hasSavedFlash) {
       void load()
     }
   },

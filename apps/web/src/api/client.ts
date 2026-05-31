@@ -7,11 +7,13 @@ import type {
   AuthSuccessResponse,
   AuthUserResponse,
   Category,
+  CategoryResponse,
   CategoryInput,
   NavResponse,
   ServiceItem,
   ServiceItemInput,
   Tag,
+  TagResponse,
   TagInput,
 } from '@dockmark/shared'
 
@@ -111,8 +113,13 @@ export async function fetchCategories(): Promise<Category[]> {
   return body.categories
 }
 
+export async function fetchCategory(id: string): Promise<Category> {
+  const body = await request<CategoryResponse>(`/api/categories/${id}`)
+  return body.category
+}
+
 export async function createCategory(input: CategoryInput): Promise<Category> {
-  const body = await request<{ category: Category }>('/api/categories', {
+  const body = await request<CategoryResponse>('/api/categories', {
     method: 'POST',
     body: JSON.stringify(input),
   })
@@ -120,7 +127,7 @@ export async function createCategory(input: CategoryInput): Promise<Category> {
 }
 
 export async function updateCategory(id: string, input: CategoryInput): Promise<Category> {
-  const body = await request<{ category: Category }>(`/api/categories/${id}`, {
+  const body = await request<CategoryResponse>(`/api/categories/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(input),
   })
@@ -136,8 +143,13 @@ export async function fetchTags(): Promise<Tag[]> {
   return body.tags
 }
 
+export async function fetchTag(id: string): Promise<Tag> {
+  const body = await request<TagResponse>(`/api/tags/${id}`)
+  return body.tag
+}
+
 export async function createTag(input: TagInput): Promise<Tag> {
-  const body = await request<{ tag: Tag }>('/api/tags', {
+  const body = await request<TagResponse>('/api/tags', {
     method: 'POST',
     body: JSON.stringify(input),
   })
@@ -145,7 +157,7 @@ export async function createTag(input: TagInput): Promise<Tag> {
 }
 
 export async function updateTag(id: string, input: TagInput): Promise<Tag> {
-  const body = await request<{ tag: Tag }>(`/api/tags/${id}`, {
+  const body = await request<TagResponse>(`/api/tags/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(input),
   })

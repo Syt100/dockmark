@@ -5,21 +5,36 @@ import { RouterView, useRoute } from 'vue-router'
 import type { Category } from '@dockmark/shared'
 
 import { deleteCategory, fetchCategories } from '../api/client'
-import { toChineseError } from '../api/errors'
 import AppBadge from '../components/AppBadge.vue'
 import AppLinkButton from '../components/AppLinkButton.vue'
 import ConfirmAction from '../components/ConfirmAction.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
 import PageHeader from '../components/PageHeader.vue'
 import SearchInput from '../components/SearchInput.vue'
+import { useManagementList } from '../composables/managementList'
 import { matchesSearchQuery } from '../ui/search'
 
 const route = useRoute()
-const categories = ref<Category[]>([])
-const error = ref<string | null>(null)
-const feedback = ref<string | null>(null)
-const isLoading = ref(false)
 const query = ref('')
+const {
+  records: categories,
+  error,
+  feedback,
+  isLoading,
+  load,
+  applySavedFlash,
+  remove,
+} = useManagementList<Category>({
+  loadRecords: fetchCategories,
+  deleteRecord: deleteCategory,
+  loadErrorMessage: '加载分类失败',
+  deleteErrorMessage: '删除分类失败',
+  deleteSuccessMessage: '分类已删除',
+  savedMessages: {
+    created: '分类已创建',
+    updated: '分类已保存',
+  },
+})
 const hasEditor = computed(() => route.name === 'category-new' || route.name === 'category-edit')
 const filteredCategories = computed(() =>
   categories.value.filter((category) =>
@@ -27,55 +42,17 @@ const filteredCategories = computed(() =>
   ),
 )
 
-async function load() {
-  isLoading.value = true
-  error.value = null
-
-  try {
-    categories.value = await fetchCategories()
-  } catch (caught) {
-    error.value = toChineseError(caught, '加载分类失败')
-  } finally {
-    isLoading.value = false
-  }
-}
-
-async function remove(id: string) {
-  error.value = null
-  feedback.value = null
-
-  try {
-    await deleteCategory(id)
-    feedback.value = '分类已删除'
-    await load()
-  } catch (caught) {
-    error.value = toChineseError(caught, '删除分类失败')
-  }
-}
-
-function applyFlash(value: unknown) {
-  if (value === 'created') {
-    feedback.value = '分类已创建'
-  } else if (value === 'updated') {
-    feedback.value = '分类已保存'
-  }
-}
-
-function isSavedValue(value: unknown): boolean {
-  return value === 'created' || value === 'updated'
-}
-
 onMounted(() => {
-  applyFlash(route.query.saved)
+  applySavedFlash(route.query.saved)
   void load()
 })
 
 watch(
   () => route.fullPath,
   () => {
-    applyFlash(route.query.saved)
+    const hasSavedFlash = applySavedFlash(route.query.saved)
 
-    if (!hasEditor.value && isSavedValue(route.query.saved)) {
+    if (!hasEditor.value && hasSavedFlash) {
       void load()
     }
   },

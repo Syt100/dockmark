@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { validateTagInput } from '@dockmark/shared'
 
-import { listTags } from '../db/tags'
+import { getTag, listTags } from '../db/tags'
 import { apiError } from '../lib/errors'
 import type { AppEnv } from '../lib/env'
 import { readJson, requireValidation } from '../lib/http'
@@ -17,6 +17,16 @@ export const tagsRoute = new Hono<AppEnv>()
 tagsRoute.get('/', requireAuth, async (c) => {
   const tags = await listTags(c.env.DB)
   return c.json({ tags })
+})
+
+tagsRoute.get('/:id', requireAuth, async (c) => {
+  const tag = await getTag(c.env.DB, c.req.param('id'))
+
+  if (!tag) {
+    throw apiError(404, 'not_found', 'Tag not found')
+  }
+
+  return c.json({ tag })
 })
 
 tagsRoute.post('/', requireAuth, async (c) => {

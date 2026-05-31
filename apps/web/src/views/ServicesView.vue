@@ -5,7 +5,6 @@ import { RouterView, useRoute } from 'vue-router'
 import type { Category, ServiceItem } from '@dockmark/shared'
 
 import { deleteItem, fetchCategories, fetchItems } from '../api/client'
-import { toChineseError } from '../api/errors'
 import AppBadge from '../components/AppBadge.vue'
 import AppButton from '../components/AppButton.vue'
 import AppLinkButton from '../components/AppLinkButton.vue'
@@ -14,6 +13,7 @@ import ConfirmAction from '../components/ConfirmAction.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
 import PageHeader from '../components/PageHeader.vue'
 import SearchInput from '../components/SearchInput.vue'
+import { useManagementList } from '../composables/managementList'
 import { endpointKindLabels, statusLabels, statusToneClasses } from '../ui/labels'
 import { matchesSearchQuery } from '../ui/search'
 
@@ -26,12 +26,31 @@ type ServiceRow = {
 }
 
 const route = useRoute()
-const items = ref<ServiceItem[]>([])
 const categories = ref<Category[]>([])
-const error = ref<string | null>(null)
-const feedback = ref<string | null>(null)
-const isLoading = ref(false)
 const query = ref('')
+const {
+  records: items,
+  error,
+  feedback,
+  isLoading,
+  load,
+  applySavedFlash,
+  remove,
+} = useManagementList<ServiceItem>({
+  async loadRecords() {
+    const [nextItems, nextCategories] = await Promise.all([fetchItems(), fetchCategories()])
+    categories.value = nextCategories
+    return nextItems
+  },
+  deleteRecord: deleteItem,
+  loadErrorMessage: '加载服务失败',
+  deleteErrorMessage: '删除服务失败',
+  deleteSuccessMessage: '服务已删除',
+  savedMessages: {
+    created: '服务已创建',
+    updated: '服务已保存',
+  },
+})
 const selectedCategoryId = ref('')
 const selectedStatus = ref('')
 const selectedTagId = ref('')
@@ -80,34 +99,6 @@ const serviceRows = computed<ServiceRow[]>(() =>
   })),
 )
 
-async function load() {
-  isLoading.value = true
-  error.value = null
-
-  try {
-    const [nextItems, nextCategories] = await Promise.all([fetchItems(), fetchCategories()])
-    items.value = nextItems
-    categories.value = nextCategories
-  } catch (caught) {
-    error.value = toChineseError(caught, '加载服务失败')
-  } finally {
-    isLoading.value = false
-  }
-}
-
-async function remove(id: string) {
-  error.value = null
-  feedback.value = null
-
-  try {
-    await deleteItem(id)
-    feedback.value = '服务已删除'
-    await load()
-  } catch (caught) {
-    error.value = toChineseError(caught, '删除服务失败')
-  }
-}
-
 function clearFilters() {
   query.value = ''
   selectedCategoryId.value = ''
@@ -119,29 +110,17 @@ function toggleMobileFilters() {
   areMobileFiltersOpen.value = !areMobileFiltersOpen.value
 }
 
-function applyFlash(value: unknown) {
-  if (value === 'created') {
-    feedback.value = '服务已创建'
-  } else if (value === 'updated') {
-    feedback.value = '服务已保存'
-  }
-}
-
-function isSavedValue(value: unknown): boolean {
-  return value === 'created' || value === 'updated'
-}
-
 onMounted(() => {
-  applyFlash(route.query.saved)
+  applySavedFlash(route.query.saved)
   void load()
 })
 
 watch(
   () => route.fullPath,
   () => {
-    applyFlash(route.query.saved)
+    const hasSavedFlash = applySavedFlash(route.query.saved)
 
-    if (!hasEditor.value && isSavedValue(route.query.saved)) {
+    if (!hasEditor.value && hasSavedFlash) {
       void load()
     }
   },

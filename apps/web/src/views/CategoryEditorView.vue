@@ -2,12 +2,13 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { createCategory, fetchCategories, updateCategory } from '../api/client'
+import { createCategory, fetchCategory, updateCategory } from '../api/client'
 import { toChineseError } from '../api/errors'
 import AppButton from '../components/AppButton.vue'
 import AppInput from '../components/AppInput.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
 import ResponsiveEditorShell from '../components/ResponsiveEditorShell.vue'
+import { categoryFormToInput, categoryToForm } from './managementForms'
 
 const route = useRoute()
 const router = useRouter()
@@ -34,18 +35,7 @@ async function load() {
   error.value = null
 
   try {
-    const category = (await fetchCategories()).find((entry) => entry.id === categoryId.value)
-
-    if (!category) {
-      error.value = '分类不存在'
-      return
-    }
-
-    form.name = category.name
-    form.slug = category.slug
-    form.icon = category.icon ?? ''
-    form.color = category.color ?? ''
-    form.sortOrder = category.sortOrder
+    Object.assign(form, categoryToForm(await fetchCategory(categoryId.value)))
   } catch (caught) {
     error.value = toChineseError(caught, '加载分类失败')
   } finally {
@@ -58,13 +48,7 @@ async function submit() {
   error.value = null
 
   try {
-    const input = {
-      name: form.name,
-      slug: form.slug || undefined,
-      icon: form.icon || null,
-      color: form.color || null,
-      sortOrder: form.sortOrder,
-    }
+    const input = categoryFormToInput(form)
 
     if (categoryId.value) {
       await updateCategory(categoryId.value, input)
@@ -112,7 +96,7 @@ onMounted(load)
           </label>
           <label class="grid gap-1 text-sm md:col-span-2">
             <span class="dm-label">排序</span>
-            <input v-model.number="form.sortOrder" class="dm-control w-full" type="number" />
+            <AppInput v-model="form.sortOrder" type="number" />
           </label>
         </div>
 

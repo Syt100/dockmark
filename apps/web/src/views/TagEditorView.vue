@@ -2,12 +2,13 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { createTag, fetchTags, updateTag } from '../api/client'
+import { createTag, fetchTag, updateTag } from '../api/client'
 import { toChineseError } from '../api/errors'
 import AppButton from '../components/AppButton.vue'
 import AppInput from '../components/AppInput.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
 import ResponsiveEditorShell from '../components/ResponsiveEditorShell.vue'
+import { tagFormToInput, tagToForm } from './managementForms'
 
 const route = useRoute()
 const router = useRouter()
@@ -31,15 +32,7 @@ async function load() {
   error.value = null
 
   try {
-    const tag = (await fetchTags()).find((entry) => entry.id === tagId.value)
-
-    if (!tag) {
-      error.value = '标签不存在'
-      return
-    }
-
-    form.name = tag.name
-    form.slug = tag.slug
+    Object.assign(form, tagToForm(await fetchTag(tagId.value)))
   } catch (caught) {
     error.value = toChineseError(caught, '加载标签失败')
   } finally {
@@ -52,10 +45,7 @@ async function submit() {
   error.value = null
 
   try {
-    const input = {
-      name: form.name,
-      slug: form.slug || undefined,
-    }
+    const input = tagFormToInput(form)
 
     if (tagId.value) {
       await updateTag(tagId.value, input)

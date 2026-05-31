@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { validateCategoryInput } from '@dockmark/shared'
 
 import {
+  getCategory,
   listCategories,
 } from '../db/categories'
 import { apiError } from '../lib/errors'
@@ -19,6 +20,16 @@ export const categoriesRoute = new Hono<AppEnv>()
 categoriesRoute.get('/', requireAuth, async (c) => {
   const categories = await listCategories(c.env.DB)
   return c.json({ categories })
+})
+
+categoriesRoute.get('/:id', requireAuth, async (c) => {
+  const category = await getCategory(c.env.DB, c.req.param('id'))
+
+  if (!category) {
+    throw apiError(404, 'not_found', 'Category not found')
+  }
+
+  return c.json({ category })
 })
 
 categoriesRoute.post('/', requireAuth, async (c) => {
