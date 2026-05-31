@@ -91,7 +91,7 @@ watch(
             <span>Slug</span>
             <span class="text-right">操作</span>
           </div>
-          <TransitionGroup class="divide-y divide-[var(--dm-border)]" name="dm-list" tag="div">
+          <TransitionGroup class="divide-y divide-[var(--dm-border)]" name="dm-list-fade" tag="div">
             <article
               v-for="tag in filteredTags"
               :key="tag.id"
@@ -107,7 +107,7 @@ watch(
           </TransitionGroup>
         </div>
 
-        <TransitionGroup class="grid gap-2 md:hidden" name="dm-list" tag="div">
+        <TransitionGroup class="grid gap-2 md:hidden" name="dm-list-fade" tag="div">
           <article v-for="tag in filteredTags" :key="tag.id" class="dm-mobile-card">
             <p class="text-base font-semibold text-[var(--dm-text)]">{{ tag.name }}</p>
             <p class="mt-1 break-all text-sm text-[var(--dm-text-muted)]">{{ tag.slug }}</p>

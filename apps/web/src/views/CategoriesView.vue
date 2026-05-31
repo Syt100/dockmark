@@ -97,7 +97,7 @@ watch(
             <span>排序</span>
             <span class="text-right">操作</span>
           </div>
-          <TransitionGroup class="divide-y divide-[var(--dm-border)]" name="dm-list" tag="div">
+          <TransitionGroup class="divide-y divide-[var(--dm-border)]" name="dm-list-fade" tag="div">
             <article
               v-for="category in filteredCategories"
               :key="category.id"
@@ -122,7 +122,7 @@ watch(
           </TransitionGroup>
         </div>
 
-        <TransitionGroup class="grid gap-2 md:hidden" name="dm-list" tag="div">
+        <TransitionGroup class="grid gap-2 md:hidden" name="dm-list-fade" tag="div">
           <article v-for="category in filteredCategories" :key="category.id" class="dm-mobile-card">
             <div class="flex items-start justify-between gap-4">
               <div class="min-w-0">
