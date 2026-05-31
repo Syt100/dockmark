@@ -237,6 +237,42 @@ describe('navigation API', () => {
     expect(refreshed.headers.get('X-Dockmark-Cache')).toBe('miss')
   })
 
+  it('ignores pre-versioned navigation cache entries after upgrading cache metadata', async () => {
+    const env = createMockEnv()
+
+    await env.KV.put('nav:home:v1', JSON.stringify({
+      categories: [],
+      uncategorized: [],
+    }))
+
+    const itemResponse = await app.request(
+      '/api/items',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          name: 'Grafana',
+          endpoints: [{
+            label: 'Public',
+            url: 'https://grafana.example.com',
+            kind: 'public',
+            isPrimary: true,
+          }],
+        }),
+        headers: { 'content-type': 'application/json' },
+      },
+      env,
+    )
+    expect(itemResponse.status).toBe(201)
+
+    const navResponse = await app.request('/api/nav', {}, env)
+    expect(navResponse.headers.get('X-Dockmark-Cache')).toBe('miss')
+
+    const nav = await json(navResponse) as {
+      uncategorized: Array<{ name: string }>
+    }
+    expect(nav.uncategorized[0]?.name).toBe('Grafana')
+  })
+
   it('does not invalidate navigation cache after failed mutations', async () => {
     const env = createMockEnv()
 

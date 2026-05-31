@@ -1,19 +1,20 @@
 import type { NavResponse } from '@dockmark/shared'
 
 const NAV_VERSION_KEY = 'cache_version:nav'
+const NAV_CACHE_VERSION_BASELINE = 2
 
 export async function getNavCacheVersion(db: D1Database): Promise<number> {
   const row = await db.prepare('SELECT value FROM app_metadata WHERE key = ?').bind(NAV_VERSION_KEY).first<{ value: string }>()
   const value = row?.value
-  const version = value ? Number.parseInt(value, 10) : 1
-  return Number.isFinite(version) && version > 0 ? version : 1
+  const version = value ? Number.parseInt(value, 10) : NAV_CACHE_VERSION_BASELINE
+  return Number.isFinite(version) && version >= NAV_CACHE_VERSION_BASELINE ? version : NAV_CACHE_VERSION_BASELINE
 }
 
 export async function incrementNavCacheVersion(db: D1Database): Promise<void> {
   await db
     .prepare(
       `INSERT INTO app_metadata (key, value, updated_at)
-       VALUES (?, '2', CURRENT_TIMESTAMP)
+       VALUES (?, '3', CURRENT_TIMESTAMP)
        ON CONFLICT(key) DO UPDATE SET
          value = CAST(CAST(value AS INTEGER) + 1 AS TEXT),
          updated_at = CURRENT_TIMESTAMP`,

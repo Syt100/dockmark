@@ -150,7 +150,7 @@ class MockStatement {
       const current = this.store.metadata.get(key)
 
       if (!current) {
-        this.store.metadata.set(key, '2')
+        this.store.metadata.set(key, '3')
       } else {
         this.store.metadata.set(key, String(Number.parseInt(current, 10) + 1))
       }
