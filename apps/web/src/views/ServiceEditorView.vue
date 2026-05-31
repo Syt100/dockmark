@@ -37,6 +37,7 @@ const selectedTagIds = ref<string[]>([])
 const error = ref<string | null>(null)
 const isLoading = ref(false)
 const isSaving = ref(false)
+const isReferenceLoading = ref(false)
 const tagQuery = ref('')
 const itemId = computed(() => (typeof route.params.id === 'string' ? route.params.id : null))
 const isEditing = computed(() => itemId.value !== null)
@@ -78,7 +79,12 @@ function applyItem(item: ServiceItem) {
 }
 
 async function load() {
-  isLoading.value = true
+  if (itemId.value) {
+    isLoading.value = true
+  } else {
+    isReferenceLoading.value = true
+  }
+
   error.value = null
 
   try {
@@ -93,6 +99,7 @@ async function load() {
     error.value = toChineseError(caught, '加载服务失败')
   } finally {
     isLoading.value = false
+    isReferenceLoading.value = false
   }
 }
 
@@ -168,7 +175,7 @@ onMounted(load)
             </label>
             <label class="grid gap-1 text-sm">
               <span class="dm-label">分类</span>
-              <AppSelect v-model="form.categoryId">
+              <AppSelect v-model="form.categoryId" :disabled="isReferenceLoading">
                 <option value="">未分类</option>
                 <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
               </AppSelect>
@@ -252,7 +259,7 @@ onMounted(load)
         <section class="dm-form-section">
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 class="dm-section-title">标签</h2>
-            <span class="text-xs text-[var(--dm-text-subtle)]">已选 {{ selectedTagCount }} 个</span>
+            <span class="text-xs text-[var(--dm-text-subtle)]">{{ isReferenceLoading ? '正在加载标签...' : `已选 ${selectedTagCount} 个` }}</span>
           </div>
           <AppInput v-if="tags.length > 8" v-model="tagQuery" aria-label="搜索标签" placeholder="搜索标签" type="search" />
           <div v-if="tags.length > 0" class="flex flex-wrap gap-2">
@@ -271,7 +278,7 @@ onMounted(load)
             </label>
             <p v-if="filteredTags.length === 0" class="text-sm text-[var(--dm-text-muted)]">没有匹配的标签。</p>
           </div>
-          <p v-else class="dm-surface-muted p-3 text-sm text-[var(--dm-text-muted)]">还没有标签。</p>
+          <p v-else class="dm-surface-muted p-3 text-sm text-[var(--dm-text-muted)]">{{ isReferenceLoading ? '标签加载中...' : '还没有标签。' }}</p>
         </section>
 
         <section class="dm-form-section">
