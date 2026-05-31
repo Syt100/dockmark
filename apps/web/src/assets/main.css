@@ -328,16 +328,6 @@ a {
   transform: translateY(0.375rem);
 }
 
-.dm-list-fade-enter-active,
-.dm-list-fade-leave-active {
-  transition: opacity var(--dm-motion-fast) var(--dm-motion-ease);
-}
-
-.dm-list-fade-enter-from,
-.dm-list-fade-leave-to {
-  opacity: 0;
-}
-
 .dm-collapse-enter-active,
 .dm-collapse-leave-active {
   overflow: hidden;
@@ -379,8 +369,6 @@ a {
   .dm-feedback-leave-to,
   .dm-list-enter-from,
   .dm-list-leave-to,
-  .dm-list-fade-enter-from,
-  .dm-list-fade-leave-to,
   .dm-collapse-enter-from,
   .dm-collapse-leave-to {
     transform: none;
