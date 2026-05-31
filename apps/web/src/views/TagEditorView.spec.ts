@@ -20,10 +20,12 @@ function createTestRouter(path = '/tags/tag_public/edit') {
 
 describe('TagEditorView', () => {
   afterEach(() => {
+    vi.useRealTimers()
     vi.unstubAllGlobals()
   })
 
   it('loads the edited tag directly', async () => {
+    vi.useFakeTimers()
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -44,6 +46,7 @@ describe('TagEditorView', () => {
     const wrapper = mount(TagEditorView, { global: { plugins: [router] } })
 
     await flushPromises()
+    await vi.advanceTimersByTimeAsync(200)
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(fetchMock).toHaveBeenCalledWith('/api/tags/tag_public', expect.any(Object))

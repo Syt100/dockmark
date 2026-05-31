@@ -9,6 +9,7 @@ import EditorLoadingState from '../components/EditorLoadingState.vue'
 import AppInput from '../components/AppInput.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
 import ResponsiveEditorShell from '../components/ResponsiveEditorShell.vue'
+import { useMinimumVisibleLoading } from '../composables/minimumVisibleLoading'
 import { categoryFormToInput, categoryToForm } from './managementForms'
 
 const route = useRoute()
@@ -16,6 +17,7 @@ const router = useRouter()
 const error = ref<string | null>(null)
 const isLoading = ref(false)
 const isSaving = ref(false)
+const isLoadingVisible = useMinimumVisibleLoading(isLoading)
 const categoryId = computed(() => (typeof route.params.id === 'string' ? route.params.id : null))
 const isEditing = computed(() => categoryId.value !== null)
 
@@ -73,7 +75,7 @@ onMounted(load)
     <form class="grid gap-[var(--dm-section-gap)]" @submit.prevent="submit">
       <FeedbackMessage tone="error" :message="error" />
 
-      <EditorLoadingState v-if="isLoading" message="正在加载分类..." variant="category" />
+      <EditorLoadingState v-if="isLoadingVisible" message="正在加载分类..." variant="category" />
 
       <template v-else>
         <div class="grid gap-[var(--dm-form-gap)] md:grid-cols-2">

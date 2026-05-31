@@ -12,7 +12,7 @@ withDefaults(
 
 <template>
   <section class="dm-editor-loading" role="status" aria-live="polite">
-    <p class="text-sm font-medium text-[var(--dm-text-muted)]">{{ message }}</p>
+    <p class="sr-only">{{ message }}</p>
 
     <div v-if="variant === 'service'" class="grid gap-[var(--dm-section-gap)]" aria-hidden="true">
       <div class="dm-editor-loading-section">
@@ -23,8 +23,8 @@ withDefaults(
           <span class="dm-skeleton h-16"></span>
         </div>
         <div class="grid gap-[var(--dm-form-gap)] md:grid-cols-2">
-          <span class="dm-skeleton h-16"></span>
-          <span class="dm-skeleton h-16"></span>
+          <span class="dm-skeleton h-14"></span>
+          <span class="dm-skeleton h-14"></span>
         </div>
       </div>
 
@@ -56,17 +56,17 @@ withDefaults(
 
     <div v-else-if="variant === 'category'" class="dm-editor-loading-section" aria-hidden="true">
       <div class="grid gap-[var(--dm-form-gap)] md:grid-cols-2">
-        <span class="dm-skeleton h-16"></span>
-        <span class="dm-skeleton h-16"></span>
-        <span class="dm-skeleton h-16"></span>
-        <span class="dm-skeleton h-16"></span>
-        <span class="dm-skeleton h-16 md:col-span-2"></span>
+        <span class="dm-skeleton h-14"></span>
+        <span class="dm-skeleton h-14"></span>
+        <span class="dm-skeleton h-14"></span>
+        <span class="dm-skeleton h-14"></span>
+        <span class="dm-skeleton h-14 md:col-span-2"></span>
       </div>
     </div>
 
     <div v-else class="dm-editor-loading-section" aria-hidden="true">
-      <span class="dm-skeleton h-16"></span>
-      <span class="dm-skeleton h-16"></span>
+      <span class="dm-skeleton h-14"></span>
+      <span class="dm-skeleton h-14"></span>
     </div>
 
     <div class="flex flex-col-reverse gap-2 border-t border-[var(--dm-border)] pt-4 sm:flex-row sm:justify-end" aria-hidden="true">

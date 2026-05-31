@@ -19,6 +19,7 @@ import AppTextarea from '../components/AppTextarea.vue'
 import EditorLoadingState from '../components/EditorLoadingState.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
 import ResponsiveEditorShell from '../components/ResponsiveEditorShell.vue'
+import { useMinimumVisibleLoading } from '../composables/minimumVisibleLoading'
 import { endpointKindLabels, statusLabels } from '../ui/labels'
 import { serviceFormToInput, serviceToForm, type EndpointForm } from './managementForms'
 
@@ -39,6 +40,7 @@ const error = ref<string | null>(null)
 const isLoading = ref(false)
 const isSaving = ref(false)
 const isReferenceLoading = ref(false)
+const isLoadingVisible = useMinimumVisibleLoading(isLoading)
 const tagQuery = ref('')
 const itemId = computed(() => (typeof route.params.id === 'string' ? route.params.id : null))
 const isEditing = computed(() => itemId.value !== null)
@@ -162,7 +164,7 @@ onMounted(load)
     <form class="grid gap-[var(--dm-section-gap)]" @submit.prevent="submit">
       <FeedbackMessage tone="error" :message="error" />
 
-      <EditorLoadingState v-if="isLoading" message="正在加载服务信息..." variant="service" />
+      <EditorLoadingState v-if="isLoadingVisible" message="正在加载服务信息..." variant="service" />
 
       <template v-else>
         <section class="dm-form-section">

@@ -20,10 +20,12 @@ function createTestRouter(path = '/categories/cat_media/edit') {
 
 describe('CategoryEditorView', () => {
   afterEach(() => {
+    vi.useRealTimers()
     vi.unstubAllGlobals()
   })
 
   it('loads the edited category directly', async () => {
+    vi.useFakeTimers()
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -48,6 +50,7 @@ describe('CategoryEditorView', () => {
     const wrapper = mount(CategoryEditorView, { global: { plugins: [router] } })
 
     await flushPromises()
+    await vi.advanceTimersByTimeAsync(200)
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(fetchMock).toHaveBeenCalledWith('/api/categories/cat_media', expect.any(Object))
