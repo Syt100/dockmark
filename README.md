@@ -26,12 +26,13 @@ Run local development:
 
 ```sh
 pnpm db:migrate:local
+pnpm db:seed:local
 pnpm dev
 ```
 
 `pnpm dev` starts Vite on port `8788` and the Worker API on port `8789`. Open `http://127.0.0.1:8788`; Vite proxies `/api/*` to the Worker so frontend changes are hot-reloaded without rebuilding `apps/web/dist`.
 
-The local D1 database starts empty. Run `pnpm db:migrate:local` after pulling new migrations, otherwise API routes such as `/api/nav` will fail with missing-table errors.
+The local D1 database starts empty. Run `pnpm db:migrate:local` after pulling new migrations, otherwise API routes such as `/api/nav` will fail with missing-table errors. `pnpm db:seed:local` loads reusable local sample categories, services, endpoints, and tags from `seeds/local-dev.sql`; it only targets the local D1 database.
 
 If you specifically need to test the Worker serving the production-built frontend assets, run:
 

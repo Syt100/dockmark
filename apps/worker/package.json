@@ -11,6 +11,7 @@
     "lint": "tsc -p tsconfig.json --noEmit",
     "format": "echo \"No worker format yet\"",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:seed:local": "wrangler d1 execute DB --local --file ../../seeds/local-dev.sql",
     "db:migrate:production": "wrangler d1 migrations apply DB --remote --env production",
     "deploy": "wrangler deploy --env production --minify",
     "deploy:dry-run": "wrangler deploy --env production --dry-run --outdir dist",
