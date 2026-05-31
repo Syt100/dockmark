@@ -137,8 +137,10 @@ describe('HomeView', () => {
     })
 
     expect(wrapper.text()).toContain('密码库')
-    expect(wrapper.text()).toContain('公网 · 公网')
-    expect(wrapper.text()).toContain('内网 · 内网')
+    expect(wrapper.text()).toContain('公网')
+    expect(wrapper.text()).toContain('内网')
+    expect(wrapper.text()).not.toContain('公网 · 公网')
+    expect(wrapper.text()).not.toContain('内网 · 内网')
     expect(wrapper.text()).toContain('Vaultwarden 搜 Dockmark')
     expect(wrapper.text()).toContain('内网')
     expect(wrapper.findComponent(ServiceNavCard).exists()).toBe(true)

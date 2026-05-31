@@ -1,12 +1,20 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 import type { NavItem } from '@dockmark/shared'
 
 import { endpointKindLabels } from '../ui/labels'
 import AppBadge from './AppBadge.vue'
 
-defineProps<{
+const props = defineProps<{
   item: NavItem
 }>()
+
+const endpoints = computed(() => [props.item.primaryEndpoint, ...props.item.alternateEndpoints])
+
+function shouldShowEndpointKind(endpoint: NavItem['primaryEndpoint']) {
+  return endpoint.label !== endpointKindLabels[endpoint.kind]
+}
 </script>
 
 <template>
@@ -26,17 +34,20 @@ defineProps<{
     </div>
 
     <div class="mt-4 grid gap-2">
-      <a class="dm-link break-all text-sm" :href="item.primaryEndpoint.url" target="_blank">
-        {{ item.primaryEndpoint.label }} · {{ endpointKindLabels[item.primaryEndpoint.kind] }}
-      </a>
       <a
-        v-for="endpoint in item.alternateEndpoints"
+        v-for="(endpoint, index) in endpoints"
         :key="endpoint.id"
-        class="break-all text-sm text-[var(--dm-text-muted)] hover:text-[var(--dm-text)]"
+        :class="[
+          'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[var(--dm-radius-control)] px-2 py-1.5 text-sm transition hover:bg-[var(--dm-surface-muted)]',
+          index === 0 ? 'text-[var(--dm-primary)]' : 'text-[var(--dm-text-muted)] hover:text-[var(--dm-text)]',
+        ]"
         :href="endpoint.url"
         target="_blank"
       >
-        {{ endpoint.label }} · {{ endpointKindLabels[endpoint.kind] }}
+        <span class="min-w-0 truncate font-medium">{{ endpoint.label }}</span>
+        <AppBadge v-if="shouldShowEndpointKind(endpoint)" :tone="index === 0 ? 'primary' : 'neutral'">
+          {{ endpointKindLabels[endpoint.kind] }}
+        </AppBadge>
       </a>
     </div>
 

@@ -201,6 +201,18 @@ a {
   font-weight: 600;
 }
 
+.dm-form-section {
+  display: grid;
+  gap: var(--dm-form-gap);
+  border-top: 1px solid var(--dm-border);
+  padding-top: var(--dm-section-gap);
+}
+
+.dm-form-section:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+
 .dm-link {
   color: var(--dm-primary);
   font-weight: 500;

@@ -32,15 +32,15 @@ async function logout() {
 <template>
   <div class="min-h-screen bg-[var(--dm-bg)] text-[var(--dm-text)]">
     <header class="border-b border-[var(--dm-border)] bg-[var(--dm-surface)]">
-      <div class="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between">
+      <div class="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-3 sm:px-6 sm:py-4 md:flex-row md:items-center md:justify-between">
         <RouterLink to="/" class="text-lg font-semibold text-[var(--dm-text)]">Dockmark</RouterLink>
 
-        <div class="flex flex-wrap items-center gap-2">
-          <nav v-if="currentUser" class="flex items-center gap-1 overflow-x-auto text-sm text-[var(--dm-text-muted)]">
+        <div class="flex flex-wrap items-center gap-2 md:justify-end">
+          <nav v-if="currentUser" class="-mx-1 flex max-w-full items-center gap-1 overflow-x-auto px-1 text-sm text-[var(--dm-text-muted)]">
             <RouterLink
               v-for="item in navItems"
               :key="item.to"
-              class="shrink-0 rounded-[var(--dm-radius-control)] px-3 py-2 transition hover:bg-[var(--dm-surface-muted)] hover:text-[var(--dm-text)] aria-[current=page]:bg-[var(--dm-primary-soft)] aria-[current=page]:text-[var(--dm-primary)]"
+              class="shrink-0 rounded-[var(--dm-radius-control)] px-2.5 py-1.5 transition hover:bg-[var(--dm-surface-muted)] hover:text-[var(--dm-text)] aria-[current=page]:bg-[var(--dm-primary-soft)] aria-[current=page]:text-[var(--dm-primary)] sm:px-3 sm:py-2"
               :to="item.to"
             >
               {{ item.label }}

@@ -99,6 +99,18 @@ const serviceRows = computed<ServiceRow[]>(() =>
   })),
 )
 
+function rowStateClass(status: ServiceItem['status']) {
+  if (status === 'hidden') {
+    return 'opacity-75'
+  }
+
+  if (status === 'archived') {
+    return 'opacity-60'
+  }
+
+  return ''
+}
+
 function clearFilters() {
   query.value = ''
   selectedCategoryId.value = ''
@@ -201,7 +213,7 @@ watch(
               </tr>
             </thead>
             <tbody class="divide-y divide-[var(--dm-border)]">
-              <tr v-for="row in serviceRows" :key="row.item.id" class="dm-list-row">
+              <tr v-for="row in serviceRows" :key="row.item.id" :class="['dm-list-row', rowStateClass(row.item.status)]">
                 <td class="px-3 py-3 align-middle">
                   <div class="flex min-w-0 items-center gap-3">
                     <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--dm-radius-control)] bg-[var(--dm-surface-muted)] text-base font-semibold text-[var(--dm-text-muted)]">
@@ -236,7 +248,14 @@ watch(
                   <span v-else class="text-sm text-[var(--dm-text-subtle)]">无标签</span>
                 </td>
                 <td class="px-3 py-3 align-middle">
-                  <p class="truncate text-sm text-[var(--dm-text-muted)]">{{ row.item.credentialHint || '无凭据提示' }}</p>
+                  <p
+                    :class="[
+                      'truncate text-sm',
+                      row.item.credentialHint ? 'text-[var(--dm-text-muted)]' : 'text-[var(--dm-text-subtle)]',
+                    ]"
+                  >
+                    {{ row.item.credentialHint || '未设置凭据提示' }}
+                  </p>
                   <p class="mt-1 text-xs text-[var(--dm-text-subtle)]">{{ row.item.endpoints.length }} 个地址</p>
                 </td>
                 <td class="px-3 py-3 align-middle">
@@ -259,7 +278,7 @@ watch(
         </div>
 
         <div class="grid gap-2 lg:hidden">
-          <article v-for="row in serviceRows" :key="row.item.id" class="dm-mobile-card">
+          <article v-for="row in serviceRows" :key="row.item.id" :class="['dm-mobile-card', rowStateClass(row.item.status)]">
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
                 <div class="flex min-w-0 items-center gap-2">
@@ -298,6 +317,14 @@ watch(
             <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
               <span class="text-xs text-[var(--dm-text-subtle)]">{{ row.item.endpoints.length }} 个地址</span>
               <div class="flex flex-wrap gap-2">
+                <a
+                  v-if="row.primaryEndpoint"
+                  class="inline-flex min-h-10 items-center justify-center rounded-[var(--dm-radius-control)] px-3.5 py-2 text-sm font-medium text-[var(--dm-primary)] transition hover:bg-[var(--dm-primary-soft)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--dm-focus)]"
+                  :href="row.primaryEndpoint.url"
+                  target="_blank"
+                >
+                  打开
+                </a>
                 <AppLinkButton :to="`/services/${row.item.id}/edit`" tone="ghost">编辑</AppLinkButton>
                 <ConfirmAction :message="`确认删除服务“${row.item.name}”？`" @confirm="remove(row.item.id)" />
               </div>

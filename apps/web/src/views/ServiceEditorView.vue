@@ -159,7 +159,7 @@ onMounted(load)
       </div>
 
       <template v-else>
-        <section class="grid gap-[var(--dm-form-gap)]">
+        <section class="dm-form-section">
           <h2 class="dm-section-title">基本信息</h2>
           <div class="grid gap-[var(--dm-form-gap)] md:grid-cols-3">
             <label class="grid gap-1 text-sm">
@@ -193,16 +193,17 @@ onMounted(load)
           </div>
         </section>
 
-        <section class="grid gap-3">
+        <section class="dm-form-section">
           <div class="grid gap-3">
             <div class="flex items-center justify-between gap-3">
               <h2 class="dm-section-title">访问地址</h2>
               <AppButton type="button" @click="addEndpoint">添加地址</AppButton>
             </div>
-            <div class="flex flex-wrap gap-2">
+            <div class="flex flex-wrap gap-1.5 rounded-[var(--dm-radius-surface)] border border-[var(--dm-border)] bg-[var(--dm-surface)] p-1.5">
               <AppButton
                 v-for="template in endpointTemplates"
                 :key="template.kind"
+                size="sm"
                 type="button"
                 tone="ghost"
                 @click="addEndpointFromTemplate(template)"
@@ -248,7 +249,7 @@ onMounted(load)
           </div>
         </section>
 
-        <section class="grid gap-3">
+        <section class="dm-form-section">
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 class="dm-section-title">标签</h2>
             <span class="text-xs text-[var(--dm-text-subtle)]">已选 {{ selectedTagCount }} 个</span>
@@ -273,7 +274,7 @@ onMounted(load)
           <p v-else class="dm-surface-muted p-3 text-sm text-[var(--dm-text-muted)]">还没有标签。</p>
         </section>
 
-        <section class="grid gap-[var(--dm-form-gap)]">
+        <section class="dm-form-section">
           <h2 class="dm-section-title">凭据提示与备注</h2>
           <label class="grid gap-1 text-sm">
             <span class="dm-label">Vaultwarden 搜索提示</span>

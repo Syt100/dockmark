@@ -2,6 +2,8 @@
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 
+import AppIconButton from './AppIconButton.vue'
+
 const props = defineProps<{
   title: string
   backTo: string
@@ -122,7 +124,11 @@ onBeforeUnmount(() => {
       >
         <div class="sticky top-0 z-10 flex items-center justify-between border-b border-[var(--dm-border)] bg-[var(--dm-surface-elevated)] px-5 py-4">
           <h1 class="text-lg font-semibold text-[var(--dm-text)]">{{ title }}</h1>
-          <button class="text-sm font-medium text-[var(--dm-text-muted)] hover:text-[var(--dm-text)]" type="button" @click="close">关闭</button>
+          <AppIconButton label="关闭" type="button" @click="close">
+            <svg aria-hidden="true" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path d="m6 6 12 12M18 6 6 18" stroke-linecap="round" />
+            </svg>
+          </AppIconButton>
         </div>
         <div class="p-5">
           <slot />
