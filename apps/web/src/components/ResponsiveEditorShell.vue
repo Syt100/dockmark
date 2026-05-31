@@ -116,8 +116,8 @@ onBeforeUnmount(() => {
       <Transition appear name="dm-fade">
         <button class="fixed inset-0 z-30 cursor-default bg-[var(--dm-overlay)]" type="button" aria-label="关闭编辑器" @click="close"></button>
       </Transition>
-      <Transition appear name="dm-panel">
-        <div class="fixed inset-0 z-40 grid place-items-center p-6 pointer-events-none">
+      <div class="fixed inset-0 z-40 grid place-items-center p-6 pointer-events-none">
+        <Transition appear name="dm-panel">
           <section
             ref="dialog"
             class="pointer-events-auto max-h-[calc(100dvh-4rem)] w-[min(760px,calc(100vw-3rem))] overflow-auto rounded-[var(--dm-radius-surface)] bg-[var(--dm-surface-elevated)] shadow-[var(--dm-shadow-elevated)]"
@@ -138,8 +138,8 @@ onBeforeUnmount(() => {
               <slot />
             </div>
           </section>
-        </div>
-      </Transition>
+        </Transition>
+      </div>
     </div>
   </div>
 </template>

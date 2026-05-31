@@ -60,4 +60,29 @@ describe('ResponsiveEditorShell', () => {
 
     expect(router.currentRoute.value.path).toBe('/services')
   })
+
+  it('keeps the animated dialog separate from the full-screen centering layer', async () => {
+    const router = createTestRouter()
+    await router.isReady()
+
+    const wrapper = mount(ResponsiveEditorShell, {
+      props: {
+        title: '新建服务',
+        backTo: '/services',
+      },
+      global: {
+        plugins: [router],
+      },
+      slots: {
+        default: '<button>保存</button>',
+      },
+    })
+
+    const centeringLayer = wrapper.get('.pointer-events-none')
+    const dialog = wrapper.get('[role="dialog"]')
+
+    expect(centeringLayer.element.contains(dialog.element)).toBe(true)
+    expect(centeringLayer.classes()).toContain('fixed')
+    expect(dialog.classes()).toContain('pointer-events-auto')
+  })
 })

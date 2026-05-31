@@ -5,6 +5,7 @@ import { RouterLink, RouterView } from 'vue-router'
 import { currentUser, signOut } from './auth/state'
 import AppButton from './components/AppButton.vue'
 import ThemeToggle from './components/ThemeToggle.vue'
+import { routeTransitionKey } from './router/motion'
 
 const navItems = [
   { to: '/', label: '首页' },
@@ -60,7 +61,7 @@ async function logout() {
     <div class="mx-auto max-w-6xl px-[var(--dm-page-x)] py-[var(--dm-page-y)]">
       <RouterView v-slot="{ Component, route }">
         <Transition mode="out-in" name="dm-route">
-          <component :is="Component" :key="route.fullPath" />
+          <component :is="Component" :key="routeTransitionKey(route)" />
         </Transition>
       </RouterView>
     </div>
