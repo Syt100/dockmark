@@ -2,9 +2,29 @@ name: Cloudflare
 
 on:
   pull_request:
+    paths:
+      - ".github/workflows/cloudflare.yml"
+      - "apps/**"
+      - "packages/**"
+      - "migrations/**"
+      - "seeds/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.base.json"
   push:
     branches:
       - main
+    paths:
+      - ".github/workflows/cloudflare.yml"
+      - "apps/**"
+      - "packages/**"
+      - "migrations/**"
+      - "seeds/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.base.json"
   workflow_dispatch:
 
 concurrency:
