@@ -146,6 +146,15 @@ corepack pnpm --dir apps/worker exec wrangler kv namespace create dockmark-produ
 
 纯仓库维护类变更不会自动触发 Cloudflare workflow，例如 `.github/dependabot.yml`、文档、OpenSpec proposal/spec/tasks。需要强制验证或部署时，仍可通过 `workflow_dispatch` 手动触发。
 
+Dependabot 依赖更新通过 `.github/dependabot.yml` 管理：
+
+- npm/pnpm 更新只配置 `directory: "/"`，由根目录统一处理整个 pnpm workspace。不要为 `apps/web`、`apps/worker`、`apps/extension` 或 `packages/shared` 单独配置 npm 更新目录；Dependabot 不支持从 pnpm workspace 子目录更新，容易产生 lockfile 不完整或动态扫描失败。
+- production 和 development 的 minor/patch 更新分别分组，减少 PR 数量。
+- npm security updates 单独分组，优先处理。
+- `@types/node` 的 major 更新暂时忽略，直到项目明确从 Node 24 类型策略升级。
+- `npm-run-all2` 的 major 更新暂时忽略，直到项目明确提高 Node engine 要求。
+- GitHub Actions 更新单独配置为每周检查一次。
+
 GitHub repository secrets：
 
 - `CLOUDFLARE_API_TOKEN`：Cloudflare API token，至少需要部署 Worker、操作 D1 和自动创建绑定资源的权限。
