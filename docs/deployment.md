@@ -130,7 +130,21 @@ corepack pnpm --dir apps/worker exec wrangler kv namespace create dockmark-produ
 
 ## 5. GitHub Actions 自动部署
 
-`.github/workflows/cloudflare.yml` 会在 pull request 和 `main` push 时运行验证，在 `main` push 或手动触发时部署生产环境。
+`.github/workflows/cloudflare.yml` 会在 deploy-relevant 路径变更的 pull request 和 `main` push 时运行验证，在 deploy-relevant 路径变更的 `main` push 或手动触发时部署生产环境。
+
+自动触发路径只覆盖会影响构建、测试、迁移或 Cloudflare 部署的内容：
+
+- `.github/workflows/cloudflare.yml`
+- `apps/**`
+- `packages/**`
+- `migrations/**`
+- `seeds/**`
+- `package.json`
+- `pnpm-lock.yaml`
+- `pnpm-workspace.yaml`
+- `tsconfig.base.json`
+
+纯仓库维护类变更不会自动触发 Cloudflare workflow，例如 `.github/dependabot.yml`、文档、OpenSpec proposal/spec/tasks。需要强制验证或部署时，仍可通过 `workflow_dispatch` 手动触发。
 
 GitHub repository secrets：
 
