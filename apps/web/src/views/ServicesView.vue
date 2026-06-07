@@ -13,6 +13,7 @@ import ConfirmAction from '../components/ConfirmAction.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
 import PageHeader from '../components/PageHeader.vue'
 import SearchInput from '../components/SearchInput.vue'
+import ServiceIcon from '../components/ServiceIcon.vue'
 import { useManagementList } from '../composables/managementList'
 import { endpointKindLabels, statusLabels, statusToneClasses } from '../ui/labels'
 import { matchesSearchQuery } from '../ui/search'
@@ -234,9 +235,12 @@ watch(
               <tr v-for="row in serviceRows" :key="row.item.id" :class="['dm-list-row', rowStateClass(row.item.status)]">
                 <td class="px-3 py-3 align-middle">
                   <div class="flex min-w-0 items-center gap-3">
-                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--dm-radius-control)] bg-[var(--dm-surface-muted)] text-base font-semibold text-[var(--dm-text-muted)]">
-                      {{ row.item.icon || '•' }}
-                    </span>
+                    <ServiceIcon
+                      :icon="row.item.icon"
+                      :icon-type="row.item.iconType"
+                      :name="row.item.name"
+                      :primary-url="row.primaryEndpoint?.url ?? null"
+                    />
                     <div class="min-w-0">
                       <div class="flex min-w-0 items-center gap-2">
                         <p class="truncate font-semibold text-[var(--dm-text)]">{{ row.item.name }}</p>
@@ -300,7 +304,14 @@ watch(
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
                 <div class="flex min-w-0 items-center gap-2">
-                  <p class="truncate text-base font-semibold text-[var(--dm-text)]">{{ row.item.icon || '•' }} {{ row.item.name }}</p>
+                  <ServiceIcon
+                    :icon="row.item.icon"
+                    :icon-type="row.item.iconType"
+                    :name="row.item.name"
+                    :primary-url="row.primaryEndpoint?.url ?? null"
+                    size="sm"
+                  />
+                  <p class="truncate text-base font-semibold text-[var(--dm-text)]">{{ row.item.name }}</p>
                   <span :class="['shrink-0 rounded-[var(--dm-radius-full)] px-2 py-0.5 text-xs font-medium', statusToneClasses[row.item.status]]">
                     {{ statusLabels[row.item.status] }}
                   </span>

@@ -56,8 +56,8 @@ describe('management form mapping', () => {
       categoryId: null,
       name: 'Immich',
       description: null,
-      icon: null,
-      iconType: 'emoji',
+      icon: 'https://cdn.example.test/immich.png',
+      iconType: 'url',
       credentialHint: null,
       note: null,
       status: 'active',
@@ -82,6 +82,8 @@ describe('management form mapping', () => {
 
     expect(form.categoryId).toBe('')
     expect(form.description).toBe('')
+    expect(form.icon).toBe('https://cdn.example.test/immich.png')
+    expect(form.iconType).toBe('url')
     expect(form.endpoints[0]?.sortOrder).toBe(4)
 
     form.endpoints.push({
@@ -95,6 +97,8 @@ describe('management form mapping', () => {
     expect(serviceFormToInput(form, ['tag_photo'])).toMatchObject({
       categoryId: null,
       description: null,
+      icon: 'https://cdn.example.test/immich.png',
+      iconType: 'url',
       credentialHint: null,
       note: null,
       endpoints: [

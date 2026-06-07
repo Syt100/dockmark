@@ -2,6 +2,7 @@ import type {
   Category,
   CategoryInput,
   EndpointKind,
+  IconType,
   ServiceItem,
   ServiceItemInput,
   Tag,
@@ -35,6 +36,7 @@ export type ServiceForm = {
   categoryId: string
   description: string
   icon: string
+  iconType: IconType
   credentialHint: string
   note: string
   status: ServiceItem['status']
@@ -82,6 +84,7 @@ export function serviceToForm(item: ServiceItem): ServiceForm {
     categoryId: item.categoryId ?? '',
     description: item.description ?? '',
     icon: item.icon ?? '',
+    iconType: item.iconType,
     credentialHint: item.credentialHint ?? '',
     note: item.note ?? '',
     status: item.status,
@@ -103,7 +106,7 @@ export function serviceFormToInput(form: ServiceForm, selectedTagIds: string[]):
     categoryId: form.categoryId || null,
     description: form.description || null,
     icon: form.icon || null,
-    iconType: 'emoji',
+    iconType: form.iconType,
     credentialHint: form.credentialHint || null,
     note: form.note || null,
     status: form.status,

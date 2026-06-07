@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import type { Category, EndpointKind, ServiceItem, Tag } from '@dockmark/shared'
+import type { Category, EndpointKind, IconType, ServiceItem, Tag } from '@dockmark/shared'
 
 import {
   createItem,
@@ -19,11 +19,17 @@ import AppTextarea from '../components/AppTextarea.vue'
 import EditorLoadingState from '../components/EditorLoadingState.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
 import ResponsiveEditorShell from '../components/ResponsiveEditorShell.vue'
+import ServiceIcon from '../components/ServiceIcon.vue'
 import { useMinimumVisibleLoading } from '../composables/minimumVisibleLoading'
 import { endpointKindLabels, statusLabels } from '../ui/labels'
 import { serviceFormToInput, serviceToForm, type EndpointForm } from './managementForms'
 
 const endpointKinds: EndpointKind[] = ['public', 'lan', 'tailscale', 'admin', 'backup', 'docs', 'api']
+const serviceIconTypes: Array<{ value: IconType; label: string }> = [
+  { value: 'emoji', label: 'Emoji / 文本' },
+  { value: 'url', label: '图片 URL' },
+  { value: 'favicon', label: '主地址 Favicon' },
+]
 const endpointTemplates: Array<{ label: string; kind: EndpointKind }> = [
   { label: '公网', kind: 'public' },
   { label: '内网', kind: 'lan' },
@@ -55,12 +61,14 @@ const filteredTags = computed(() => {
   return tags.value.filter((tag) => [tag.name, tag.slug].some((value) => value.toLowerCase().includes(query)))
 })
 const selectedTagCount = computed(() => selectedTagIds.value.length)
+const primaryEndpointUrl = computed(() => form.endpoints.find((endpoint) => endpoint.isPrimary)?.url ?? form.endpoints[0]?.url ?? null)
 
 const form = reactive({
   name: '',
   categoryId: '',
   description: '',
   icon: '',
+  iconType: 'emoji' as IconType,
   credentialHint: '',
   note: '',
   status: 'active' as ServiceItem['status'],
@@ -194,10 +202,31 @@ onMounted(load)
               <span class="dm-label">描述</span>
               <AppInput v-model="form.description" />
             </label>
-            <label class="grid gap-1 text-sm">
+            <div class="grid gap-2 text-sm">
               <span class="dm-label">图标</span>
-              <AppInput v-model="form.icon" placeholder="例如 🏠 或服务缩写" />
-            </label>
+              <div class="grid gap-2 rounded-[var(--dm-radius-surface)] bg-[var(--dm-surface-muted)] p-3 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
+                <ServiceIcon :icon="form.icon" :icon-type="form.iconType" :name="form.name || '服务'" :primary-url="primaryEndpointUrl" size="lg" />
+                <div class="grid gap-2">
+                  <AppSelect v-model="form.iconType" aria-label="图标类型" name="service-icon-type">
+                    <option v-for="option in serviceIconTypes" :key="option.value" :value="option.value">{{ option.label }}</option>
+                  </AppSelect>
+                  <AppInput
+                    v-if="form.iconType === 'emoji'"
+                    v-model="form.icon"
+                    name="service-icon-value"
+                    placeholder="例如 🏠 或服务缩写"
+                  />
+                  <AppInput
+                    v-else-if="form.iconType === 'url'"
+                    v-model="form.icon"
+                    name="service-icon-url"
+                    placeholder="https://example.com/icon.png"
+                    type="url"
+                  />
+                  <p v-else class="text-xs leading-5 text-[var(--dm-text-muted)]">保存后将使用主地址的 favicon，加载失败时显示服务缩写。</p>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 

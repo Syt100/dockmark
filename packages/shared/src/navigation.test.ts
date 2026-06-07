@@ -51,6 +51,51 @@ describe('navigation validation', () => {
     })
   })
 
+  it('rejects direct image icons without a valid URL', () => {
+    const result = validateServiceItemInput({
+      name: 'Grafana',
+      icon: 'grafana',
+      iconType: 'url',
+      endpoints: [
+        {
+          label: 'Public',
+          url: 'https://grafana.example.com',
+          kind: 'public',
+          isPrimary: true,
+        },
+      ],
+    })
+
+    expect(result).toEqual({
+      ok: false,
+      errors: ['icon must be a valid URL when iconType is url'],
+    })
+  })
+
+  it('allows favicon icons without a stored icon value', () => {
+    const result = validateServiceItemInput({
+      name: 'Grafana',
+      icon: '',
+      iconType: 'favicon',
+      endpoints: [
+        {
+          label: 'Public',
+          url: 'https://grafana.example.com',
+          kind: 'public',
+          isPrimary: true,
+        },
+      ],
+    })
+
+    expect(result).toMatchObject({
+      ok: true,
+      value: {
+        icon: null,
+        iconType: 'favicon',
+      },
+    })
+  })
+
   it('normalizes optional category input', () => {
     const result = validateCategoryInput({
       name: ' Media ',

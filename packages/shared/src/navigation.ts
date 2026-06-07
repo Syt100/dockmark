@@ -339,6 +339,14 @@ export function validateServiceItemInput(input: unknown): ValidationResult<Servi
     errors.push('tagIds must be an array')
   }
 
+  if (iconType === 'url') {
+    if (!icon) {
+      errors.push('icon is required when iconType is url')
+    } else if (!isValidUrl(icon)) {
+      errors.push('icon must be a valid URL when iconType is url')
+    }
+  }
+
   if (errors.length > 0) {
     return { ok: false, errors }
   }
@@ -349,7 +357,7 @@ export function validateServiceItemInput(input: unknown): ValidationResult<Servi
       categoryId: categoryId ?? null,
       name,
       description: description ?? null,
-      icon: icon ?? null,
+      icon: icon || null,
       iconType,
       credentialHint: credentialHint ?? null,
       note: note ?? null,

@@ -5,6 +5,7 @@ import type { NavItem } from '@dockmark/shared'
 
 import { endpointKindLabels } from '../ui/labels'
 import AppBadge from './AppBadge.vue'
+import ServiceIcon from './ServiceIcon.vue'
 
 const props = defineProps<{
   item: NavItem
@@ -20,9 +21,12 @@ function shouldShowEndpointKind(endpoint: NavItem['primaryEndpoint']) {
 <template>
   <article class="dm-surface p-[var(--dm-panel-padding)]">
     <div class="flex items-start justify-between gap-3">
-      <div class="min-w-0">
-        <h3 class="font-semibold text-[var(--dm-text)]">{{ item.icon || '•' }} {{ item.name }}</h3>
-        <p v-if="item.description" class="mt-1 text-sm leading-6 text-[var(--dm-text-muted)]">{{ item.description }}</p>
+      <div class="flex min-w-0 flex-1 items-center gap-3">
+        <ServiceIcon :icon="item.icon" :icon-type="item.iconType" :name="item.name" :primary-url="item.primaryEndpoint.url" />
+        <div class="min-w-0">
+          <h3 class="truncate font-semibold text-[var(--dm-text)]">{{ item.name }}</h3>
+          <p v-if="item.description" class="mt-1 text-sm leading-6 text-[var(--dm-text-muted)]">{{ item.description }}</p>
+        </div>
       </div>
       <a
         class="shrink-0 whitespace-nowrap rounded-[var(--dm-radius-control)] px-3 py-1.5 text-sm font-medium text-[var(--dm-text-muted)] transition hover:bg-[var(--dm-surface-muted)] hover:text-[var(--dm-text)]"

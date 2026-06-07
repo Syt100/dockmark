@@ -155,4 +155,79 @@ describe('ServiceEditorView', () => {
 
     vi.unstubAllGlobals()
   })
+
+  it('preserves loaded service icon type and previews the primary favicon', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation((input) => {
+      const path = String(input)
+
+      if (path === '/api/categories') {
+        return Promise.resolve(new Response(JSON.stringify({ categories: [] }), { status: 200 }))
+      }
+
+      if (path === '/api/tags') {
+        return Promise.resolve(new Response(JSON.stringify({ tags: [] }), { status: 200 }))
+      }
+
+      if (path === '/api/items/item_1') {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              item: {
+                id: 'item_1',
+                categoryId: null,
+                name: 'Grafana',
+                description: null,
+                icon: null,
+                iconType: 'favicon',
+                credentialHint: null,
+                note: null,
+                status: 'active',
+                sortOrder: 0,
+                createdAt: '2026-05-29T00:00:00.000Z',
+                updatedAt: '2026-05-29T00:00:00.000Z',
+                tags: [],
+                endpoints: [
+                  {
+                    id: 'end_1',
+                    itemId: 'item_1',
+                    label: '公网',
+                    url: 'https://grafana.example.test/dashboards',
+                    kind: 'public',
+                    isPrimary: true,
+                    sortOrder: 0,
+                    createdAt: '2026-05-29T00:00:00.000Z',
+                    updatedAt: '2026-05-29T00:00:00.000Z',
+                  },
+                ],
+              },
+            }),
+            { status: 200 },
+          ),
+        )
+      }
+
+      return Promise.resolve(new Response('{}', { status: 404 }))
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    const router = createTestRouter('/services/item_1/edit')
+    await router.isReady()
+
+    const wrapper = mount(ServiceEditorView, {
+      global: {
+        plugins: [router],
+      },
+    })
+
+    await vi.waitFor(() => {
+      expect(wrapper.get('select[name="service-icon-type"]').element).toHaveProperty('value', 'favicon')
+    })
+
+    expect(wrapper.findAll('input').some((input) => input.element.value === 'Grafana')).toBe(true)
+    expect(wrapper.get('select[name="service-icon-type"]').element).toHaveProperty('value', 'favicon')
+    expect(wrapper.find('img[alt="Grafana 图标"]').attributes('src')).toBe('https://grafana.example.test/favicon.ico')
+
+    vi.unstubAllGlobals()
+  })
 })
