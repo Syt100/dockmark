@@ -204,27 +204,24 @@ onMounted(load)
             </label>
             <div class="grid gap-2 text-sm">
               <span class="dm-label">图标</span>
-              <div class="grid gap-2 rounded-[var(--dm-radius-surface)] bg-[var(--dm-surface-muted)] p-3 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
-                <ServiceIcon :icon="form.icon" :icon-type="form.iconType" :name="form.name || '服务'" :primary-url="primaryEndpointUrl" size="lg" />
-                <div class="grid gap-2">
-                  <AppSelect v-model="form.iconType" aria-label="图标类型" name="service-icon-type">
-                    <option v-for="option in serviceIconTypes" :key="option.value" :value="option.value">{{ option.label }}</option>
-                  </AppSelect>
-                  <AppInput
-                    v-if="form.iconType === 'emoji'"
-                    v-model="form.icon"
-                    name="service-icon-value"
-                    placeholder="例如 🏠 或服务缩写"
-                  />
-                  <AppInput
-                    v-else-if="form.iconType === 'url'"
-                    v-model="form.icon"
-                    name="service-icon-url"
-                    placeholder="https://example.com/icon.png"
-                    type="url"
-                  />
-                  <p v-else class="text-xs leading-5 text-[var(--dm-text-muted)]">保存后将使用主地址的 favicon，加载失败时显示服务缩写。</p>
-                </div>
+              <div class="grid gap-2 sm:grid-cols-[auto_minmax(8rem,0.8fr)_minmax(8rem,1fr)] sm:items-center">
+                <ServiceIcon :icon="form.icon" :icon-type="form.iconType" :name="form.name || '服务'" :primary-url="primaryEndpointUrl" />
+                <AppSelect v-model="form.iconType" aria-label="图标类型" name="service-icon-type">
+                  <option v-for="option in serviceIconTypes" :key="option.value" :value="option.value">{{ option.label }}</option>
+                </AppSelect>
+                <AppInput
+                  v-if="form.iconType === 'emoji'"
+                  v-model="form.icon"
+                  name="service-icon-value"
+                  placeholder="例如 🏠 或服务缩写"
+                />
+                <AppInput
+                  v-else-if="form.iconType === 'url'"
+                  v-model="form.icon"
+                  name="service-icon-url"
+                  placeholder="https://example.com/icon.png"
+                  type="url"
+                />
               </div>
             </div>
           </div>

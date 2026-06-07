@@ -227,6 +227,7 @@ describe('ServiceEditorView', () => {
     expect(wrapper.findAll('input').some((input) => input.element.value === 'Grafana')).toBe(true)
     expect(wrapper.get('select[name="service-icon-type"]').element).toHaveProperty('value', 'favicon')
     expect(wrapper.find('img[alt="Grafana 图标"]').attributes('src')).toBe('https://grafana.example.test/favicon.ico')
+    expect(wrapper.text()).not.toContain('保存后将使用主地址的 favicon')
 
     vi.unstubAllGlobals()
   })
