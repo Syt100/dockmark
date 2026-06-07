@@ -21,7 +21,7 @@ function shouldShowEndpointKind(endpoint: NavItem['primaryEndpoint']) {
 <template>
   <article class="dm-surface p-[var(--dm-panel-padding)]">
     <div class="flex items-start justify-between gap-3">
-      <div class="flex min-w-0 flex-1 items-center gap-3">
+      <div class="flex min-w-0 flex-1 items-start gap-3">
         <ServiceIcon :icon="item.icon" :icon-type="item.iconType" :name="item.name" :primary-url="item.primaryEndpoint.url" />
         <div class="min-w-0">
           <h3 class="truncate font-semibold text-[var(--dm-text)]">{{ item.name }}</h3>
