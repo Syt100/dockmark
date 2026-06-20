@@ -23,3 +23,15 @@ Dockmark SHALL apply service navigation source mutations and navigation cache ve
 - **WHEN** a category, tag, or service item mutation cannot advance the navigation cache version
 - **THEN** the corresponding source data mutation SHALL NOT remain committed
 - **AND** a later navigation read SHALL NOT depend on a stale cache version for changed source data.
+
+### Requirement: Explicit Worker release gates
+Dockmark SHALL document and configure Worker production release checks so deployment behavior does not depend on implicit local defaults.
+
+#### Scenario: Production release is prepared
+- **WHEN** a production Worker release is prepared
+- **THEN** the release checklist SHALL include validation, OpenSpec validation, Wrangler binding type checks, and production dry-run deployment checks
+- **AND** Worker observability SHALL be explicitly enabled with a configured sampling rate.
+
+#### Scenario: Compatibility date is updated
+- **WHEN** the Worker compatibility date changes
+- **THEN** Worker runtime integration tests and the root validation gate SHALL pass before release.

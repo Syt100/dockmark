@@ -122,6 +122,8 @@ corepack pnpm --dir apps/worker exec wrangler kv namespace create dockmark-produ
 - 禁止使用 `AUTH_MODE=development`。
 - 当前生产默认使用 `AUTH_MODE=builtin`。
 - 生产迁移和部署命令必须显式选择 Wrangler `production` environment。
+- `compatibility_date` 应定期更新；每次更新必须运行 Worker typecheck、runtime integration tests、`corepack pnpm validate` 和 OpenSpec 全量校验。
+- Worker observability 必须显式启用并配置采样率；调整采样率时要记录原因，避免排障时缺少日志/trace 样本。
 - `AUTH_MODE=oidc` 和 `AUTH_MODE=cloudflare-access` 是预留模式，当前会拒绝访问并提示改用 builtin。
 - 业务代码只能依赖标准用户上下文。
 - OIDC 和 Cloudflare Access 需要后续 OpenSpec change 实现后才能用于生产。
@@ -213,6 +215,8 @@ corepack pnpm validate
 openspec validate --all --strict --no-interactive
 ```
 
+`corepack pnpm validate` 是只读门禁，不应改写源码、格式或 lint 结果。需要自动修复时，先本地显式运行 `corepack pnpm lint:fix` 或 `corepack pnpm format`，再重新运行验证。
+
 构建检查：
 
 ```sh
@@ -228,12 +232,14 @@ corepack pnpm deploy:production
 发布顺序建议：
 
 1. 合并代码前运行测试和 OpenSpec 校验。
-2. 首次部署或确认生产 D1/KV 已存在。
-3. 应用生产 D1 迁移。
-4. 部署 Worker 和前端 assets。
-5. 打开 `/api/health` 检查版本和服务状态。
-6. 打开 `/api/smoke` 检查 D1/KV 连通性。
-7. 打开首页确认 `/api/nav` 正常返回。
+2. 运行 `corepack pnpm --filter @dockmark/worker cf-typecheck`，确认 Wrangler 绑定类型和配置一致。
+3. 运行 `corepack pnpm deploy:dry-run`，确认生产 Worker 绑定、assets 和 vars。
+4. 首次部署或确认生产 D1/KV 已存在。
+5. 应用生产 D1 迁移。
+6. 部署 Worker 和前端 assets。
+7. 打开 `/api/health` 检查版本和服务状态。
+8. 打开 `/api/smoke` 检查 D1/KV 连通性。
+9. 打开首页确认 `/api/nav` 正常返回。
 
 ## 8. 回滚原则
 
@@ -266,6 +272,8 @@ corepack pnpm deploy:production
 
 - 生产 D1 已存在或将由 GitHub Actions 自动创建，KV 将由 Wrangler 部署时自动创建并绑定。
 - `env.production.vars.AUTH_MODE=builtin`，且没有误配为尚未实现的 `oidc` 或 `cloudflare-access`。
+- `compatibility_date` 更新已经通过 Worker runtime integration tests。
+- Worker observability 已启用并设置了明确采样率。
 - GitHub repository secret `DOCKMARK_SETUP_TOKEN` 已配置为强随机值，并在管理员初始化后移除或轮换。
 - 已执行生产迁移。
 - `corepack pnpm validate` 通过。

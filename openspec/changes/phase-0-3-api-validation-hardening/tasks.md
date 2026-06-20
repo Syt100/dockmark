@@ -14,8 +14,13 @@
 - [x] 3.1 Batch navigation mutations with cache version invalidation in the application service boundary.
 - [x] 3.2 Add Worker regression coverage proving mutation writes roll back if cache version invalidation fails.
 
-## 4. Verification
+## 4. Production Operations
 
-- [x] 4.1 Run focused Worker and web validation checks.
-- [x] 4.2 Run `corepack pnpm validate`.
-- [x] 4.3 Run `openspec validate --all --strict --no-interactive`.
+- [x] 4.1 Configure explicit Worker observability sampling.
+- [x] 4.2 Document compatibility date, binding typecheck, dry-run deploy, and validation release gates.
+
+## 5. Verification
+
+- [x] 5.1 Run focused Worker and web validation checks.
+- [x] 5.2 Run `corepack pnpm validate`.
+- [x] 5.3 Run `openspec validate --all --strict --no-interactive`.

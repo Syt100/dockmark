@@ -8,6 +8,7 @@ Dockmark's validation gate should be safe to run in CI or locally without rewrit
 - Keep explicit fix/format commands available for developer-initiated rewrites.
 - Return stable structured `conflict` errors for D1 uniqueness failures without exposing raw database messages.
 - Execute navigation mutations and cache version invalidation in one D1 consistency boundary.
+- Make Worker production observability and release checks explicit in config and deployment docs.
 - Add regression coverage for the conflict response contract and lint check behavior.
 
 ## Capabilities
@@ -25,4 +26,5 @@ Dockmark's validation gate should be safe to run in CI or locally without rewrit
 - Root and web package scripts for validation/lint behavior.
 - Worker API error mapping and tests.
 - Worker service mutation boundary for categories, tags, and service items.
+- Worker Wrangler observability configuration and deployment documentation.
 - No data model, migration, auth, sync, import/export, or credential storage changes.
