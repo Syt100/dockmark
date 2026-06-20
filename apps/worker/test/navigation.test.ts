@@ -405,12 +405,15 @@ describe('navigation API', () => {
     }, env)
 
     expect(duplicate.status).toBe(409)
-    await expect(duplicate.json()).resolves.toMatchObject({
+    const body = await duplicate.json() as { error: { code: string; message: string } }
+    expect(body).toMatchObject({
       error: {
         code: 'conflict',
-        message: expect.stringContaining('UNIQUE constraint failed: tags.name'),
+        message: 'Resource already exists',
       },
     })
+    expect(body.error.message).not.toContain('UNIQUE constraint failed')
+    expect(body.error.message).not.toContain('tags.name')
   })
 
   it('returns structured JSON errors for invalid JSON and missing API routes', async () => {

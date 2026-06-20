@@ -13,7 +13,9 @@
     "build": "tsc -p tsconfig.json --noEmit",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "lint": "echo \"No shared lint yet\"",
+    "lint": "corepack pnpm run lint:check",
+    "lint:check": "echo \"No shared lint yet\"",
+    "lint:fix": "echo \"No shared lint fix yet\"",
     "format": "echo \"No shared format yet\""
   },
   "devDependencies": {

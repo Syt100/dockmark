@@ -64,7 +64,8 @@ export async function apiErrorResponseFromUnknown(error: unknown): Promise<Respo
   }
 
   if (isD1UniqueConstraintError(error)) {
-    return apiErrorResponse(new ApiHttpError(409, 'conflict', error.message))
+    console.error(error)
+    return apiErrorResponse(new ApiHttpError(409, 'conflict', 'Resource already exists'))
   }
 
   console.error(error)

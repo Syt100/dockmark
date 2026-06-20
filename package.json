@@ -18,8 +18,10 @@
     "typecheck": "corepack pnpm -r --if-present typecheck",
     "test": "corepack pnpm -r --if-present test",
     "lint": "corepack pnpm -r --if-present lint",
+    "lint:check": "corepack pnpm -r --if-present lint:check",
+    "lint:fix": "corepack pnpm -r --if-present lint:fix",
     "format": "corepack pnpm -r --if-present format",
-    "validate": "corepack pnpm typecheck && corepack pnpm test && corepack pnpm lint && corepack pnpm build"
+    "validate": "corepack pnpm typecheck && corepack pnpm test && corepack pnpm lint:check && corepack pnpm build"
   },
   "devDependencies": {
     "@types/node": "^24.13.1",

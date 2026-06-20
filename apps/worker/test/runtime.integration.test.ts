@@ -159,9 +159,12 @@ describe('runtime-backed Worker integration', () => {
       body: JSON.stringify({ name: 'media' }),
     })
     expect(duplicate.status).toBe(409)
-    await expect(duplicate.json()).resolves.toMatchObject({
-      error: { code: 'conflict' },
+    const duplicateBody = await duplicate.json() as { error: { code: string; message: string } }
+    expect(duplicateBody).toMatchObject({
+      error: { code: 'conflict', message: 'Resource already exists' },
     })
+    expect(duplicateBody.error.message).not.toContain('UNIQUE constraint failed')
+    expect(duplicateBody.error.message).not.toContain('tags.name')
 
     const invalid = await SELF.fetch('https://dockmark.test/api/items', {
       method: 'POST',
