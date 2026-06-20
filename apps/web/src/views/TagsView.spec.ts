@@ -74,7 +74,6 @@ describe('TagsView', () => {
 
     expect(wrapper.text()).not.toContain('公网')
     expect(wrapper.text()).toContain('监控')
-    expect(wrapper.findComponent({ name: 'TransitionGroup' }).exists()).toBe(true)
 
     await input.setValue('不存在')
 

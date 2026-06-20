@@ -37,17 +37,18 @@ Dockmark SHALL make route and modal/editor transitions visually traceable withou
 - **THEN** the confirmation overlay and dialog SHALL appear with a short transition
 - **AND** focus behavior and Escape/cancel behavior SHALL remain unchanged.
 
-### Requirement: List and Card Update Transitions
-Dockmark SHALL animate common list and card state changes in service navigation and management views.
+### Requirement: Stable Filtered Lists
+Dockmark SHALL keep filter-driven service navigation and management lists stable during search and filter changes.
 
-#### Scenario: Navigation cards load or change
-- **WHEN** home navigation cards become visible after loading or filtering
-- **THEN** card appearance SHALL use a subtle shared list transition.
+#### Scenario: Navigation cards are filtered
+- **WHEN** home navigation cards change because the user searches
+- **THEN** retained cards SHALL NOT move through a list transition
+- **AND** leaving cards SHALL NOT create layout jumps.
 
-#### Scenario: Management records change
-- **WHEN** service, category, or tag records are inserted, removed, or filtered
-- **THEN** visible rows or mobile cards SHALL update with a subtle shared transition
-- **AND** table and card layouts SHALL remain stable.
+#### Scenario: Management records are filtered
+- **WHEN** service, category, or tag records change because the user searches or filters
+- **THEN** desktop rows and mobile cards SHALL update in stable normal list containers
+- **AND** table and card layouts SHALL remain stable and scannable.
 
 ### Requirement: Feedback and Disclosure Transitions
 Dockmark SHALL make transient feedback and mobile disclosures easier to follow.

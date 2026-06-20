@@ -82,7 +82,6 @@ describe('CategoriesView', () => {
 
     expect(wrapper.text()).not.toContain('媒体与相册')
     expect(wrapper.text()).toContain('基础设施')
-    expect(wrapper.findComponent({ name: 'TransitionGroup' }).exists()).toBe(true)
 
     await input.setValue('不存在')
 

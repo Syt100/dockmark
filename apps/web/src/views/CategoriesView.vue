@@ -97,7 +97,7 @@ watch(
             <span>排序</span>
             <span class="text-right">操作</span>
           </div>
-          <TransitionGroup appear class="divide-y divide-[var(--dm-border)]" name="dm-list" tag="div">
+          <div class="divide-y divide-[var(--dm-border)]">
             <article
               v-for="category in filteredCategories"
               :key="category.id"
@@ -119,10 +119,10 @@ watch(
                 <ConfirmAction :message="`确认删除分类“${category.name}”？服务会变为未分类。`" @confirm="remove(category.id)" />
               </div>
             </article>
-          </TransitionGroup>
+          </div>
         </div>
 
-        <TransitionGroup appear class="grid gap-2 md:hidden" name="dm-list" tag="div">
+        <div class="grid gap-2 md:hidden">
           <article v-for="category in filteredCategories" :key="category.id" class="dm-mobile-card">
             <div class="flex items-start justify-between gap-4">
               <div class="min-w-0">
@@ -139,7 +139,7 @@ watch(
               <ConfirmAction :message="`确认删除分类“${category.name}”？服务会变为未分类。`" @confirm="remove(category.id)" />
             </div>
           </article>
-        </TransitionGroup>
+        </div>
       </section>
     </div>
 

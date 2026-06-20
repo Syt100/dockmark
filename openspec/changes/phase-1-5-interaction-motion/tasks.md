@@ -9,8 +9,8 @@
 - [x] Add desktop editor overlay/panel transition in `ResponsiveEditorShell.vue`
 
 ## 3. Lists, cards, and feedback
-- [x] Add card/list transitions in `HomeView.vue`
-- [x] Add management list transitions in service, category, and tag views
+- [x] Keep filter-driven home cards stable without list transition groups
+- [x] Keep service, category, and tag management lists stable without filter-driven transition groups
 - [x] Add feedback message transition
 
 ## 4. Dynamic controls

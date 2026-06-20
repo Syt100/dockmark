@@ -156,7 +156,6 @@ describe('ServicesView', () => {
     expect(wrapper.html()).toContain('whitespace-nowrap')
     expect(wrapper.html()).toContain('table-fixed')
     expect(wrapper.html()).toContain('lg:hidden')
-    expect(wrapper.findComponent({ name: 'TransitionGroup' }).exists()).toBe(true)
 
     const selects = wrapper.findAll('select')
     await selects[1]?.setValue('archived')

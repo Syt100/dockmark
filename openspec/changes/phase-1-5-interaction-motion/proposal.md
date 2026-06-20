@@ -5,7 +5,8 @@ Dockmark Phase 1 frontend already has consistent layout, theme tokens, and share
 
 ## What Changes
 - Add a lightweight shared motion system using CSS tokens and Vue built-in transitions.
-- Animate route content, dialogs, feedback messages, mobile filter disclosure, list/card updates, and dynamic service editor rows.
+- Animate route content, dialogs, feedback messages, mobile filter disclosure, and dynamic service editor rows.
+- Keep filter-driven home and management lists on stable static containers to avoid retained-item and leaving-item layout jumps during search or filter changes.
 - Respect reduced-motion user preferences.
 - Keep motion definitions centralized to avoid repeated page-local animation CSS.
 

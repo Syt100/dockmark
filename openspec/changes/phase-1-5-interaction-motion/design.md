@@ -15,7 +15,7 @@ Define shared motion tokens for duration and easing:
 ## Transition Families
 - `dm-fade`: opacity-only changes.
 - `dm-panel`: dialog and editor panel entry and exit.
-- `dm-list`: list/card insertion, removal, and move transitions.
+- `dm-list`: dynamic row insertion, removal, and move transitions for controlled, non-filter-driven lists.
 - `dm-feedback`: success, error, and info feedback appearance.
 - `dm-collapse`: mobile filter disclosure.
 
@@ -27,5 +27,6 @@ Reduced motion mode SHALL preserve visibility changes and layout correctness wit
 ## Implementation Notes
 - Do not introduce GSAP, Motion for Vue, or another animation dependency for this phase.
 - Prefer opacity and transform animations over layout-heavy properties.
-- Keep table row animation conservative so desktop management tables remain stable and scannable.
+- Keep search/filter-driven home and management lists on normal containers. Earlier `TransitionGroup` use in these views caused retained-item and leaving-item layout motion during filtering, so list motion is reserved for controlled dynamic rows such as service editor endpoints.
+- Keep table rows stable so desktop management tables remain scannable.
 - Preserve existing focus handling, body scroll locking, and route-driven editor behavior.
