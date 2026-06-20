@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.json --noEmit",
+    "build": "tsc -p tsconfig.build.json && node scripts/write-manifest.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "echo \"No extension tests yet\"",
+    "test": "corepack pnpm run build && node --test test/**/*.test.mjs",
     "lint": "corepack pnpm run lint:check",
     "lint:check": "echo \"No extension lint yet\"",
     "lint:fix": "echo \"No extension lint fix yet\"",
