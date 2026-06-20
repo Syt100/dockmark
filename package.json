@@ -21,6 +21,7 @@
     "lint:check": "corepack pnpm -r --if-present lint:check",
     "lint:fix": "corepack pnpm -r --if-present lint:fix",
     "format": "corepack pnpm -r --if-present format",
+    "clean": "node scripts/clean.mjs",
     "validate": "corepack pnpm typecheck && corepack pnpm test && corepack pnpm lint:check && corepack pnpm build"
   },
   "devDependencies": {

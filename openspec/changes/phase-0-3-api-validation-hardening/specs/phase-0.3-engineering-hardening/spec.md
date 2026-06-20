@@ -47,3 +47,11 @@ Dockmark SHALL keep web API request serialization and structured error handling 
 #### Scenario: Empty response is returned
 - **WHEN** an API response returns HTTP 204
 - **THEN** the shared client helper SHALL resolve without attempting to parse JSON.
+
+### Requirement: Ignored build output cleanup
+Dockmark SHALL provide a workspace cleanup command for ignored generated outputs without deleting tracked source files.
+
+#### Scenario: Cleanup is requested
+- **WHEN** a developer runs the cleanup command
+- **THEN** ignored build outputs, caches, and TypeScript build info under workspace apps and packages SHALL be removed
+- **AND** tracked files SHALL remain untouched.

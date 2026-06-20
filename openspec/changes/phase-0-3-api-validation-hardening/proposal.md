@@ -10,6 +10,7 @@ Dockmark's validation gate should be safe to run in CI or locally without rewrit
 - Execute navigation mutations and cache version invalidation in one D1 consistency boundary.
 - Make Worker production observability and release checks explicit in config and deployment docs.
 - Centralize web JSON request serialization so API wrappers do not repeat low-level fetch details.
+- Add a workspace clean command for ignored build outputs and local caches.
 - Add regression coverage for the conflict response contract and lint check behavior.
 
 ## Capabilities
@@ -29,4 +30,5 @@ Dockmark's validation gate should be safe to run in CI or locally without rewrit
 - Worker service mutation boundary for categories, tags, and service items.
 - Worker Wrangler observability configuration and deployment documentation.
 - Web API client request helper and tests.
+- Root package scripts and README development workflow.
 - No data model, migration, auth, sync, import/export, or credential storage changes.

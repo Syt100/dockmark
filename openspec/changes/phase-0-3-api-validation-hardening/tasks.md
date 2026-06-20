@@ -24,8 +24,13 @@
 - [x] 5.1 Add a shared JSON request helper for endpoint wrappers.
 - [x] 5.2 Add focused tests for JSON serialization, header merging, structured errors, and 204 responses.
 
-## 6. Verification
+## 6. Local Generated Outputs
 
-- [x] 6.1 Run focused Worker and web validation checks.
-- [x] 6.2 Run `corepack pnpm validate`.
-- [x] 6.3 Run `openspec validate --all --strict --no-interactive`.
+- [x] 6.1 Add a root cleanup command for ignored app/package build outputs and caches.
+- [x] 6.2 Document the cleanup command in development instructions.
+
+## 7. Verification
+
+- [x] 7.1 Run focused Worker and web validation checks.
+- [x] 7.2 Run `corepack pnpm validate`.
+- [x] 7.3 Run `openspec validate --all --strict --no-interactive`.

@@ -50,6 +50,12 @@ openspec validate --all --strict --no-interactive
 
 `pnpm validate` is a read-only gate: it typechecks, tests, lint-checks, and builds without applying formatter or lint fixer changes. Use `pnpm format` or `pnpm lint:fix` when you explicitly want local files rewritten.
 
+Clean ignored workspace build outputs and caches:
+
+```sh
+pnpm clean
+```
+
 Production deploys use the Wrangler `production` environment. Wrangler can automatically provision the production D1 database and KV namespace from the binding configuration:
 
 ```sh
