@@ -8,7 +8,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "corepack pnpm run build && node --test test/**/*.test.mjs",
     "lint": "corepack pnpm run lint:check",
-    "lint:check": "echo \"No extension lint yet\"",
+    "lint:check": "tsc -p tsconfig.json --noEmit",
     "lint:fix": "echo \"No extension lint fix yet\"",
     "format": "echo \"No extension format yet\""
   },

@@ -11,6 +11,6 @@
 
 ## 3. Verification
 
-- [ ] 3.1 Run extension tests and build.
-- [ ] 3.2 Run `corepack pnpm validate`.
-- [ ] 3.3 Run `openspec validate --all --strict --no-interactive`.
+- [x] 3.1 Run extension tests and build.
+- [x] 3.2 Run `corepack pnpm validate`.
+- [x] 3.3 Run `openspec validate --all --strict --no-interactive`.
