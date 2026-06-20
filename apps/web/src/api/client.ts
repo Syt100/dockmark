@@ -58,6 +58,23 @@ async function readError(response: Response): Promise<ApiError> {
   return new ApiError(message || `Request failed with ${response.status}`, response.status)
 }
 
+type JsonRequestInit = Omit<RequestInit, 'body'> & {
+  body?: unknown
+}
+
+function jsonInit(init: JsonRequestInit = {}): RequestInit {
+  const { body, headers, ...rest } = init
+
+  return {
+    ...rest,
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    headers: {
+      'content-type': 'application/json',
+      ...headers,
+    },
+  }
+}
+
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init,
@@ -78,21 +95,25 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>
 }
 
+export function jsonRequest<T>(path: string, init?: JsonRequestInit): Promise<T> {
+  return request<T>(path, jsonInit(init))
+}
+
 export async function fetchAuthSetupStatus(): Promise<AuthSetupStatusResponse> {
   return request<AuthSetupStatusResponse>('/api/auth/setup')
 }
 
 export async function setupBuiltinAuth(input: AuthSetupRequest): Promise<AuthSuccessResponse> {
-  return request<AuthSuccessResponse>('/api/auth/setup', {
+  return jsonRequest<AuthSuccessResponse>('/api/auth/setup', {
     method: 'POST',
-    body: JSON.stringify(input),
+    body: input,
   })
 }
 
 export async function login(input: AuthLoginRequest): Promise<AuthSuccessResponse> {
-  return request<AuthSuccessResponse>('/api/auth/login', {
+  return jsonRequest<AuthSuccessResponse>('/api/auth/login', {
     method: 'POST',
-    body: JSON.stringify(input),
+    body: input,
   })
 }
 
@@ -119,17 +140,17 @@ export async function fetchCategory(id: string): Promise<Category> {
 }
 
 export async function createCategory(input: CategoryInput): Promise<Category> {
-  const body = await request<CategoryResponse>('/api/categories', {
+  const body = await jsonRequest<CategoryResponse>('/api/categories', {
     method: 'POST',
-    body: JSON.stringify(input),
+    body: input,
   })
   return body.category
 }
 
 export async function updateCategory(id: string, input: CategoryInput): Promise<Category> {
-  const body = await request<CategoryResponse>(`/api/categories/${id}`, {
+  const body = await jsonRequest<CategoryResponse>(`/api/categories/${id}`, {
     method: 'PATCH',
-    body: JSON.stringify(input),
+    body: input,
   })
   return body.category
 }
@@ -149,17 +170,17 @@ export async function fetchTag(id: string): Promise<Tag> {
 }
 
 export async function createTag(input: TagInput): Promise<Tag> {
-  const body = await request<TagResponse>('/api/tags', {
+  const body = await jsonRequest<TagResponse>('/api/tags', {
     method: 'POST',
-    body: JSON.stringify(input),
+    body: input,
   })
   return body.tag
 }
 
 export async function updateTag(id: string, input: TagInput): Promise<Tag> {
-  const body = await request<TagResponse>(`/api/tags/${id}`, {
+  const body = await jsonRequest<TagResponse>(`/api/tags/${id}`, {
     method: 'PATCH',
-    body: JSON.stringify(input),
+    body: input,
   })
   return body.tag
 }
@@ -179,17 +200,17 @@ export async function fetchItem(id: string): Promise<ServiceItem> {
 }
 
 export async function createItem(input: ServiceItemInput): Promise<ServiceItem> {
-  const body = await request<{ item: ServiceItem }>('/api/items', {
+  const body = await jsonRequest<{ item: ServiceItem }>('/api/items', {
     method: 'POST',
-    body: JSON.stringify(input),
+    body: input,
   })
   return body.item
 }
 
 export async function updateItem(id: string, input: ServiceItemInput): Promise<ServiceItem> {
-  const body = await request<{ item: ServiceItem }>(`/api/items/${id}`, {
+  const body = await jsonRequest<{ item: ServiceItem }>(`/api/items/${id}`, {
     method: 'PATCH',
-    body: JSON.stringify(input),
+    body: input,
   })
   return body.item
 }

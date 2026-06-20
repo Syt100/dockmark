@@ -19,8 +19,13 @@
 - [x] 4.1 Configure explicit Worker observability sampling.
 - [x] 4.2 Document compatibility date, binding typecheck, dry-run deploy, and validation release gates.
 
-## 5. Verification
+## 5. Web API Client
 
-- [x] 5.1 Run focused Worker and web validation checks.
-- [x] 5.2 Run `corepack pnpm validate`.
-- [x] 5.3 Run `openspec validate --all --strict --no-interactive`.
+- [x] 5.1 Add a shared JSON request helper for endpoint wrappers.
+- [x] 5.2 Add focused tests for JSON serialization, header merging, structured errors, and 204 responses.
+
+## 6. Verification
+
+- [x] 6.1 Run focused Worker and web validation checks.
+- [x] 6.2 Run `corepack pnpm validate`.
+- [x] 6.3 Run `openspec validate --all --strict --no-interactive`.

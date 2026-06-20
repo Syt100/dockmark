@@ -35,3 +35,15 @@ Dockmark SHALL document and configure Worker production release checks so deploy
 #### Scenario: Compatibility date is updated
 - **WHEN** the Worker compatibility date changes
 - **THEN** Worker runtime integration tests and the root validation gate SHALL pass before release.
+
+### Requirement: Centralized web JSON requests
+Dockmark SHALL keep web API request serialization and structured error handling in a shared client helper rather than repeating low-level fetch details across endpoint wrappers.
+
+#### Scenario: JSON request is sent
+- **WHEN** a web API wrapper sends a JSON request body
+- **THEN** the body SHALL be serialized by the shared client helper
+- **AND** caller-provided headers SHALL be preserved.
+
+#### Scenario: Empty response is returned
+- **WHEN** an API response returns HTTP 204
+- **THEN** the shared client helper SHALL resolve without attempting to parse JSON.

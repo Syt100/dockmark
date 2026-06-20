@@ -4,6 +4,8 @@
 
 Production deployment docs already describe the broad release flow, but compatibility date updates, observability sampling, binding type checks, and dry-run deployment checks should be explicit release gates.
 
+The web API client currently repeats JSON body serialization in individual endpoint wrappers. That is low risk today but easy to make inconsistent as more endpoints are added.
+
 ## Goals / Non-Goals
 
 **Goals:**
@@ -14,6 +16,7 @@ Production deployment docs already describe the broad release flow, but compatib
 - Avoid exposing raw D1 constraint messages to API clients.
 - Keep navigation source mutations and cache version invalidation in one D1 consistency boundary.
 - Make Worker observability and release checks explicit without adding new infrastructure.
+- Centralize JSON request serialization while preserving the existing endpoint wrapper API.
 
 **Non-Goals:**
 
@@ -48,9 +51,16 @@ Wrangler config will keep observability enabled with an explicit `head_sampling_
 
 Alternative considered: adding automation for every release gate now. The existing GitHub Actions workflow already runs the key validation and deployment steps; documenting the operational contract is the smaller change for this hardening pass.
 
+### Centralize web JSON requests
+
+The web client will keep its existing endpoint-specific functions but route JSON-body requests through a shared helper that handles serialization, default content type, caller header merging, structured error parsing, and 204 responses.
+
+Alternative considered: generating a client from shared types. That would be heavier than needed for the current API surface and would not remove the need for runtime error handling.
+
 ## Risks / Trade-offs
 
 - [Risk] Some developers may expect `pnpm lint` to auto-fix. -> Mitigation: expose explicit fix scripts and keep validation/check scripts read-only.
 - [Risk] Generic conflict messages provide less immediate client detail. -> Mitigation: retain stable `conflict` code and add field-level validation separately for known user-correctable inputs where needed.
 - [Risk] Service-layer mutation code becomes more statement-oriented. -> Mitigation: keep route handlers unchanged and isolate batching inside application service functions.
 - [Risk] Full observability sampling may be noisy at higher traffic. -> Mitigation: Dockmark is currently a low-traffic personal Homelab app; adjust sampling deliberately when traffic patterns justify it.
+- [Risk] Request helper abstraction hides fetch details. -> Mitigation: keep the helper small and cover serialization/header behavior with focused tests.
