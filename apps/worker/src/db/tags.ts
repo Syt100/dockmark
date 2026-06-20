@@ -14,9 +14,8 @@ export async function getTag(db: D1Database, id: string): Promise<Tag | null> {
 
 export async function createTag(db: D1Database, input: TagInput): Promise<Tag> {
   const id = createId('tag')
-  const slug = input.slug || slugify(input.name)
 
-  await db.prepare('INSERT INTO tags (id, name, slug) VALUES (?, ?, ?)').bind(id, input.name, slug).run()
+  await db.batch([createTagStatement(db, id, input)])
 
   const tag = await getTag(db, id)
 
@@ -27,13 +26,14 @@ export async function createTag(db: D1Database, input: TagInput): Promise<Tag> {
   return tag
 }
 
-export async function updateTag(db: D1Database, id: string, input: TagInput): Promise<Tag | null> {
+export function createTagStatement(db: D1Database, id: string, input: TagInput): D1PreparedStatement {
   const slug = input.slug || slugify(input.name)
 
-  const result = await db
-    .prepare('UPDATE tags SET name = ?, slug = ? WHERE id = ?')
-    .bind(input.name, slug, id)
-    .run()
+  return db.prepare('INSERT INTO tags (id, name, slug) VALUES (?, ?, ?)').bind(id, input.name, slug)
+}
+
+export async function updateTag(db: D1Database, id: string, input: TagInput): Promise<Tag | null> {
+  const result = await updateTagStatement(db, id, input).run()
 
   if (result.meta.changes === 0) {
     return null
@@ -42,7 +42,19 @@ export async function updateTag(db: D1Database, id: string, input: TagInput): Pr
   return getTag(db, id)
 }
 
+export function updateTagStatement(db: D1Database, id: string, input: TagInput): D1PreparedStatement {
+  const slug = input.slug || slugify(input.name)
+
+  return db
+    .prepare('UPDATE tags SET name = ?, slug = ? WHERE id = ?')
+    .bind(input.name, slug, id)
+}
+
 export async function deleteTag(db: D1Database, id: string): Promise<boolean> {
-  const result = await db.prepare('DELETE FROM tags WHERE id = ?').bind(id).run()
+  const result = await deleteTagStatement(db, id).run()
   return result.meta.changes > 0
+}
+
+export function deleteTagStatement(db: D1Database, id: string): D1PreparedStatement {
+  return db.prepare('DELETE FROM tags WHERE id = ?').bind(id)
 }

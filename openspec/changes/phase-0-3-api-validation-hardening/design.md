@@ -1,6 +1,6 @@
 ## Context
 
-`corepack pnpm validate` currently invokes package lint scripts, and the web lint script runs fixers. This makes a validation command capable of modifying tracked files. Separately, the Worker maps D1 unique constraint failures to `409 conflict` but returns the raw database error message, which may include implementation details such as table and column names.
+`corepack pnpm validate` currently invokes package lint scripts, and the web lint script runs fixers. This makes a validation command capable of modifying tracked files. Separately, the Worker maps D1 unique constraint failures to `409 conflict` but returns the raw database error message, which may include implementation details such as table and column names. Navigation mutations also update source rows before incrementing cache version metadata, so a failed invalidation can leave changed D1 data paired with an old KV cache version.
 
 ## Goals / Non-Goals
 
@@ -10,10 +10,11 @@
 - Preserve explicit commands for developers to auto-fix lint issues.
 - Keep API errors structured with stable machine-readable codes.
 - Avoid exposing raw D1 constraint messages to API clients.
+- Keep navigation source mutations and cache version invalidation in one D1 consistency boundary.
 
 **Non-Goals:**
 
-- No changes to D1 schema, migrations, auth adapters, KV caching, or navigation behavior.
+- No changes to D1 schema, migrations, auth adapters, or product navigation behavior.
 - No new product capabilities.
 - No changes to password, token, API key, OTP seed, session cookie, or other secret storage.
 
@@ -31,7 +32,14 @@ D1 uniqueness failures will still map to `409` with `error.code = conflict`, but
 
 Alternative considered: parse constraint names into field-specific validation errors. That would couple API behavior to current SQLite/D1 error text and is better handled by explicit preflight validation where needed.
 
+### Batch navigation mutations with cache version increments
+
+Navigation application services will execute source mutation statements and the navigation cache version increment through one `D1Database.batch()` call. D1 batch execution is sequential and rolls back the full sequence on failure, matching the requirement that source data and cache version metadata advance together.
+
+Alternative considered: rebuild navigation from D1 on every read after writes. That avoids stale cache but discards the existing versioned KV cache benefit.
+
 ## Risks / Trade-offs
 
 - [Risk] Some developers may expect `pnpm lint` to auto-fix. -> Mitigation: expose explicit fix scripts and keep validation/check scripts read-only.
 - [Risk] Generic conflict messages provide less immediate client detail. -> Mitigation: retain stable `conflict` code and add field-level validation separately for known user-correctable inputs where needed.
+- [Risk] Service-layer mutation code becomes more statement-oriented. -> Mitigation: keep route handlers unchanged and isolate batching inside application service functions.

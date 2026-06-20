@@ -84,6 +84,7 @@ type Store = {
   authUsers: AuthUserRecord[]
   authSessions: AuthSessionRecord[]
   authSessionTouchCount: number
+  failNextNavCacheVersionIncrement: boolean
 }
 
 type StatementResult = {
@@ -108,6 +109,36 @@ function sortByOrderAndName<T extends { sort_order?: number; name?: string; labe
 
 function uniqueConstraintFailed(columns: string): Error {
   return new Error(`D1_ERROR: UNIQUE constraint failed: ${columns}`)
+}
+
+function cloneStoreState(store: Store): Store {
+  return {
+    metadata: new Map(store.metadata),
+    kvPutOptions: new Map(store.kvPutOptions),
+    categories: structuredClone(store.categories),
+    items: structuredClone(store.items),
+    endpoints: structuredClone(store.endpoints),
+    tags: structuredClone(store.tags),
+    itemTags: structuredClone(store.itemTags),
+    authUsers: structuredClone(store.authUsers),
+    authSessions: structuredClone(store.authSessions),
+    authSessionTouchCount: store.authSessionTouchCount,
+    failNextNavCacheVersionIncrement: store.failNextNavCacheVersionIncrement,
+  }
+}
+
+function restoreStoreState(store: Store, snapshot: Store): void {
+  store.metadata = snapshot.metadata
+  store.kvPutOptions = snapshot.kvPutOptions
+  store.categories = snapshot.categories
+  store.items = snapshot.items
+  store.endpoints = snapshot.endpoints
+  store.tags = snapshot.tags
+  store.itemTags = snapshot.itemTags
+  store.authUsers = snapshot.authUsers
+  store.authSessions = snapshot.authSessions
+  store.authSessionTouchCount = snapshot.authSessionTouchCount
+  store.failNextNavCacheVersionIncrement = snapshot.failNextNavCacheVersionIncrement
 }
 
 class MockStatement {
@@ -147,6 +178,11 @@ class MockStatement {
     }
 
     if (sql.startsWith('INSERT INTO app_metadata')) {
+      if (this.store.failNextNavCacheVersionIncrement) {
+        this.store.failNextNavCacheVersionIncrement = false
+        throw new Error('D1_ERROR: simulated nav cache version increment failure')
+      }
+
       const key = this.values[0] as string
       const current = this.store.metadata.get(key)
 
@@ -484,10 +520,17 @@ class MockDb {
   }
 
   async batch(statements: MockStatement[]): Promise<D1Result[]> {
-    return statements.map((statement) => ({
-      success: true,
-      meta: { changes: statement.execute().meta?.changes ?? 0 },
-    })) as D1Result[]
+    const snapshot = cloneStoreState(this.store)
+
+    try {
+      return statements.map((statement) => ({
+        success: true,
+        meta: { changes: statement.execute().meta?.changes ?? 0 },
+      })) as D1Result[]
+    } catch (error) {
+      restoreStoreState(this.store, snapshot)
+      throw error
+    }
   }
 }
 
@@ -508,6 +551,7 @@ export function createMockEnv(overrides: Partial<Bindings> = {}): MockBindings {
     authUsers: [],
     authSessions: [],
     authSessionTouchCount: 0,
+    failNextNavCacheVersionIncrement: false,
   }
 
   return {

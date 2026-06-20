@@ -82,11 +82,11 @@ async function hydrateItems(db: D1Database, rows: ItemRow[]): Promise<ServiceIte
   return rows.map((row) => mapServiceItem(row, endpointsByItem.get(row.id) ?? [], tagsByItem.get(row.id) ?? []))
 }
 
-async function replaceItemChildren(db: D1Database, itemId: string, input: ServiceItemInput): Promise<void> {
-  await db.batch([
+function replaceItemChildrenStatements(db: D1Database, itemId: string, input: ServiceItemInput): D1PreparedStatement[] {
+  const deleteStatements = [
     db.prepare('DELETE FROM endpoints WHERE item_id = ?').bind(itemId),
     db.prepare('DELETE FROM item_tags WHERE item_id = ?').bind(itemId),
-  ])
+  ]
 
   const endpointStatements = input.endpoints.map((endpoint, index) =>
     db
@@ -109,7 +109,7 @@ async function replaceItemChildren(db: D1Database, itemId: string, input: Servic
     db.prepare('INSERT OR IGNORE INTO item_tags (item_id, tag_id) VALUES (?, ?)').bind(itemId, tagId),
   )
 
-  await db.batch([...endpointStatements, ...tagStatements])
+  return [...deleteStatements, ...endpointStatements, ...tagStatements]
 }
 
 export async function listItems(db: D1Database): Promise<ServiceItem[]> {
@@ -134,27 +134,7 @@ export async function getItem(db: D1Database, id: string): Promise<ServiceItem |
 export async function createItem(db: D1Database, input: ServiceItemInput): Promise<ServiceItem> {
   const id = createId('item')
 
-  await db
-    .prepare(
-      `INSERT INTO items (
-        id, category_id, name, description, icon, icon_type, credential_hint, note, status, sort_order
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    )
-    .bind(
-      id,
-      input.categoryId ?? null,
-      input.name,
-      input.description ?? null,
-      input.icon ?? null,
-      input.iconType ?? 'emoji',
-      input.credentialHint ?? null,
-      input.note ?? null,
-      input.status ?? 'active',
-      input.sortOrder ?? 0,
-    )
-    .run()
-
-  await replaceItemChildren(db, id, input)
+  await db.batch(createItemStatements(db, id, input))
 
   const item = await getItem(db, id)
 
@@ -165,51 +145,85 @@ export async function createItem(db: D1Database, input: ServiceItemInput): Promi
   return item
 }
 
+export function createItemStatements(db: D1Database, id: string, input: ServiceItemInput): D1PreparedStatement[] {
+  return [
+    db
+      .prepare(
+        `INSERT INTO items (
+          id, category_id, name, description, icon, icon_type, credential_hint, note, status, sort_order
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .bind(
+        id,
+        input.categoryId ?? null,
+        input.name,
+        input.description ?? null,
+        input.icon ?? null,
+        input.iconType ?? 'emoji',
+        input.credentialHint ?? null,
+        input.note ?? null,
+        input.status ?? 'active',
+        input.sortOrder ?? 0,
+      ),
+    ...replaceItemChildrenStatements(db, id, input),
+  ]
+}
+
 export async function updateItem(
   db: D1Database,
   id: string,
   input: ServiceItemInput,
 ): Promise<ServiceItem | null> {
-  const result = await db
-    .prepare(
-      `UPDATE items
-       SET category_id = ?,
-           name = ?,
-           description = ?,
-           icon = ?,
-           icon_type = ?,
-           credential_hint = ?,
-           note = ?,
-           status = ?,
-           sort_order = ?,
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = ?`,
-    )
-    .bind(
-      input.categoryId ?? null,
-      input.name,
-      input.description ?? null,
-      input.icon ?? null,
-      input.iconType ?? 'emoji',
-      input.credentialHint ?? null,
-      input.note ?? null,
-      input.status ?? 'active',
-      input.sortOrder ?? 0,
-      id,
-    )
-    .run()
+  const statements = updateItemStatements(db, id, input)
+  const [result] = await db.batch(statements)
 
-  if (result.meta.changes === 0) {
+  if (!result || result.meta.changes === 0) {
     return null
   }
 
-  await replaceItemChildren(db, id, input)
   return getItem(db, id)
 }
 
+export function updateItemStatements(db: D1Database, id: string, input: ServiceItemInput): D1PreparedStatement[] {
+  return [
+    db
+      .prepare(
+        `UPDATE items
+         SET category_id = ?,
+             name = ?,
+             description = ?,
+             icon = ?,
+             icon_type = ?,
+             credential_hint = ?,
+             note = ?,
+             status = ?,
+             sort_order = ?,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+      )
+      .bind(
+        input.categoryId ?? null,
+        input.name,
+        input.description ?? null,
+        input.icon ?? null,
+        input.iconType ?? 'emoji',
+        input.credentialHint ?? null,
+        input.note ?? null,
+        input.status ?? 'active',
+        input.sortOrder ?? 0,
+        id,
+      ),
+    ...replaceItemChildrenStatements(db, id, input),
+  ]
+}
+
 export async function deleteItem(db: D1Database, id: string): Promise<boolean> {
-  const result = await db.prepare('DELETE FROM items WHERE id = ?').bind(id).run()
+  const result = await deleteItemStatement(db, id).run()
   return result.meta.changes > 0
+}
+
+export function deleteItemStatement(db: D1Database, id: string): D1PreparedStatement {
+  return db.prepare('DELETE FROM items WHERE id = ?').bind(id)
 }
 
 export async function getNavigation(db: D1Database): Promise<NavResponse> {
@@ -225,4 +239,3 @@ export async function getNavigation(db: D1Database): Promise<NavResponse> {
     uncategorized: navItems.filter((item) => item.categoryId === null),
   }
 }
-

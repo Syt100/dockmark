@@ -237,6 +237,35 @@ describe('navigation API', () => {
     expect(refreshed.headers.get('X-Dockmark-Cache')).toBe('miss')
   })
 
+  it('rolls back navigation mutations when cache version invalidation fails', async () => {
+    const env = createMockEnv()
+    env.__testStore.failNextNavCacheVersionIncrement = true
+
+    const response = await app.request(
+      '/api/categories',
+      {
+        method: 'POST',
+        body: JSON.stringify({ name: 'Rollback' }),
+        headers: { 'content-type': 'application/json' },
+      },
+      env,
+    )
+
+    expect(response.status).toBe(500)
+    await expect(response.json()).resolves.toMatchObject({
+      error: {
+        code: 'internal_error',
+        message: 'Internal Server Error',
+      },
+    })
+    expect(env.__testStore.categories).toHaveLength(0)
+
+    const categories = await app.request('/api/categories', {}, env)
+    await expect(categories.json()).resolves.toMatchObject({
+      categories: [],
+    })
+  })
+
   it('writes navigation cache entries with a TTL so obsolete versions expire', async () => {
     const env = createMockEnv()
 

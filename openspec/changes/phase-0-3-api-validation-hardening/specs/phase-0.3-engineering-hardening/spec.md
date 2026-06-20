@@ -15,3 +15,11 @@ Dockmark SHALL map persistence uniqueness conflicts to stable structured API err
 - **WHEN** D1 rejects a create or update operation because of a uniqueness constraint
 - **THEN** the Worker SHALL return HTTP 409 with `error.code` set to `conflict`
 - **AND** the response body SHALL NOT include raw D1 messages such as table names, column names, SQL fragments, or `UNIQUE constraint failed`.
+
+### Requirement: Atomic navigation mutation invalidation
+Dockmark SHALL apply service navigation source mutations and navigation cache version invalidation in one D1 consistency boundary.
+
+#### Scenario: Cache version invalidation fails during a mutation
+- **WHEN** a category, tag, or service item mutation cannot advance the navigation cache version
+- **THEN** the corresponding source data mutation SHALL NOT remain committed
+- **AND** a later navigation read SHALL NOT depend on a stale cache version for changed source data.

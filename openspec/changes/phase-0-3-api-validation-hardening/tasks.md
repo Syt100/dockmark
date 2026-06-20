@@ -9,8 +9,13 @@
 - [x] 2.1 Sanitize D1 uniqueness conflict responses while keeping `409` and `conflict`.
 - [x] 2.2 Add Worker regression coverage proving raw D1 details are not returned to clients.
 
-## 3. Verification
+## 3. Navigation Cache Consistency
 
-- [x] 3.1 Run focused Worker and web validation checks.
-- [x] 3.2 Run `corepack pnpm validate`.
-- [x] 3.3 Run `openspec validate --all --strict --no-interactive`.
+- [x] 3.1 Batch navigation mutations with cache version invalidation in the application service boundary.
+- [x] 3.2 Add Worker regression coverage proving mutation writes roll back if cache version invalidation fails.
+
+## 4. Verification
+
+- [x] 4.1 Run focused Worker and web validation checks.
+- [x] 4.2 Run `corepack pnpm validate`.
+- [x] 4.3 Run `openspec validate --all --strict --no-interactive`.

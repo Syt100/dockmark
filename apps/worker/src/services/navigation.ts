@@ -1,88 +1,161 @@
 import type { CategoryInput, ServiceItemInput, TagInput } from '@dockmark/shared'
+import { createId } from '@dockmark/shared'
 
-import { createCategory, deleteCategory, updateCategory } from '../db/categories'
-import { createItem, deleteItem, updateItem } from '../db/items'
-import { createTag, deleteTag, updateTag } from '../db/tags'
-import { incrementNavCacheVersion } from '../lib/cache'
+import {
+  createCategoryStatement,
+  deleteCategoryStatement,
+  getCategory,
+  updateCategoryStatement,
+} from '../db/categories'
+import {
+  createItemStatements,
+  deleteItemStatement,
+  getItem,
+  updateItemStatements,
+} from '../db/items'
+import {
+  createTagStatement,
+  deleteTagStatement,
+  getTag,
+  updateTagStatement,
+} from '../db/tags'
+import { navCacheVersionIncrementStatement } from '../lib/cache'
 
 type Store = {
   DB: D1Database
 }
 
 export async function createCategoryWithNavInvalidation(store: Store, input: CategoryInput) {
-  const category = await createCategory(store.DB, input)
-  await incrementNavCacheVersion(store.DB)
+  const id = createId('cat')
+  await store.DB.batch([
+    createCategoryStatement(store.DB, id, input),
+    navCacheVersionIncrementStatement(store.DB),
+  ])
+  const category = await getCategory(store.DB, id)
+
+  if (!category) {
+    throw new Error('Created category could not be loaded')
+  }
+
   return category
 }
 
 export async function updateCategoryWithNavInvalidation(store: Store, id: string, input: CategoryInput) {
-  const category = await updateCategory(store.DB, id, input)
+  const existing = await getCategory(store.DB, id)
 
-  if (category) {
-    await incrementNavCacheVersion(store.DB)
+  if (!existing) {
+    return null
   }
 
-  return category
+  await store.DB.batch([
+    updateCategoryStatement(store.DB, id, input),
+    navCacheVersionIncrementStatement(store.DB),
+  ])
+
+  return getCategory(store.DB, id)
 }
 
 export async function deleteCategoryWithNavInvalidation(store: Store, id: string): Promise<boolean> {
-  const deleted = await deleteCategory(store.DB, id)
+  const existing = await getCategory(store.DB, id)
 
-  if (deleted) {
-    await incrementNavCacheVersion(store.DB)
+  if (!existing) {
+    return false
   }
 
-  return deleted
+  await store.DB.batch([
+    deleteCategoryStatement(store.DB, id),
+    navCacheVersionIncrementStatement(store.DB),
+  ])
+
+  return true
 }
 
 export async function createTagWithNavInvalidation(store: Store, input: TagInput) {
-  const tag = await createTag(store.DB, input)
-  await incrementNavCacheVersion(store.DB)
+  const id = createId('tag')
+  await store.DB.batch([
+    createTagStatement(store.DB, id, input),
+    navCacheVersionIncrementStatement(store.DB),
+  ])
+  const tag = await getTag(store.DB, id)
+
+  if (!tag) {
+    throw new Error('Created tag could not be loaded')
+  }
+
   return tag
 }
 
 export async function updateTagWithNavInvalidation(store: Store, id: string, input: TagInput) {
-  const tag = await updateTag(store.DB, id, input)
+  const existing = await getTag(store.DB, id)
 
-  if (tag) {
-    await incrementNavCacheVersion(store.DB)
+  if (!existing) {
+    return null
   }
 
-  return tag
+  await store.DB.batch([
+    updateTagStatement(store.DB, id, input),
+    navCacheVersionIncrementStatement(store.DB),
+  ])
+
+  return getTag(store.DB, id)
 }
 
 export async function deleteTagWithNavInvalidation(store: Store, id: string): Promise<boolean> {
-  const deleted = await deleteTag(store.DB, id)
+  const existing = await getTag(store.DB, id)
 
-  if (deleted) {
-    await incrementNavCacheVersion(store.DB)
+  if (!existing) {
+    return false
   }
 
-  return deleted
+  await store.DB.batch([
+    deleteTagStatement(store.DB, id),
+    navCacheVersionIncrementStatement(store.DB),
+  ])
+
+  return true
 }
 
 export async function createItemWithNavInvalidation(store: Store, input: ServiceItemInput) {
-  const item = await createItem(store.DB, input)
-  await incrementNavCacheVersion(store.DB)
+  const id = createId('item')
+  await store.DB.batch([
+    ...createItemStatements(store.DB, id, input),
+    navCacheVersionIncrementStatement(store.DB),
+  ])
+  const item = await getItem(store.DB, id)
+
+  if (!item) {
+    throw new Error('Created item could not be loaded')
+  }
+
   return item
 }
 
 export async function updateItemWithNavInvalidation(store: Store, id: string, input: ServiceItemInput) {
-  const item = await updateItem(store.DB, id, input)
+  const existing = await getItem(store.DB, id)
 
-  if (item) {
-    await incrementNavCacheVersion(store.DB)
+  if (!existing) {
+    return null
   }
 
-  return item
+  await store.DB.batch([
+    ...updateItemStatements(store.DB, id, input),
+    navCacheVersionIncrementStatement(store.DB),
+  ])
+
+  return getItem(store.DB, id)
 }
 
 export async function deleteItemWithNavInvalidation(store: Store, id: string): Promise<boolean> {
-  const deleted = await deleteItem(store.DB, id)
+  const existing = await getItem(store.DB, id)
 
-  if (deleted) {
-    await incrementNavCacheVersion(store.DB)
+  if (!existing) {
+    return false
   }
 
-  return deleted
+  await store.DB.batch([
+    deleteItemStatement(store.DB, id),
+    navCacheVersionIncrementStatement(store.DB),
+  ])
+
+  return true
 }

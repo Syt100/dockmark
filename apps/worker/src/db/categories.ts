@@ -17,15 +17,8 @@ export async function getCategory(db: D1Database, id: string): Promise<Category 
 
 export async function createCategory(db: D1Database, input: CategoryInput): Promise<Category> {
   const id = createId('cat')
-  const slug = input.slug || slugify(input.name)
 
-  await db
-    .prepare(
-      `INSERT INTO categories (id, name, slug, icon, color, sort_order)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-    )
-    .bind(id, input.name, slug, input.icon ?? null, input.color ?? null, input.sortOrder ?? 0)
-    .run()
+  await db.batch([createCategoryStatement(db, id, input)])
 
   const category = await getCategory(db, id)
 
@@ -36,21 +29,23 @@ export async function createCategory(db: D1Database, input: CategoryInput): Prom
   return category
 }
 
+export function createCategoryStatement(db: D1Database, id: string, input: CategoryInput): D1PreparedStatement {
+  const slug = input.slug || slugify(input.name)
+
+  return db
+    .prepare(
+      `INSERT INTO categories (id, name, slug, icon, color, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(id, input.name, slug, input.icon ?? null, input.color ?? null, input.sortOrder ?? 0)
+}
+
 export async function updateCategory(
   db: D1Database,
   id: string,
   input: CategoryInput,
 ): Promise<Category | null> {
-  const slug = input.slug || slugify(input.name)
-
-  const result = await db
-    .prepare(
-      `UPDATE categories
-       SET name = ?, slug = ?, icon = ?, color = ?, sort_order = ?, updated_at = CURRENT_TIMESTAMP
-       WHERE id = ?`,
-    )
-    .bind(input.name, slug, input.icon ?? null, input.color ?? null, input.sortOrder ?? 0, id)
-    .run()
+  const result = await updateCategoryStatement(db, id, input).run()
 
   if (result.meta.changes === 0) {
     return null
@@ -59,8 +54,23 @@ export async function updateCategory(
   return getCategory(db, id)
 }
 
+export function updateCategoryStatement(db: D1Database, id: string, input: CategoryInput): D1PreparedStatement {
+  const slug = input.slug || slugify(input.name)
+
+  return db
+    .prepare(
+      `UPDATE categories
+       SET name = ?, slug = ?, icon = ?, color = ?, sort_order = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+    )
+    .bind(input.name, slug, input.icon ?? null, input.color ?? null, input.sortOrder ?? 0, id)
+}
+
 export async function deleteCategory(db: D1Database, id: string): Promise<boolean> {
-  const result = await db.prepare('DELETE FROM categories WHERE id = ?').bind(id).run()
+  const result = await deleteCategoryStatement(db, id).run()
   return result.meta.changes > 0
 }
 
+export function deleteCategoryStatement(db: D1Database, id: string): D1PreparedStatement {
+  return db.prepare('DELETE FROM categories WHERE id = ?').bind(id)
+}

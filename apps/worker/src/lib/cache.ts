@@ -12,7 +12,11 @@ export async function getNavCacheVersion(db: D1Database): Promise<number> {
 }
 
 export async function incrementNavCacheVersion(db: D1Database): Promise<void> {
-  await db
+  await navCacheVersionIncrementStatement(db).run()
+}
+
+export function navCacheVersionIncrementStatement(db: D1Database): D1PreparedStatement {
+  return db
     .prepare(
       `INSERT INTO app_metadata (key, value, updated_at)
        VALUES (?, '3', CURRENT_TIMESTAMP)
@@ -21,7 +25,6 @@ export async function incrementNavCacheVersion(db: D1Database): Promise<void> {
          updated_at = CURRENT_TIMESTAMP`,
     )
     .bind(NAV_VERSION_KEY)
-    .run()
 }
 
 export async function getCachedNavigation(db: D1Database, kv: KVNamespace): Promise<NavResponse | null> {
