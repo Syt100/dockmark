@@ -144,6 +144,7 @@ describe('HomeView', () => {
     expect(wrapper.text()).toContain('Vaultwarden 搜 Dockmark')
     expect(wrapper.text()).toContain('内网')
     expect(wrapper.findComponent(ServiceNavCard).exists()).toBe(true)
+    expect(wrapper.findComponent({ name: 'TransitionGroup' }).exists()).toBe(true)
 
     vi.unstubAllGlobals()
   })

@@ -231,7 +231,7 @@ watch(
                 <th class="px-3 py-3 text-right font-medium">操作</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-[var(--dm-border)]">
+            <TransitionGroup appear class="divide-y divide-[var(--dm-border)]" name="dm-list" tag="tbody">
               <tr v-for="row in serviceRows" :key="row.item.id" :class="['dm-list-row', rowStateClass(row.item.status)]">
                 <td class="px-3 py-3 align-middle">
                   <div class="flex min-w-0 items-center gap-3">
@@ -295,11 +295,11 @@ watch(
                   </div>
                 </td>
               </tr>
-            </tbody>
+            </TransitionGroup>
           </table>
         </div>
 
-        <div class="grid gap-2 lg:hidden">
+        <TransitionGroup appear class="grid gap-2 lg:hidden" name="dm-list" tag="div">
           <article v-for="row in serviceRows" :key="row.item.id" :class="['dm-mobile-card', rowStateClass(row.item.status)]">
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
@@ -359,7 +359,7 @@ watch(
               </div>
             </div>
           </article>
-        </div>
+        </TransitionGroup>
       </section>
     </div>
 
