@@ -1,8 +1,6 @@
 ## Purpose
 Define the future browser extension synchronization milestone, limited to one-way browser-to-Dockmark sync with paired clients and token-based authentication.
-
 ## Requirements
-
 ### Requirement: Browser extension sync boundary
 Dockmark SHALL support browser-to-Dockmark bookmark synchronization through a browser extension, initially as one-way sync only.
 
@@ -57,3 +55,25 @@ Phase 4 SHALL NOT support server-to-browser bookmark writes, conflict resolution
 #### Scenario: Browser bookmark data differs from Dockmark
 - **WHEN** a user edits imported bookmark metadata in Dockmark
 - **THEN** those edits SHALL NOT be pushed back to the browser in Phase 4
+
+### Requirement: Extension package foundation
+Dockmark SHALL provide a buildable browser extension foundation before implementing bookmark synchronization.
+
+#### Scenario: Extension is built
+- **WHEN** the extension build command runs
+- **THEN** it SHALL emit a Manifest V3 `manifest.json`
+- **AND** it SHALL emit a background script referenced by that manifest.
+
+#### Scenario: Extension permissions are reviewed
+- **WHEN** the foundation extension manifest is inspected
+- **THEN** it SHALL avoid host permissions and bookmark permissions until pairing and sync behavior are implemented
+- **AND** it SHALL identify itself as a Dockmark extension.
+
+### Requirement: Extension foundation excludes sync behavior
+Dockmark SHALL keep browser bookmark reading, pairing, token storage, and server synchronization out of the extension foundation milestone.
+
+#### Scenario: Foundation extension starts
+- **WHEN** the extension background script loads
+- **THEN** it SHALL initialize only static extension metadata
+- **AND** it SHALL NOT read browser bookmarks, store sync tokens, call Dockmark APIs, or write browser bookmark data.
+
