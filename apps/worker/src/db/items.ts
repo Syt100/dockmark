@@ -18,7 +18,10 @@ import {
   type TagRow,
 } from './rows'
 
-async function listEndpointsForItems(db: D1Database, itemIds: string[]): Promise<Map<string, Endpoint[]>> {
+async function listEndpointsForItems(
+  db: D1Database,
+  itemIds: string[],
+): Promise<Map<string, Endpoint[]>> {
   const map = new Map<string, Endpoint[]>()
 
   if (itemIds.length === 0) {
@@ -79,10 +82,16 @@ async function hydrateItems(db: D1Database, rows: ItemRow[]): Promise<ServiceIte
   const endpointsByItem = await listEndpointsForItems(db, ids)
   const tagsByItem = await listTagsForItems(db, ids)
 
-  return rows.map((row) => mapServiceItem(row, endpointsByItem.get(row.id) ?? [], tagsByItem.get(row.id) ?? []))
+  return rows.map((row) =>
+    mapServiceItem(row, endpointsByItem.get(row.id) ?? [], tagsByItem.get(row.id) ?? []),
+  )
 }
 
-function replaceItemChildrenStatements(db: D1Database, itemId: string, input: ServiceItemInput): D1PreparedStatement[] {
+function replaceItemChildrenStatements(
+  db: D1Database,
+  itemId: string,
+  input: ServiceItemInput,
+): D1PreparedStatement[] {
   const deleteStatements = [
     db.prepare('DELETE FROM endpoints WHERE item_id = ?').bind(itemId),
     db.prepare('DELETE FROM item_tags WHERE item_id = ?').bind(itemId),
@@ -106,7 +115,9 @@ function replaceItemChildrenStatements(db: D1Database, itemId: string, input: Se
   )
 
   const tagStatements = (input.tagIds ?? []).map((tagId) =>
-    db.prepare('INSERT OR IGNORE INTO item_tags (item_id, tag_id) VALUES (?, ?)').bind(itemId, tagId),
+    db
+      .prepare('INSERT OR IGNORE INTO item_tags (item_id, tag_id) VALUES (?, ?)')
+      .bind(itemId, tagId),
   )
 
   return [...deleteStatements, ...endpointStatements, ...tagStatements]
@@ -145,7 +156,11 @@ export async function createItem(db: D1Database, input: ServiceItemInput): Promi
   return item
 }
 
-export function createItemStatements(db: D1Database, id: string, input: ServiceItemInput): D1PreparedStatement[] {
+export function createItemStatements(
+  db: D1Database,
+  id: string,
+  input: ServiceItemInput,
+): D1PreparedStatement[] {
   return [
     db
       .prepare(
@@ -184,7 +199,11 @@ export async function updateItem(
   return getItem(db, id)
 }
 
-export function updateItemStatements(db: D1Database, id: string, input: ServiceItemInput): D1PreparedStatement[] {
+export function updateItemStatements(
+  db: D1Database,
+  id: string,
+  input: ServiceItemInput,
+): D1PreparedStatement[] {
   return [
     db
       .prepare(

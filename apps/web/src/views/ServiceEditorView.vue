@@ -4,13 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import type { Category, EndpointKind, IconType, ServiceItem, Tag } from '@dockmark/shared'
 
-import {
-  createItem,
-  fetchCategories,
-  fetchItem,
-  fetchTags,
-  updateItem,
-} from '../api/client'
+import { createItem, fetchCategories, fetchItem, fetchTags, updateItem } from '../api/client'
 import { toChineseError } from '../api/errors'
 import AppButton from '../components/AppButton.vue'
 import AppInput from '../components/AppInput.vue'
@@ -24,7 +18,15 @@ import { useMinimumVisibleLoading } from '../composables/minimumVisibleLoading'
 import { endpointKindLabels, statusLabels } from '../ui/labels'
 import { serviceFormToInput, serviceToForm, type EndpointForm } from './managementForms'
 
-const endpointKinds: EndpointKind[] = ['public', 'lan', 'tailscale', 'admin', 'backup', 'docs', 'api']
+const endpointKinds: EndpointKind[] = [
+  'public',
+  'lan',
+  'tailscale',
+  'admin',
+  'backup',
+  'docs',
+  'api',
+]
 const serviceIconTypes: Array<{ value: IconType; label: string }> = [
   { value: 'emoji', label: 'Emoji / 文本' },
   { value: 'url', label: '图片 URL' },
@@ -58,10 +60,15 @@ const filteredTags = computed(() => {
     return tags.value
   }
 
-  return tags.value.filter((tag) => [tag.name, tag.slug].some((value) => value.toLowerCase().includes(query)))
+  return tags.value.filter((tag) =>
+    [tag.name, tag.slug].some((value) => value.toLowerCase().includes(query)),
+  )
 })
 const selectedTagCount = computed(() => selectedTagIds.value.length)
-const primaryEndpointUrl = computed(() => form.endpoints.find((endpoint) => endpoint.isPrimary)?.url ?? form.endpoints[0]?.url ?? null)
+const primaryEndpointUrl = computed(
+  () =>
+    form.endpoints.find((endpoint) => endpoint.isPrimary)?.url ?? form.endpoints[0]?.url ?? null,
+)
 
 const form = reactive({
   name: '',
@@ -186,13 +193,17 @@ onMounted(load)
               <span class="dm-label">分类</span>
               <AppSelect v-model="form.categoryId" :disabled="isReferenceLoading">
                 <option value="">未分类</option>
-                <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
+                <option v-for="category in categories" :key="category.id" :value="category.id">
+                  {{ category.name }}
+                </option>
               </AppSelect>
             </label>
             <label class="grid gap-1 text-sm">
               <span class="dm-label">状态</span>
               <AppSelect v-model="form.status">
-                <option v-for="(label, value) in statusLabels" :key="value" :value="value">{{ label }}</option>
+                <option v-for="(label, value) in statusLabels" :key="value" :value="value">
+                  {{ label }}
+                </option>
               </AppSelect>
             </label>
           </div>
@@ -204,10 +215,23 @@ onMounted(load)
             </label>
             <div class="grid gap-2 text-sm">
               <span class="dm-label">图标</span>
-              <div class="grid gap-2 sm:grid-cols-[auto_minmax(8rem,0.8fr)_minmax(8rem,1fr)] sm:items-center">
-                <ServiceIcon :icon="form.icon" :icon-type="form.iconType" :name="form.name || '服务'" :primary-url="primaryEndpointUrl" />
+              <div
+                class="grid gap-2 sm:grid-cols-[auto_minmax(8rem,0.8fr)_minmax(8rem,1fr)] sm:items-center"
+              >
+                <ServiceIcon
+                  :icon="form.icon"
+                  :icon-type="form.iconType"
+                  :name="form.name || '服务'"
+                  :primary-url="primaryEndpointUrl"
+                />
                 <AppSelect v-model="form.iconType" aria-label="图标类型" name="service-icon-type">
-                  <option v-for="option in serviceIconTypes" :key="option.value" :value="option.value">{{ option.label }}</option>
+                  <option
+                    v-for="option in serviceIconTypes"
+                    :key="option.value"
+                    :value="option.value"
+                  >
+                    {{ option.label }}
+                  </option>
                 </AppSelect>
                 <AppInput
                   v-if="form.iconType === 'emoji'"
@@ -233,7 +257,9 @@ onMounted(load)
               <h2 class="dm-section-title">访问地址</h2>
               <AppButton type="button" @click="addEndpoint">添加地址</AppButton>
             </div>
-            <div class="flex flex-wrap gap-1.5 rounded-[var(--dm-radius-surface)] border border-[var(--dm-border)] bg-[var(--dm-surface)] p-1.5">
+            <div
+              class="flex flex-wrap gap-1.5 rounded-[var(--dm-radius-surface)] border border-[var(--dm-border)] bg-[var(--dm-surface)] p-1.5"
+            >
               <AppButton
                 v-for="template in endpointTemplates"
                 :key="template.kind"
@@ -253,7 +279,9 @@ onMounted(load)
               :key="index"
               class="grid gap-3 rounded-[var(--dm-radius-surface)] bg-[var(--dm-surface-muted)] p-3 md:grid-cols-[2.4rem_minmax(7rem,1fr)_minmax(12rem,2fr)_minmax(8rem,1fr)_auto] md:items-end"
             >
-              <div class="hidden h-10 items-center justify-center rounded-[var(--dm-radius-control)] bg-[var(--dm-surface)] text-sm font-medium text-[var(--dm-text-muted)] md:flex">
+              <div
+                class="hidden h-10 items-center justify-center rounded-[var(--dm-radius-control)] bg-[var(--dm-surface)] text-sm font-medium text-[var(--dm-text-muted)] md:flex"
+              >
                 {{ index + 1 }}
               </div>
               <label class="grid gap-1 text-sm">
@@ -267,15 +295,29 @@ onMounted(load)
               <label class="grid gap-1 text-sm">
                 <span class="dm-label">类型</span>
                 <AppSelect v-model="endpoint.kind">
-                  <option v-for="kind in endpointKinds" :key="kind" :value="kind">{{ endpointKindLabels[kind] }}</option>
+                  <option v-for="kind in endpointKinds" :key="kind" :value="kind">
+                    {{ endpointKindLabels[kind] }}
+                  </option>
                 </AppSelect>
               </label>
               <div class="flex flex-wrap items-center gap-2 md:justify-end">
-                <label class="flex min-h-10 items-center gap-2 whitespace-nowrap text-sm text-[var(--dm-text-muted)]">
-                  <input :checked="endpoint.isPrimary" type="radio" name="primaryEndpoint" @change="setPrimary(index)" />
+                <label
+                  class="flex min-h-10 items-center gap-2 whitespace-nowrap text-sm text-[var(--dm-text-muted)]"
+                >
+                  <input
+                    :checked="endpoint.isPrimary"
+                    type="radio"
+                    name="primaryEndpoint"
+                    @change="setPrimary(index)"
+                  />
                   主地址
                 </label>
-                <AppButton v-if="form.endpoints.length > 1" type="button" tone="ghost" @click="removeEndpoint(index)">
+                <AppButton
+                  v-if="form.endpoints.length > 1"
+                  type="button"
+                  tone="ghost"
+                  @click="removeEndpoint(index)"
+                >
                   移除
                 </AppButton>
               </div>
@@ -286,9 +328,17 @@ onMounted(load)
         <section class="dm-form-section">
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 class="dm-section-title">标签</h2>
-            <span class="text-xs text-[var(--dm-text-subtle)]">{{ isReferenceLoading ? '正在加载标签...' : `已选 ${selectedTagCount} 个` }}</span>
+            <span class="text-xs text-[var(--dm-text-subtle)]">{{
+              isReferenceLoading ? '正在加载标签...' : `已选 ${selectedTagCount} 个`
+            }}</span>
           </div>
-          <AppInput v-if="tags.length > 8" v-model="tagQuery" aria-label="搜索标签" placeholder="搜索标签" type="search" />
+          <AppInput
+            v-if="tags.length > 8"
+            v-model="tagQuery"
+            aria-label="搜索标签"
+            placeholder="搜索标签"
+            type="search"
+          />
           <div v-if="tags.length > 0" class="flex flex-wrap gap-2">
             <label
               v-for="tag in filteredTags"
@@ -303,9 +353,13 @@ onMounted(load)
               <input v-model="selectedTagIds" :value="tag.id" type="checkbox" />
               {{ tag.name }}
             </label>
-            <p v-if="filteredTags.length === 0" class="text-sm text-[var(--dm-text-muted)]">没有匹配的标签。</p>
+            <p v-if="filteredTags.length === 0" class="text-sm text-[var(--dm-text-muted)]">
+              没有匹配的标签。
+            </p>
           </div>
-          <p v-else class="dm-surface-muted p-3 text-sm text-[var(--dm-text-muted)]">{{ isReferenceLoading ? '标签加载中...' : '还没有标签。' }}</p>
+          <p v-else class="dm-surface-muted p-3 text-sm text-[var(--dm-text-muted)]">
+            {{ isReferenceLoading ? '标签加载中...' : '还没有标签。' }}
+          </p>
         </section>
 
         <section class="dm-form-section">
@@ -320,8 +374,12 @@ onMounted(load)
           </label>
         </section>
 
-        <div class="grid gap-2 border-t border-[var(--dm-border)] pt-4 sm:flex sm:flex-row sm:justify-end">
-          <AppButton class="w-full sm:w-auto" type="button" @click="router.push('/services')">取消</AppButton>
+        <div
+          class="grid gap-2 border-t border-[var(--dm-border)] pt-4 sm:flex sm:flex-row sm:justify-end"
+        >
+          <AppButton class="w-full sm:w-auto" type="button" @click="router.push('/services')"
+            >取消</AppButton
+          >
           <AppButton class="w-full sm:w-auto" tone="primary" type="submit" :disabled="isSaving">
             {{ isSaving ? '保存中...' : '保存服务' }}
           </AppButton>

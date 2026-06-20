@@ -10,10 +10,7 @@ function toBase64Url(bytes: ArrayBuffer | Uint8Array): string {
     binary += String.fromCharCode(byte)
   }
 
-  return btoa(binary)
-    .replaceAll('+', '-')
-    .replaceAll('/', '_')
-    .replaceAll('=', '')
+  return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')
 }
 
 function fromBase64Url(value: string): ArrayBuffer {
@@ -63,7 +60,9 @@ export async function createPasswordVerifier(
 ): Promise<{ hash: string; algo: string }> {
   const iterations = options.iterations ?? defaultPbkdf2Iterations
   const salt = randomToken(16)
-  const key = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits'])
+  const key = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, [
+    'deriveBits',
+  ])
   const bits = await crypto.subtle.deriveBits(
     {
       name: 'PBKDF2',
@@ -85,11 +84,18 @@ export async function verifyPassword(password: string, storedHash: string): Prom
   const [algorithm, iterationsValue, salt, expectedHash] = storedHash.split(':')
   const iterations = Number(iterationsValue)
 
-  if (algorithm !== 'pbkdf2-sha256' || !Number.isSafeInteger(iterations) || !salt || !expectedHash) {
+  if (
+    algorithm !== 'pbkdf2-sha256' ||
+    !Number.isSafeInteger(iterations) ||
+    !salt ||
+    !expectedHash
+  ) {
     return false
   }
 
-  const key = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits'])
+  const key = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, [
+    'deriveBits',
+  ])
   const bits = await crypto.subtle.deriveBits(
     {
       name: 'PBKDF2',

@@ -24,7 +24,9 @@ describe('ConfirmAction', () => {
     expect(document.body.style.overflow).toBe('hidden')
     expect(wrapper.html()).not.toContain('确认删除服务？')
 
-    const confirmButton = [...document.body.querySelectorAll('button')].find((button) => button.textContent === '确认删除')
+    const confirmButton = [...document.body.querySelectorAll('button')].find(
+      (button) => button.textContent === '确认删除',
+    )
     confirmButton?.click()
     await wrapper.vm.$nextTick()
 

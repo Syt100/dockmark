@@ -16,12 +16,18 @@ export function getSessionTtlSeconds(env: Pick<Bindings, 'SESSION_TTL_SECONDS'>)
   return Number.isSafeInteger(value) && value > 0 ? value : defaultSessionTtlSeconds
 }
 
-export function getSessionTouchIntervalSeconds(env: Pick<Bindings, 'SESSION_TOUCH_INTERVAL_SECONDS'>): number {
+export function getSessionTouchIntervalSeconds(
+  env: Pick<Bindings, 'SESSION_TOUCH_INTERVAL_SECONDS'>,
+): number {
   const value = Number(env.SESSION_TOUCH_INTERVAL_SECONDS)
   return Number.isSafeInteger(value) && value > 0 ? value : defaultSessionTouchIntervalSeconds
 }
 
-export function shouldTouchSession(lastSeenAt: string, env: Pick<Bindings, 'SESSION_TOUCH_INTERVAL_SECONDS'>, now = new Date()): boolean {
+export function shouldTouchSession(
+  lastSeenAt: string,
+  env: Pick<Bindings, 'SESSION_TOUCH_INTERVAL_SECONDS'>,
+  now = new Date(),
+): boolean {
   const lastSeenTime = new Date(lastSeenAt).getTime()
 
   if (!Number.isFinite(lastSeenTime)) {
@@ -31,7 +37,10 @@ export function shouldTouchSession(lastSeenAt: string, env: Pick<Bindings, 'SESS
   return now.getTime() - lastSeenTime >= getSessionTouchIntervalSeconds(env) * 1000
 }
 
-export function getSessionExpiresAt(env: Pick<Bindings, 'SESSION_TTL_SECONDS'>, now = new Date()): string {
+export function getSessionExpiresAt(
+  env: Pick<Bindings, 'SESSION_TTL_SECONDS'>,
+  now = new Date(),
+): string {
   return new Date(now.getTime() + getSessionTtlSeconds(env) * 1000).toISOString()
 }
 
@@ -39,7 +48,10 @@ export function getRequestSessionToken(c: Context<AppEnv>): string | null {
   return getCookie(c, getSessionCookieName(c.env)) ?? null
 }
 
-export function getRequestSessionTokenFromRequest(request: Request, env: Pick<Bindings, 'SESSION_COOKIE_NAME'>): string | null {
+export function getRequestSessionTokenFromRequest(
+  request: Request,
+  env: Pick<Bindings, 'SESSION_COOKIE_NAME'>,
+): string | null {
   const cookieHeader = request.headers.get('cookie')
 
   if (!cookieHeader) {
@@ -60,7 +72,10 @@ export function getRequestSessionTokenFromRequest(request: Request, env: Pick<Bi
   return null
 }
 
-export async function createSessionSecret(): Promise<{ token: string; hash: string }> {
+export async function createSessionSecret(): Promise<{
+  token: string
+  hash: string
+}> {
   const token = randomToken(32)
   return {
     token,

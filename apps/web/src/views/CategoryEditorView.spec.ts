@@ -75,20 +75,23 @@ describe('CategoryEditorView', () => {
   })
 
   it('shows not found feedback for a missing category', async () => {
-    vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          error: {
-            code: 'not_found',
-            message: 'Category not found',
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: {
+              code: 'not_found',
+              message: 'Category not found',
+            },
+          }),
+          {
+            status: 404,
+            headers: { 'content-type': 'application/json' },
           },
-        }),
-        {
-          status: 404,
-          headers: { 'content-type': 'application/json' },
-        },
+        ),
       ),
-    ))
+    )
 
     const router = createTestRouter()
     await router.isReady()

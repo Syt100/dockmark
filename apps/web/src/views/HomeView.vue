@@ -41,8 +41,12 @@ const categories = computed(() =>
     .filter((category) => category.items.length > 0),
 )
 
-const uncategorized = computed(() => (nav.value?.uncategorized ?? []).filter((item) => matches(item, '未分类')))
-const hasVisibleItems = computed(() => categories.value.length > 0 || uncategorized.value.length > 0)
+const uncategorized = computed(() =>
+  (nav.value?.uncategorized ?? []).filter((item) => matches(item, '未分类')),
+)
+const hasVisibleItems = computed(
+  () => categories.value.length > 0 || uncategorized.value.length > 0,
+)
 const totalItems = computed(
   () =>
     (nav.value?.categories ?? []).reduce((count, category) => count + category.items.length, 0) +
@@ -72,19 +76,29 @@ onMounted(load)
         </p>
       </div>
       <div class="md:w-80">
-        <SearchInput v-model="query" label="搜索服务导航" name="home-search" placeholder="服务、URL 或标签" />
+        <SearchInput
+          v-model="query"
+          label="搜索服务导航"
+          name="home-search"
+          placeholder="服务、URL 或标签"
+        />
       </div>
     </section>
 
     <FeedbackMessage tone="error" :message="error" />
 
-    <section v-if="!nav && !error" class="dm-surface p-[var(--dm-panel-padding)] text-sm text-[var(--dm-text-muted)]">
+    <section
+      v-if="!nav && !error"
+      class="dm-surface p-[var(--dm-panel-padding)] text-sm text-[var(--dm-text-muted)]"
+    >
       正在加载服务...
     </section>
 
     <section v-else-if="nav && totalItems === 0" class="dm-surface border-dashed p-8 text-center">
       <p class="text-base font-medium text-[var(--dm-text)]">还没有服务</p>
-      <p class="mt-1 text-sm text-[var(--dm-text-muted)]">进入“服务”页面添加第一个自部署服务入口。</p>
+      <p class="mt-1 text-sm text-[var(--dm-text-muted)]">
+        进入“服务”页面添加第一个自部署服务入口。
+      </p>
       <div class="mt-4">
         <AppLinkButton to="/services/new" tone="primary">新建服务</AppLinkButton>
       </div>
@@ -97,7 +111,9 @@ onMounted(load)
 
     <section v-for="category in categories" :key="category.id" class="grid gap-3">
       <div class="flex items-center justify-between gap-3">
-        <h2 class="text-lg font-semibold text-[var(--dm-text)]">{{ category.icon || '' }} {{ category.name }}</h2>
+        <h2 class="text-lg font-semibold text-[var(--dm-text)]">
+          {{ category.icon || '' }} {{ category.name }}
+        </h2>
         <span class="text-xs text-[var(--dm-text-subtle)]">{{ category.items.length }} 个服务</span>
       </div>
 

@@ -105,7 +105,11 @@ onBeforeUnmount(() => {
   <div>
     <div class="md:hidden">
       <div class="mb-4 flex items-center justify-between gap-3">
-        <RouterLink class="text-sm font-medium text-[var(--dm-text-muted)] hover:text-[var(--dm-text)]" :to="backTo">返回</RouterLink>
+        <RouterLink
+          class="text-sm font-medium text-[var(--dm-text-muted)] hover:text-[var(--dm-text)]"
+          :to="backTo"
+          >返回</RouterLink
+        >
         <h1 class="text-lg font-semibold text-[var(--dm-text)]">{{ title }}</h1>
         <span class="w-8" aria-hidden="true"></span>
       </div>
@@ -114,7 +118,12 @@ onBeforeUnmount(() => {
 
     <div class="hidden md:block">
       <Transition appear name="dm-fade">
-        <button class="fixed inset-0 z-30 cursor-default bg-[var(--dm-overlay)]" type="button" aria-label="关闭编辑器" @click="close"></button>
+        <button
+          class="fixed inset-0 z-30 cursor-default bg-[var(--dm-overlay)]"
+          type="button"
+          aria-label="关闭编辑器"
+          @click="close"
+        ></button>
       </Transition>
       <div class="fixed inset-0 z-40 grid place-items-center p-6 pointer-events-none">
         <Transition appear name="dm-panel">
@@ -126,10 +135,19 @@ onBeforeUnmount(() => {
             :aria-label="title"
             tabindex="-1"
           >
-            <div class="sticky top-0 z-10 flex items-center justify-between border-b border-[var(--dm-border)] bg-[var(--dm-surface-elevated)] px-5 py-4">
+            <div
+              class="sticky top-0 z-10 flex items-center justify-between border-b border-[var(--dm-border)] bg-[var(--dm-surface-elevated)] px-5 py-4"
+            >
               <h1 class="text-lg font-semibold text-[var(--dm-text)]">{{ title }}</h1>
               <AppIconButton label="关闭" type="button" @click="close">
-                <svg aria-hidden="true" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <svg
+                  aria-hidden="true"
+                  class="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  viewBox="0 0 24 24"
+                >
                   <path d="m6 6 12 12M18 6 6 18" stroke-linecap="round" />
                 </svg>
               </AppIconButton>

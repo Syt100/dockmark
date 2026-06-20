@@ -18,5 +18,11 @@ function updateValue(event: Event) {
 </script>
 
 <template>
-  <textarea v-bind="$attrs" class="dm-control min-h-24 w-full resize-y" :placeholder="placeholder" :value="modelValue" @input="updateValue"></textarea>
+  <textarea
+    v-bind="$attrs"
+    class="dm-control min-h-24 w-full resize-y"
+    :placeholder="placeholder"
+    :value="modelValue"
+    @input="updateValue"
+  ></textarea>
 </template>

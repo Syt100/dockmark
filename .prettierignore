@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Generated outputs and caches
+dist/
+.output/
+.wrangler/
+.vite/
+coverage/
+*.tsbuildinfo
+.eslintcache
+
+# Package manager state
+pnpm-lock.yaml
+
+# Archived OpenSpec changes preserve historical proposal text.
+openspec/changes/archive/
+
+# Local environment
+.env
+.env.*

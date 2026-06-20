@@ -11,7 +11,7 @@ vi.mock('vue-router', () => ({
 }))
 
 vi.mock('../auth/state', () => ({
-  authMessage: (caught: unknown) => caught instanceof Error ? caught.message : '登录失败',
+  authMessage: (caught: unknown) => (caught instanceof Error ? caught.message : '登录失败'),
   authSetupStatus: ref(null),
   signIn: vi.fn<(input: unknown) => Promise<void>>(),
 }))

@@ -161,7 +161,9 @@ describe('ServicesView', () => {
     await selects[1]?.setValue('archived')
 
     expect(wrapper.text()).toContain('没有符合筛选条件的服务')
-    expect(wrapper.findAll('article').some((article) => article.text().includes('Immich'))).toBe(false)
+    expect(wrapper.findAll('article').some((article) => article.text().includes('Immich'))).toBe(
+      false,
+    )
 
     vi.unstubAllGlobals()
   })
@@ -208,7 +210,10 @@ describe('ServicesView', () => {
 
     expect(wrapper.find('select[name="services-category-filter-mobile"]').exists()).toBe(false)
 
-    const filterToggle = () => wrapper.findAll('button').find((button) => button.text() === '筛选' || button.text() === '收起筛选')
+    const filterToggle = () =>
+      wrapper
+        .findAll('button')
+        .find((button) => button.text() === '筛选' || button.text() === '收起筛选')
 
     await filterToggle()?.trigger('click')
     await wrapper.vm.$nextTick()
@@ -235,7 +240,10 @@ describe('ServicesView', () => {
         return Promise.resolve(
           new Response(
             JSON.stringify({
-              items: itemsRequestCount === 1 ? [] : [serviceItem({ id: 'item_created', name: '新服务' })],
+              items:
+                itemsRequestCount === 1
+                  ? []
+                  : [serviceItem({ id: 'item_created', name: '新服务' })],
             }),
             { status: 200 },
           ),

@@ -10,7 +10,11 @@ function createTestRouter() {
     history: createMemoryHistory(),
     routes: [
       { path: '/services', component: { template: '<div>services</div>' } },
-      { path: '/services/new', component: ResponsiveEditorShell, props: { title: '新建服务', backTo: '/services' } },
+      {
+        path: '/services/new',
+        component: ResponsiveEditorShell,
+        props: { title: '新建服务', backTo: '/services' },
+      },
     ],
   })
 

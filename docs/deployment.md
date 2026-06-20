@@ -215,7 +215,7 @@ corepack pnpm validate
 openspec validate --all --strict --no-interactive
 ```
 
-`corepack pnpm validate` 是只读门禁，不应改写源码、格式或 lint 结果。需要自动修复时，先本地显式运行 `corepack pnpm lint:fix` 或 `corepack pnpm format`，再重新运行验证。
+`corepack pnpm validate` 是只读门禁，会执行 typecheck、测试、lint check、format check 和 build，不应改写源码、格式或 lint 结果。需要自动修复时，先本地显式运行 `corepack pnpm lint:fix` 或 `corepack pnpm format`，再重新运行验证。
 
 构建检查：
 

@@ -169,17 +169,27 @@ describe('CategoriesView', () => {
       expect(wrapper.text()).toContain('媒体与相册')
     })
 
-    await wrapper.findAll('button').find((button) => button.text() === '删除')?.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '删除')
+      ?.trigger('click')
     await vi.waitFor(() => {
       expect(document.body.textContent).toContain('确认删除分类“媒体与相册”？服务会变为未分类。')
     })
-    ;(Array.from(document.querySelectorAll('button')).find((button) => button.textContent === '确认删除') as HTMLButtonElement).click()
+    ;(
+      Array.from(document.querySelectorAll('button')).find(
+        (button) => button.textContent === '确认删除',
+      ) as HTMLButtonElement
+    ).click()
     await flushPromises()
 
     await vi.waitFor(() => {
       expect(wrapper.text()).toContain('分类已删除')
     })
-    expect(fetchMock).toHaveBeenCalledWith('/api/categories/cat_media', expect.objectContaining({ method: 'DELETE' }))
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/categories/cat_media',
+      expect.objectContaining({ method: 'DELETE' }),
+    )
     expect(fetchMock).toHaveBeenCalledTimes(3)
   })
 })

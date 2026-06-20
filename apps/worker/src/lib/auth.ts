@@ -1,10 +1,6 @@
 import type { AuthenticatedUser } from '@dockmark/shared'
 
-import {
-  getAuthenticatedSession,
-  mapAuthUser,
-  touchAuthSession,
-} from '../db/auth'
+import { getAuthenticatedSession, mapAuthUser, touchAuthSession } from '../db/auth'
 import type { Bindings } from './env'
 import { apiError } from './errors'
 import { getRequestSessionTokenFromRequest, hashSessionToken, shouldTouchSession } from './session'
@@ -56,13 +52,21 @@ class BuiltinAuthAdapter implements AuthAdapter {
 
 class CloudflareAccessAuthAdapter implements AuthAdapter {
   async authenticate(): Promise<AuthenticatedUser> {
-    throw apiError(503, 'config_error', 'Cloudflare Access authentication is reserved but not implemented securely yet. Use AUTH_MODE=builtin.')
+    throw apiError(
+      503,
+      'config_error',
+      'Cloudflare Access authentication is reserved but not implemented securely yet. Use AUTH_MODE=builtin.',
+    )
   }
 }
 
 class OidcAuthAdapter implements AuthAdapter {
   async authenticate(): Promise<AuthenticatedUser> {
-    throw apiError(503, 'config_error', 'OIDC authentication is reserved but not implemented yet. Use AUTH_MODE=builtin.')
+    throw apiError(
+      503,
+      'config_error',
+      'OIDC authentication is reserved but not implemented yet. Use AUTH_MODE=builtin.',
+    )
   }
 }
 

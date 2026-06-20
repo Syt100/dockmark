@@ -9,8 +9,8 @@
     "test": "corepack pnpm run build && node --test test/**/*.test.mjs",
     "lint": "corepack pnpm run lint:check",
     "lint:check": "tsc -p tsconfig.json --noEmit",
-    "lint:fix": "echo \"No extension lint fix yet\"",
-    "format": "echo \"No extension format yet\""
+    "lint:fix": "corepack pnpm --dir ../.. exec prettier --write apps/extension",
+    "format": "corepack pnpm --dir ../.. exec prettier --write apps/extension"
   },
   "devDependencies": {
     "typescript": "~6.0.0"

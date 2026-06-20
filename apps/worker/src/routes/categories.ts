@@ -1,10 +1,7 @@
 import { Hono } from 'hono'
 import { validateCategoryInput } from '@dockmark/shared'
 
-import {
-  getCategory,
-  listCategories,
-} from '../db/categories'
+import { getCategory, listCategories } from '../db/categories'
 import { apiError } from '../lib/errors'
 import type { AppEnv } from '../lib/env'
 import { readJson, requireValidation } from '../lib/http'

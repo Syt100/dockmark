@@ -18,7 +18,10 @@ function cookieFrom(response: Response): string {
 
 describe('built-in auth API', () => {
   it('reports setup status before and after administrator setup', async () => {
-    const env = createMockEnv({ AUTH_MODE: 'builtin', SETUP_TOKEN: 'setup-secret' })
+    const env = createMockEnv({
+      AUTH_MODE: 'builtin',
+      SETUP_TOKEN: 'setup-secret',
+    })
 
     const before = await app.request('/api/auth/setup', {}, env)
     await expect(before.json()).resolves.toMatchObject({
@@ -27,11 +30,15 @@ describe('built-in auth API', () => {
       supported: true,
     })
 
-    const created = await app.request('/api/auth/setup', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(setupBody),
-    }, env)
+    const created = await app.request(
+      '/api/auth/setup',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(setupBody),
+      },
+      env,
+    )
     expect(created.status).toBe(201)
     expect(created.headers.get('set-cookie')).toContain('HttpOnly')
     await expect(created.json()).resolves.toMatchObject({
@@ -49,81 +56,132 @@ describe('built-in auth API', () => {
   })
 
   it('rejects invalid setup tokens and additional setup attempts', async () => {
-    const env = createMockEnv({ AUTH_MODE: 'builtin', SETUP_TOKEN: 'setup-secret' })
+    const env = createMockEnv({
+      AUTH_MODE: 'builtin',
+      SETUP_TOKEN: 'setup-secret',
+    })
 
-    const invalid = await app.request('/api/auth/setup', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ ...setupBody, setupToken: 'wrong' }),
-    }, env)
+    const invalid = await app.request(
+      '/api/auth/setup',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ...setupBody, setupToken: 'wrong' }),
+      },
+      env,
+    )
     expect(invalid.status).toBe(401)
 
-    const created = await app.request('/api/auth/setup', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(setupBody),
-    }, env)
+    const created = await app.request(
+      '/api/auth/setup',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(setupBody),
+      },
+      env,
+    )
     expect(created.status).toBe(201)
 
-    const repeated = await app.request('/api/auth/setup', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(setupBody),
-    }, env)
+    const repeated = await app.request(
+      '/api/auth/setup',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(setupBody),
+      },
+      env,
+    )
     expect(repeated.status).toBe(409)
   })
 
   it('logs in, authenticates protected APIs, and logs out', async () => {
-    const env = createMockEnv({ AUTH_MODE: 'builtin', SETUP_TOKEN: 'setup-secret' })
-    const created = await app.request('/api/auth/setup', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(setupBody),
-    }, env)
+    const env = createMockEnv({
+      AUTH_MODE: 'builtin',
+      SETUP_TOKEN: 'setup-secret',
+    })
+    const created = await app.request(
+      '/api/auth/setup',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(setupBody),
+      },
+      env,
+    )
     const firstCookie = cookieFrom(created)
 
-    const me = await app.request('/api/auth/me', {
-      headers: { cookie: firstCookie },
-    }, env)
+    const me = await app.request(
+      '/api/auth/me',
+      {
+        headers: { cookie: firstCookie },
+      },
+      env,
+    )
     expect(me.status).toBe(200)
-    await expect(me.json()).resolves.toMatchObject({ user: { email: 'owner@example.com' } })
+    await expect(me.json()).resolves.toMatchObject({
+      user: { email: 'owner@example.com' },
+    })
 
-    const nav = await app.request('/api/nav', {
-      headers: { cookie: firstCookie },
-    }, env)
+    const nav = await app.request(
+      '/api/nav',
+      {
+        headers: { cookie: firstCookie },
+      },
+      env,
+    )
     expect(nav.status).toBe(200)
 
-    const logout = await app.request('/api/auth/logout', {
-      method: 'POST',
-      headers: { cookie: firstCookie },
-    }, env)
+    const logout = await app.request(
+      '/api/auth/logout',
+      {
+        method: 'POST',
+        headers: { cookie: firstCookie },
+      },
+      env,
+    )
     expect(logout.status).toBe(204)
     expect(logout.headers.get('set-cookie')).toContain('Max-Age=0')
 
-    const rejected = await app.request('/api/nav', {
-      headers: { cookie: firstCookie },
-    }, env)
+    const rejected = await app.request(
+      '/api/nav',
+      {
+        headers: { cookie: firstCookie },
+      },
+      env,
+    )
     expect(rejected.status).toBe(401)
 
-    const login = await app.request('/api/auth/login', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        email: 'owner@example.com',
-        password: 'correct horse battery staple',
-      }),
-    }, env)
+    const login = await app.request(
+      '/api/auth/login',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          email: 'owner@example.com',
+          password: 'correct horse battery staple',
+        }),
+      },
+      env,
+    )
     expect(login.status).toBe(200)
     expect(login.headers.get('set-cookie')).toContain('dockmark_session=')
   })
 
   it('does not touch sessions on every authenticated request inside the touch threshold', async () => {
-    const env = createMockEnv({ AUTH_MODE: 'builtin', SETUP_TOKEN: 'setup-secret' })
-    const created = await app.request('/api/auth/setup', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(setupBody),
-    }, env)
+    const env = createMockEnv({
+      AUTH_MODE: 'builtin',
+      SETUP_TOKEN: 'setup-secret',
+    })
+    const created = await app.request(
+      '/api/auth/setup',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(setupBody),
+      },
+      env,
+    )
     const cookie = cookieFrom(created)
 
     await app.request('/api/nav', { headers: { cookie } }, env)
@@ -138,11 +196,15 @@ describe('built-in auth API', () => {
       SETUP_TOKEN: 'setup-secret',
       SESSION_TOUCH_INTERVAL_SECONDS: '1',
     })
-    const created = await app.request('/api/auth/setup', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(setupBody),
-    }, env)
+    const created = await app.request(
+      '/api/auth/setup',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(setupBody),
+      },
+      env,
+    )
     const cookie = cookieFrom(created)
     const session = env.__testStore.authSessions[0]
 
@@ -158,21 +220,32 @@ describe('built-in auth API', () => {
   })
 
   it('rejects invalid login credentials with a generic error', async () => {
-    const env = createMockEnv({ AUTH_MODE: 'builtin', SETUP_TOKEN: 'setup-secret' })
-    await app.request('/api/auth/setup', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(setupBody),
-    }, env)
+    const env = createMockEnv({
+      AUTH_MODE: 'builtin',
+      SETUP_TOKEN: 'setup-secret',
+    })
+    await app.request(
+      '/api/auth/setup',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(setupBody),
+      },
+      env,
+    )
 
-    const response = await app.request('/api/auth/login', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        email: 'owner@example.com',
-        password: 'wrong password',
-      }),
-    }, env)
+    const response = await app.request(
+      '/api/auth/login',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          email: 'owner@example.com',
+          password: 'wrong password',
+        }),
+      },
+      env,
+    )
     expect(response.status).toBe(401)
     await expect(response.json()).resolves.toMatchObject({
       error: {
@@ -188,18 +261,26 @@ describe('built-in auth API', () => {
       SETUP_TOKEN: 'setup-secret',
       SESSION_TTL_SECONDS: '1',
     })
-    const created = await app.request('/api/auth/setup', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(setupBody),
-    }, env)
+    const created = await app.request(
+      '/api/auth/setup',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(setupBody),
+      },
+      env,
+    )
     const cookie = cookieFrom(created)
 
     await new Promise((resolve) => setTimeout(resolve, 1100))
 
-    const response = await app.request('/api/nav', {
-      headers: { cookie },
-    }, env)
+    const response = await app.request(
+      '/api/nav',
+      {
+        headers: { cookie },
+      },
+      env,
+    )
     expect(response.status).toBe(401)
   })
 

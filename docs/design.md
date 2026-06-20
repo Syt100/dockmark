@@ -1378,27 +1378,27 @@ dockmark/
   "compatibility_date": "2026-05-27",
   "assets": {
     "directory": "apps/web/dist",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
   },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "dockmark",
-      "database_id": "xxxx"
-    }
+      "database_id": "xxxx",
+    },
   ],
   "kv_namespaces": [
     {
       "binding": "KV",
-      "id": "xxxx"
-    }
+      "id": "xxxx",
+    },
   ],
   "r2_buckets": [
     {
       "binding": "R2",
-      "bucket_name": "dockmark-assets"
-    }
-  ]
+      "bucket_name": "dockmark-assets",
+    },
+  ],
 }
 ```
 
@@ -1411,21 +1411,21 @@ R2 没开时：
   "compatibility_date": "2026-05-27",
   "assets": {
     "directory": "apps/web/dist",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
   },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "dockmark",
-      "database_id": "xxxx"
-    }
+      "database_id": "xxxx",
+    },
   ],
   "kv_namespaces": [
     {
       "binding": "KV",
-      "id": "xxxx"
-    }
-  ]
+      "id": "xxxx",
+    },
+  ],
 }
 ```
 

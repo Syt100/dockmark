@@ -56,10 +56,16 @@ const selectedCategoryId = ref('')
 const selectedStatus = ref('')
 const selectedTagId = ref('')
 const areMobileFiltersOpen = ref(false)
-const categoryById = computed(() => new Map(categories.value.map((category) => [category.id, category.name])))
+const categoryById = computed(
+  () => new Map(categories.value.map((category) => [category.id, category.name])),
+)
 const hasEditor = computed(() => route.name === 'service-new' || route.name === 'service-edit')
 const hasFilters = computed(
-  () => query.value.trim().length > 0 || selectedCategoryId.value !== '' || selectedStatus.value !== '' || selectedTagId.value !== '',
+  () =>
+    query.value.trim().length > 0 ||
+    selectedCategoryId.value !== '' ||
+    selectedStatus.value !== '' ||
+    selectedTagId.value !== '',
 )
 const availableTags = computed(() => {
   const map = new Map<string, ServiceItem['tags'][number]>()
@@ -74,8 +80,9 @@ const availableTags = computed(() => {
 })
 
 const filteredItems = computed(() => {
-  return items.value.filter((item) =>
-    matchesSearchQuery(query.value, [
+  return items.value.filter(
+    (item) =>
+      matchesSearchQuery(query.value, [
         item.name,
         item.description ?? '',
         item.credentialHint ?? '',
@@ -83,10 +90,12 @@ const filteredItems = computed(() => {
         ...item.tags.map((tag) => tag.name),
         ...item.endpoints.map((endpoint) => `${endpoint.label} ${endpoint.url} ${endpoint.kind}`),
       ]) &&
-    (!selectedCategoryId.value ||
-      (selectedCategoryId.value === '__uncategorized' ? item.categoryId === null : item.categoryId === selectedCategoryId.value)) &&
-    (!selectedStatus.value || item.status === selectedStatus.value) &&
-    (!selectedTagId.value || item.tags.some((tag) => tag.id === selectedTagId.value)),
+      (!selectedCategoryId.value ||
+        (selectedCategoryId.value === '__uncategorized'
+          ? item.categoryId === null
+          : item.categoryId === selectedCategoryId.value)) &&
+      (!selectedStatus.value || item.status === selectedStatus.value) &&
+      (!selectedTagId.value || item.tags.some((tag) => tag.id === selectedTagId.value)),
   )
 })
 
@@ -94,7 +103,8 @@ const serviceRows = computed<ServiceRow[]>(() =>
   filteredItems.value.map((item) => ({
     item,
     categoryName: categoryById.value.get(item.categoryId ?? '') ?? '未分类',
-    primaryEndpoint: item.endpoints.find((endpoint) => endpoint.isPrimary) ?? item.endpoints[0] ?? null,
+    primaryEndpoint:
+      item.endpoints.find((endpoint) => endpoint.isPrimary) ?? item.endpoints[0] ?? null,
     visibleTags: item.tags.slice(0, 3),
     hiddenTagCount: Math.max(item.tags.length - 3, 0),
   })),
@@ -143,47 +153,100 @@ watch(
 <template>
   <main class="dm-page-grid">
     <div :class="hasEditor ? 'hidden md:grid md:gap-[var(--dm-section-gap)]' : 'dm-page-grid'">
-      <PageHeader title="服务" description="管理自部署服务、访问地址、标签和 Vaultwarden 搜索提示。">
+      <PageHeader
+        title="服务"
+        description="管理自部署服务、访问地址、标签和 Vaultwarden 搜索提示。"
+      >
         <template #actions>
           <AppLinkButton to="/services/new" tone="primary">新建服务</AppLinkButton>
         </template>
       </PageHeader>
 
       <section class="grid gap-3">
-        <div class="grid gap-3 md:grid-cols-[minmax(14rem,2fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_auto] md:items-center">
-          <SearchInput v-model="query" label="搜索服务" name="services-search" placeholder="搜索服务、URL、分类或标签" />
+        <div
+          class="grid gap-3 md:grid-cols-[minmax(14rem,2fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_auto] md:items-center"
+        >
+          <SearchInput
+            v-model="query"
+            label="搜索服务"
+            name="services-search"
+            placeholder="搜索服务、URL、分类或标签"
+          />
 
           <div class="hidden md:contents">
-            <AppSelect v-model="selectedCategoryId" aria-label="按分类筛选服务" name="services-category-filter">
+            <AppSelect
+              v-model="selectedCategoryId"
+              aria-label="按分类筛选服务"
+              name="services-category-filter"
+            >
               <option value="">全部分类</option>
               <option value="__uncategorized">未分类</option>
-              <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
+              <option v-for="category in categories" :key="category.id" :value="category.id">
+                {{ category.name }}
+              </option>
             </AppSelect>
-            <AppSelect v-model="selectedStatus" aria-label="按状态筛选服务" name="services-status-filter">
+            <AppSelect
+              v-model="selectedStatus"
+              aria-label="按状态筛选服务"
+              name="services-status-filter"
+            >
               <option value="">全部状态</option>
-              <option v-for="(label, value) in statusLabels" :key="value" :value="value">{{ label }}</option>
+              <option v-for="(label, value) in statusLabels" :key="value" :value="value">
+                {{ label }}
+              </option>
             </AppSelect>
-            <AppSelect v-model="selectedTagId" aria-label="按标签筛选服务" name="services-tag-filter">
+            <AppSelect
+              v-model="selectedTagId"
+              aria-label="按标签筛选服务"
+              name="services-tag-filter"
+            >
               <option value="">全部标签</option>
-              <option v-for="tag in availableTags" :key="tag.id" :value="tag.id">{{ tag.name }}</option>
+              <option v-for="tag in availableTags" :key="tag.id" :value="tag.id">
+                {{ tag.name }}
+              </option>
             </AppSelect>
-            <AppButton class="justify-self-start" :disabled="!hasFilters" tone="ghost" type="button" @click="clearFilters">清空</AppButton>
+            <AppButton
+              class="justify-self-start"
+              :disabled="!hasFilters"
+              tone="ghost"
+              type="button"
+              @click="clearFilters"
+              >清空</AppButton
+            >
           </div>
 
           <Transition name="dm-collapse">
             <div v-if="areMobileFiltersOpen" class="grid gap-3 md:hidden">
-              <AppSelect v-model="selectedCategoryId" aria-label="按分类筛选服务" name="services-category-filter-mobile">
+              <AppSelect
+                v-model="selectedCategoryId"
+                aria-label="按分类筛选服务"
+                name="services-category-filter-mobile"
+              >
                 <option value="">全部分类</option>
                 <option value="__uncategorized">未分类</option>
-                <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
+                <option v-for="category in categories" :key="category.id" :value="category.id">
+                  {{ category.name }}
+                </option>
               </AppSelect>
-              <AppSelect v-model="selectedStatus" aria-label="按状态筛选服务" name="services-status-filter-mobile">
+              <AppSelect
+                v-model="selectedStatus"
+                aria-label="按状态筛选服务"
+                name="services-status-filter-mobile"
+              >
                 <option value="">全部状态</option>
-                <option v-for="(label, value) in statusLabels" :key="value" :value="value">{{ label }}</option>
+                <option v-for="(label, value) in statusLabels" :key="value" :value="value">
+                  {{ label }}
+                </option>
               </AppSelect>
-              <AppSelect v-model="selectedTagId" aria-label="按标签筛选服务" name="services-tag-filter-mobile">
+              <AppSelect
+                v-model="selectedTagId"
+                aria-label="按标签筛选服务"
+                name="services-tag-filter-mobile"
+              >
                 <option value="">全部标签</option>
-                <option v-for="tag in availableTags" :key="tag.id" :value="tag.id">{{ tag.name }}</option>
+                <option v-for="tag in availableTags" :key="tag.id" :value="tag.id">
+                  {{ tag.name }}
+                </option>
               </AppSelect>
             </div>
           </Transition>
@@ -192,20 +255,29 @@ watch(
             <AppButton tone="secondary" type="button" @click="toggleMobileFilters">
               {{ areMobileFiltersOpen ? '收起筛选' : '筛选' }}
             </AppButton>
-            <AppButton v-if="hasFilters" tone="ghost" type="button" @click="clearFilters">清空筛选</AppButton>
+            <AppButton v-if="hasFilters" tone="ghost" type="button" @click="clearFilters"
+              >清空筛选</AppButton
+            >
           </div>
         </div>
       </section>
       <FeedbackMessage tone="success" :message="feedback" />
       <FeedbackMessage tone="error" :message="error" />
 
-      <section v-if="isLoading" class="dm-surface p-[var(--dm-panel-padding)] text-sm text-[var(--dm-text-muted)]">
+      <section
+        v-if="isLoading"
+        class="dm-surface p-[var(--dm-panel-padding)] text-sm text-[var(--dm-text-muted)]"
+      >
         正在加载服务...
       </section>
 
       <section v-else-if="filteredItems.length === 0" class="dm-surface p-8 text-center">
-        <p class="text-base font-medium text-[var(--dm-text)]">{{ hasFilters ? '没有符合筛选条件的服务' : '还没有服务' }}</p>
-        <p class="mt-1 text-sm text-[var(--dm-text-muted)]">{{ hasFilters ? '清空筛选或换一个条件试试。' : '可以新建服务，开始整理自部署入口。' }}</p>
+        <p class="text-base font-medium text-[var(--dm-text)]">
+          {{ hasFilters ? '没有符合筛选条件的服务' : '还没有服务' }}
+        </p>
+        <p class="mt-1 text-sm text-[var(--dm-text-muted)]">
+          {{ hasFilters ? '清空筛选或换一个条件试试。' : '可以新建服务，开始整理自部署入口。' }}
+        </p>
         <div class="mt-4 flex justify-center gap-2">
           <AppButton v-if="hasFilters" type="button" @click="clearFilters">清空筛选</AppButton>
           <AppLinkButton to="/services/new" tone="primary">新建服务</AppLinkButton>
@@ -232,7 +304,11 @@ watch(
               </tr>
             </thead>
             <tbody class="divide-y divide-[var(--dm-border)]">
-              <tr v-for="row in serviceRows" :key="row.item.id" :class="['dm-list-row', rowStateClass(row.item.status)]">
+              <tr
+                v-for="row in serviceRows"
+                :key="row.item.id"
+                :class="['dm-list-row', rowStateClass(row.item.status)]"
+              >
                 <td class="px-3 py-3 align-middle">
                   <div class="flex min-w-0 items-center gap-3">
                     <ServiceIcon
@@ -243,22 +319,43 @@ watch(
                     />
                     <div class="min-w-0">
                       <div class="flex min-w-0 items-center gap-2">
-                        <p class="truncate font-semibold text-[var(--dm-text)]">{{ row.item.name }}</p>
-                        <span :class="['shrink-0 rounded-[var(--dm-radius-full)] px-2 py-0.5 text-xs font-medium', statusToneClasses[row.item.status]]">
+                        <p class="truncate font-semibold text-[var(--dm-text)]">
+                          {{ row.item.name }}
+                        </p>
+                        <span
+                          :class="[
+                            'shrink-0 rounded-[var(--dm-radius-full)] px-2 py-0.5 text-xs font-medium',
+                            statusToneClasses[row.item.status],
+                          ]"
+                        >
                           {{ statusLabels[row.item.status] }}
                         </span>
                       </div>
-                      <p class="mt-1 truncate text-xs text-[var(--dm-text-subtle)]">{{ row.categoryName }}</p>
-                      <p v-if="row.item.description" class="mt-1 truncate text-xs text-[var(--dm-text-subtle)]">{{ row.item.description }}</p>
+                      <p class="mt-1 truncate text-xs text-[var(--dm-text-subtle)]">
+                        {{ row.categoryName }}
+                      </p>
+                      <p
+                        v-if="row.item.description"
+                        class="mt-1 truncate text-xs text-[var(--dm-text-subtle)]"
+                      >
+                        {{ row.item.description }}
+                      </p>
                     </div>
                   </div>
                 </td>
                 <td class="px-3 py-3 align-middle">
                   <template v-if="row.primaryEndpoint">
-                    <a class="dm-link block truncate" :href="row.primaryEndpoint.url" target="_blank">
-                      {{ row.primaryEndpoint.label }} · {{ endpointKindLabels[row.primaryEndpoint.kind] }}
+                    <a
+                      class="dm-link block truncate"
+                      :href="row.primaryEndpoint.url"
+                      target="_blank"
+                    >
+                      {{ row.primaryEndpoint.label }} ·
+                      {{ endpointKindLabels[row.primaryEndpoint.kind] }}
                     </a>
-                    <p class="mt-1 truncate text-xs text-[var(--dm-text-subtle)]">{{ row.primaryEndpoint.url }}</p>
+                    <p class="mt-1 truncate text-xs text-[var(--dm-text-subtle)]">
+                      {{ row.primaryEndpoint.url }}
+                    </p>
                   </template>
                   <span v-else class="text-sm text-[var(--dm-text-subtle)]">未配置地址</span>
                 </td>
@@ -273,12 +370,16 @@ watch(
                   <p
                     :class="[
                       'truncate text-sm',
-                      row.item.credentialHint ? 'text-[var(--dm-text-muted)]' : 'text-[var(--dm-text-subtle)]',
+                      row.item.credentialHint
+                        ? 'text-[var(--dm-text-muted)]'
+                        : 'text-[var(--dm-text-subtle)]',
                     ]"
                   >
                     {{ row.item.credentialHint || '未设置凭据提示' }}
                   </p>
-                  <p class="mt-1 text-xs text-[var(--dm-text-subtle)]">{{ row.item.endpoints.length }} 个地址</p>
+                  <p class="mt-1 text-xs text-[var(--dm-text-subtle)]">
+                    {{ row.item.endpoints.length }} 个地址
+                  </p>
                 </td>
                 <td class="px-3 py-3 align-middle">
                   <div class="flex items-center justify-end gap-1 whitespace-nowrap">
@@ -290,8 +391,14 @@ watch(
                     >
                       打开 ↗
                     </a>
-                    <AppLinkButton :to="`/services/${row.item.id}/edit`" tone="ghost" size="sm">编辑</AppLinkButton>
-                    <ConfirmAction :message="`确认删除服务“${row.item.name}”？`" size="sm" @confirm="remove(row.item.id)" />
+                    <AppLinkButton :to="`/services/${row.item.id}/edit`" tone="ghost" size="sm"
+                      >编辑</AppLinkButton
+                    >
+                    <ConfirmAction
+                      :message="`确认删除服务“${row.item.name}”？`"
+                      size="sm"
+                      @confirm="remove(row.item.id)"
+                    />
                   </div>
                 </td>
               </tr>
@@ -300,7 +407,11 @@ watch(
         </div>
 
         <div class="grid gap-2 lg:hidden">
-          <article v-for="row in serviceRows" :key="row.item.id" :class="['dm-mobile-card', rowStateClass(row.item.status)]">
+          <article
+            v-for="row in serviceRows"
+            :key="row.item.id"
+            :class="['dm-mobile-card', rowStateClass(row.item.status)]"
+          >
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
                 <div class="flex min-w-0 items-center gap-2">
@@ -311,8 +422,15 @@ watch(
                     :primary-url="row.primaryEndpoint?.url ?? null"
                     size="sm"
                   />
-                  <p class="truncate text-base font-semibold text-[var(--dm-text)]">{{ row.item.name }}</p>
-                  <span :class="['shrink-0 rounded-[var(--dm-radius-full)] px-2 py-0.5 text-xs font-medium', statusToneClasses[row.item.status]]">
+                  <p class="truncate text-base font-semibold text-[var(--dm-text)]">
+                    {{ row.item.name }}
+                  </p>
+                  <span
+                    :class="[
+                      'shrink-0 rounded-[var(--dm-radius-full)] px-2 py-0.5 text-xs font-medium',
+                      statusToneClasses[row.item.status],
+                    ]"
+                  >
                     {{ statusLabels[row.item.status] }}
                   </span>
                 </div>
@@ -320,7 +438,12 @@ watch(
               </div>
             </div>
 
-            <p v-if="row.item.description" class="mt-3 text-sm leading-6 text-[var(--dm-text-muted)]">{{ row.item.description }}</p>
+            <p
+              v-if="row.item.description"
+              class="mt-3 text-sm leading-6 text-[var(--dm-text-muted)]"
+            >
+              {{ row.item.description }}
+            </p>
 
             <div class="mt-3">
               <a
@@ -334,7 +457,10 @@ watch(
               <p v-else class="text-sm text-[var(--dm-text-muted)]">未配置地址</p>
             </div>
 
-            <p v-if="row.item.credentialHint" class="mt-3 rounded-[var(--dm-radius-control)] bg-[var(--dm-surface-muted)] px-3 py-2 text-xs text-[var(--dm-text-muted)]">
+            <p
+              v-if="row.item.credentialHint"
+              class="mt-3 rounded-[var(--dm-radius-control)] bg-[var(--dm-surface-muted)] px-3 py-2 text-xs text-[var(--dm-text-muted)]"
+            >
               {{ row.item.credentialHint }}
             </p>
 
@@ -344,7 +470,9 @@ watch(
             </div>
 
             <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
-              <span class="text-xs text-[var(--dm-text-subtle)]">{{ row.item.endpoints.length }} 个地址</span>
+              <span class="text-xs text-[var(--dm-text-subtle)]"
+                >{{ row.item.endpoints.length }} 个地址</span
+              >
               <div class="flex flex-wrap gap-2">
                 <a
                   v-if="row.primaryEndpoint"
@@ -354,8 +482,13 @@ watch(
                 >
                   打开
                 </a>
-                <AppLinkButton :to="`/services/${row.item.id}/edit`" tone="ghost">编辑</AppLinkButton>
-                <ConfirmAction :message="`确认删除服务“${row.item.name}”？`" @confirm="remove(row.item.id)" />
+                <AppLinkButton :to="`/services/${row.item.id}/edit`" tone="ghost"
+                  >编辑</AppLinkButton
+                >
+                <ConfirmAction
+                  :message="`确认删除服务“${row.item.name}”？`"
+                  @confirm="remove(row.item.id)"
+                />
               </div>
             </div>
           </article>

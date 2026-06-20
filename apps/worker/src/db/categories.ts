@@ -11,7 +11,10 @@ export async function listCategories(db: D1Database): Promise<Category[]> {
 }
 
 export async function getCategory(db: D1Database, id: string): Promise<Category | null> {
-  const row = await db.prepare('SELECT * FROM categories WHERE id = ?').bind(id).first<CategoryRow>()
+  const row = await db
+    .prepare('SELECT * FROM categories WHERE id = ?')
+    .bind(id)
+    .first<CategoryRow>()
   return row ? mapCategory(row) : null
 }
 
@@ -29,7 +32,11 @@ export async function createCategory(db: D1Database, input: CategoryInput): Prom
   return category
 }
 
-export function createCategoryStatement(db: D1Database, id: string, input: CategoryInput): D1PreparedStatement {
+export function createCategoryStatement(
+  db: D1Database,
+  id: string,
+  input: CategoryInput,
+): D1PreparedStatement {
   const slug = input.slug || slugify(input.name)
 
   return db
@@ -54,7 +61,11 @@ export async function updateCategory(
   return getCategory(db, id)
 }
 
-export function updateCategoryStatement(db: D1Database, id: string, input: CategoryInput): D1PreparedStatement {
+export function updateCategoryStatement(
+  db: D1Database,
+  id: string,
+  input: CategoryInput,
+): D1PreparedStatement {
   const slug = input.slug || slugify(input.name)
 
   return db

@@ -44,11 +44,16 @@ export function mapAuthUser(row: AuthUserRow, mode: AuthMode): AuthenticatedUser
 }
 
 export async function countAuthUsers(db: D1Database): Promise<number> {
-  const row = await db.prepare('SELECT COUNT(*) AS count FROM auth_users').first<{ count: number }>()
+  const row = await db
+    .prepare('SELECT COUNT(*) AS count FROM auth_users')
+    .first<{ count: number }>()
   return row?.count ?? 0
 }
 
-export async function getAuthUserByEmail(db: D1Database, email: string): Promise<AuthUserRow | null> {
+export async function getAuthUserByEmail(
+  db: D1Database,
+  email: string,
+): Promise<AuthUserRow | null> {
   return db
     .prepare('SELECT * FROM auth_users WHERE email = ?')
     .bind(normalizeEmail(email))
@@ -71,10 +76,19 @@ export async function createAuthUser(
       `INSERT INTO auth_users (id, email, display_name, password_hash, password_algo)
        VALUES (?, ?, ?, ?, ?)`,
     )
-    .bind(id, normalizeEmail(input.email), input.displayName, input.passwordHash, input.passwordAlgo)
+    .bind(
+      id,
+      normalizeEmail(input.email),
+      input.displayName,
+      input.passwordHash,
+      input.passwordAlgo,
+    )
     .run()
 
-  const user = await db.prepare('SELECT * FROM auth_users WHERE id = ?').bind(id).first<AuthUserRow>()
+  const user = await db
+    .prepare('SELECT * FROM auth_users WHERE id = ?')
+    .bind(id)
+    .first<AuthUserRow>()
 
   if (!user) {
     throw new Error('Created auth user could not be loaded')
@@ -85,7 +99,9 @@ export async function createAuthUser(
 
 export async function markAuthUserLogin(db: D1Database, userId: string): Promise<void> {
   await db
-    .prepare('UPDATE auth_users SET last_login_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+    .prepare(
+      'UPDATE auth_users SET last_login_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+    )
     .bind(userId)
     .run()
 }
@@ -108,7 +124,10 @@ export async function createAuthSession(
     .bind(id, input.userId, input.sessionHash, input.expiresAt)
     .run()
 
-  const session = await db.prepare('SELECT * FROM auth_sessions WHERE id = ?').bind(id).first<AuthSessionRow>()
+  const session = await db
+    .prepare('SELECT * FROM auth_sessions WHERE id = ?')
+    .bind(id)
+    .first<AuthSessionRow>()
 
   if (!session) {
     throw new Error('Created auth session could not be loaded')
@@ -167,7 +186,12 @@ export async function getAuthenticatedSession(
       last_login_at: string | null
     }>()
 
-  if (!row || row.revoked_at || row.disabled_at || new Date(row.expires_at).getTime() <= now.getTime()) {
+  if (
+    !row ||
+    row.revoked_at ||
+    row.disabled_at ||
+    new Date(row.expires_at).getTime() <= now.getTime()
+  ) {
     return null
   }
 
@@ -198,14 +222,18 @@ export async function getAuthenticatedSession(
 
 export async function touchAuthSession(db: D1Database, sessionId: string): Promise<void> {
   await db
-    .prepare('UPDATE auth_sessions SET last_seen_at = CURRENT_TIMESTAMP WHERE id = ? AND revoked_at IS NULL')
+    .prepare(
+      'UPDATE auth_sessions SET last_seen_at = CURRENT_TIMESTAMP WHERE id = ? AND revoked_at IS NULL',
+    )
     .bind(sessionId)
     .run()
 }
 
 export async function revokeAuthSession(db: D1Database, sessionHash: string): Promise<void> {
   await db
-    .prepare('UPDATE auth_sessions SET revoked_at = CURRENT_TIMESTAMP WHERE session_hash = ? AND revoked_at IS NULL')
+    .prepare(
+      'UPDATE auth_sessions SET revoked_at = CURRENT_TIMESTAMP WHERE session_hash = ? AND revoked_at IS NULL',
+    )
     .bind(sessionHash)
     .run()
 }

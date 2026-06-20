@@ -48,7 +48,7 @@ pnpm validate
 openspec validate --all --strict --no-interactive
 ```
 
-`pnpm validate` is a read-only gate: it typechecks, tests, lint-checks, and builds without applying formatter or lint fixer changes. Use `pnpm format` or `pnpm lint:fix` when you explicitly want local files rewritten.
+`pnpm validate` is a read-only gate: it typechecks, tests, lint-checks, format-checks, and builds without applying formatter or lint fixer changes. Use `pnpm format` or `pnpm lint:fix` when you explicitly want local files rewritten.
 
 Clean ignored workspace build outputs and caches:
 
@@ -69,7 +69,7 @@ Before running those commands, configure `SETUP_TOKEN` as a Wrangler secret.
 
 - `apps/web`: Vue 3, Vite, Vue Router, Tailwind CSS web UI.
 - `apps/worker`: Hono API on Cloudflare Workers.
-- `apps/extension`: browser extension placeholder for later phases.
+- `apps/extension`: Manifest V3 browser extension foundation for later sync phases.
 - `packages/shared`: shared TypeScript contracts and utilities.
 - `migrations`: Cloudflare D1 SQL migrations.
 - `docs`: design notes, project standards, API conventions, and deployment guidance.

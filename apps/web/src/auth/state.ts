@@ -30,7 +30,10 @@ export function authMessage(caught: unknown, fallback: string): string {
       return '管理员已经初始化，请直接登录。'
     }
 
-    if (caught.code === 'validation_failed' && caught.message.includes('password must be at least 12 characters')) {
+    if (
+      caught.code === 'validation_failed' &&
+      caught.message.includes('password must be at least 12 characters')
+    ) {
       return '密码至少需要 12 个字符。'
     }
 

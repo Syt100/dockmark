@@ -10,8 +10,8 @@
     "test:integration": "vitest run -c vitest.integration.config.ts",
     "lint": "corepack pnpm run lint:check",
     "lint:check": "tsc -p tsconfig.json --noEmit",
-    "lint:fix": "echo \"No worker lint fix yet\"",
-    "format": "echo \"No worker format yet\"",
+    "lint:fix": "corepack pnpm --dir ../.. exec prettier --write apps/worker",
+    "format": "corepack pnpm --dir ../.. exec prettier --write apps/worker",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "db:seed:local": "wrangler d1 execute DB --local --file ../../seeds/local-dev.sql",
     "db:migrate:production": "wrangler d1 migrations apply DB --remote --env production",
@@ -26,9 +26,9 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.16.13",
-    "@cloudflare/workers-types": "^4.20260606.1",
+    "@cloudflare/workers-types": "^4.20260620.1",
     "typescript": "~6.0.0",
     "vitest": "^4.1.8",
-    "wrangler": "^4.98.0"
+    "wrangler": "^4.103.0"
   }
 }

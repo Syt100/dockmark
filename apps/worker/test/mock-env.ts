@@ -96,7 +96,9 @@ function now(): string {
   return new Date().toISOString()
 }
 
-function sortByOrderAndName<T extends { sort_order?: number; name?: string; label?: string }>(values: T[]): T[] {
+function sortByOrderAndName<T extends { sort_order?: number; name?: string; label?: string }>(
+  values: T[],
+): T[] {
   return [...values].sort((left, right) => {
     const order = (left.sort_order ?? 0) - (right.sort_order ?? 0)
     if (order !== 0) {
@@ -166,7 +168,10 @@ class MockStatement {
 
   async run(): Promise<D1Result> {
     const result = this.execute()
-    return { success: true, meta: { changes: result.meta?.changes ?? 0 } } as D1Result
+    return {
+      success: true,
+      meta: { changes: result.meta?.changes ?? 0 },
+    } as D1Result
   }
 
   execute(): StatementResult {
@@ -200,7 +205,9 @@ class MockStatement {
     }
 
     if (sql.startsWith('SELECT * FROM auth_users WHERE email = ?')) {
-      return { results: this.store.authUsers.filter((user) => user.email === this.values[0]) }
+      return {
+        results: this.store.authUsers.filter((user) => user.email === this.values[0]),
+      }
     }
 
     if (sql.startsWith('INSERT INTO auth_users')) {
@@ -220,7 +227,9 @@ class MockStatement {
     }
 
     if (sql.startsWith('SELECT * FROM auth_users WHERE id = ?')) {
-      return { results: this.store.authUsers.filter((user) => user.id === this.values[0]) }
+      return {
+        results: this.store.authUsers.filter((user) => user.id === this.values[0]),
+      }
     }
 
     if (sql.startsWith('UPDATE auth_users SET last_login_at')) {
@@ -245,42 +254,52 @@ class MockStatement {
     }
 
     if (sql.startsWith('SELECT * FROM auth_sessions WHERE id = ?')) {
-      return { results: this.store.authSessions.filter((session) => session.id === this.values[0]) }
+      return {
+        results: this.store.authSessions.filter((session) => session.id === this.values[0]),
+      }
     }
 
     if (sql.startsWith('SELECT auth_sessions.id AS session_id')) {
-      const session = this.store.authSessions.find((record) => record.session_hash === this.values[0])
-      const user = session ? this.store.authUsers.find((record) => record.id === session.user_id) : null
+      const session = this.store.authSessions.find(
+        (record) => record.session_hash === this.values[0],
+      )
+      const user = session
+        ? this.store.authUsers.find((record) => record.id === session.user_id)
+        : null
 
       if (!session || !user) {
         return { results: [] }
       }
 
       return {
-        results: [{
-          session_id: session.id,
-          user_id: session.user_id,
-          session_hash: session.session_hash,
-          expires_at: session.expires_at,
-          session_created_at: session.created_at,
-          last_seen_at: session.last_seen_at,
-          revoked_at: session.revoked_at,
-          user_id_value: user.id,
-          email: user.email,
-          display_name: user.display_name,
-          password_hash: user.password_hash,
-          password_algo: user.password_algo,
-          is_admin: user.is_admin,
-          disabled_at: user.disabled_at,
-          user_created_at: user.created_at,
-          updated_at: user.updated_at,
-          last_login_at: user.last_login_at,
-        }],
+        results: [
+          {
+            session_id: session.id,
+            user_id: session.user_id,
+            session_hash: session.session_hash,
+            expires_at: session.expires_at,
+            session_created_at: session.created_at,
+            last_seen_at: session.last_seen_at,
+            revoked_at: session.revoked_at,
+            user_id_value: user.id,
+            email: user.email,
+            display_name: user.display_name,
+            password_hash: user.password_hash,
+            password_algo: user.password_algo,
+            is_admin: user.is_admin,
+            disabled_at: user.disabled_at,
+            user_created_at: user.created_at,
+            updated_at: user.updated_at,
+            last_login_at: user.last_login_at,
+          },
+        ],
       }
     }
 
     if (sql.startsWith('UPDATE auth_sessions SET last_seen_at')) {
-      const session = this.store.authSessions.find((record) => record.id === this.values[0] && !record.revoked_at)
+      const session = this.store.authSessions.find(
+        (record) => record.id === this.values[0] && !record.revoked_at,
+      )
       if (!session) return { meta: { changes: 0 } }
       session.last_seen_at = now()
       this.store.authSessionTouchCount += 1
@@ -288,14 +307,18 @@ class MockStatement {
     }
 
     if (sql.startsWith('UPDATE auth_sessions SET revoked_at')) {
-      const session = this.store.authSessions.find((record) => record.session_hash === this.values[0] && !record.revoked_at)
+      const session = this.store.authSessions.find(
+        (record) => record.session_hash === this.values[0] && !record.revoked_at,
+      )
       if (!session) return { meta: { changes: 0 } }
       session.revoked_at = now()
       return { meta: { changes: 1 } }
     }
 
     if (sql.startsWith('SELECT * FROM categories WHERE id = ?')) {
-      return { results: this.store.categories.filter((category) => category.id === this.values[0]) }
+      return {
+        results: this.store.categories.filter((category) => category.id === this.values[0]),
+      }
     }
 
     if (sql.startsWith('SELECT * FROM categories ORDER BY')) {
@@ -341,7 +364,9 @@ class MockStatement {
 
     if (sql.startsWith('DELETE FROM categories')) {
       const before = this.store.categories.length
-      this.store.categories = this.store.categories.filter((category) => category.id !== this.values[0])
+      this.store.categories = this.store.categories.filter(
+        (category) => category.id !== this.values[0],
+      )
       for (const item of this.store.items) {
         if (item.category_id === this.values[0]) {
           item.category_id = null
@@ -351,11 +376,15 @@ class MockStatement {
     }
 
     if (sql.startsWith('SELECT * FROM tags WHERE id = ?')) {
-      return { results: this.store.tags.filter((tag) => tag.id === this.values[0]) }
+      return {
+        results: this.store.tags.filter((tag) => tag.id === this.values[0]),
+      }
     }
 
     if (sql.startsWith('SELECT * FROM tags ORDER BY')) {
-      return { results: [...this.store.tags].sort((left, right) => left.name.localeCompare(right.name)) }
+      return {
+        results: [...this.store.tags].sort((left, right) => left.name.localeCompare(right.name)),
+      }
     }
 
     if (sql.startsWith('INSERT INTO tags')) {
@@ -403,7 +432,9 @@ class MockStatement {
     }
 
     if (sql.startsWith('SELECT * FROM items WHERE id = ?')) {
-      return { results: this.store.items.filter((item) => item.id === this.values[0]) }
+      return {
+        results: this.store.items.filter((item) => item.id === this.values[0]),
+      }
     }
 
     if (sql.startsWith('SELECT * FROM items ORDER BY')) {
@@ -448,14 +479,18 @@ class MockStatement {
     if (sql.startsWith('DELETE FROM items')) {
       const before = this.store.items.length
       this.store.items = this.store.items.filter((item) => item.id !== this.values[0])
-      this.store.endpoints = this.store.endpoints.filter((endpoint) => endpoint.item_id !== this.values[0])
+      this.store.endpoints = this.store.endpoints.filter(
+        (endpoint) => endpoint.item_id !== this.values[0],
+      )
       this.store.itemTags = this.store.itemTags.filter((link) => link.item_id !== this.values[0])
       return { meta: { changes: before - this.store.items.length } }
     }
 
     if (sql.startsWith('DELETE FROM endpoints')) {
       const before = this.store.endpoints.length
-      this.store.endpoints = this.store.endpoints.filter((endpoint) => endpoint.item_id !== this.values[0])
+      this.store.endpoints = this.store.endpoints.filter(
+        (endpoint) => endpoint.item_id !== this.values[0],
+      )
       return { meta: { changes: before - this.store.endpoints.length } }
     }
 
@@ -483,7 +518,9 @@ class MockStatement {
     if (sql.startsWith('INSERT OR IGNORE INTO item_tags')) {
       const item_id = this.values[0] as string
       const tag_id = this.values[1] as string
-      const exists = this.store.itemTags.some((link) => link.item_id === item_id && link.tag_id === tag_id)
+      const exists = this.store.itemTags.some(
+        (link) => link.item_id === item_id && link.tag_id === tag_id,
+      )
       if (!exists) {
         this.store.itemTags.push({ item_id, tag_id })
       }
@@ -492,7 +529,11 @@ class MockStatement {
 
     if (sql.startsWith('SELECT * FROM endpoints WHERE item_id IN')) {
       const ids = new Set(this.values as string[])
-      return { results: sortByOrderAndName(this.store.endpoints.filter((endpoint) => ids.has(endpoint.item_id))) }
+      return {
+        results: sortByOrderAndName(
+          this.store.endpoints.filter((endpoint) => ids.has(endpoint.item_id)),
+        ),
+      }
     }
 
     if (sql.startsWith('SELECT item_tags.item_id, tags.*')) {
@@ -563,9 +604,11 @@ export function createMockEnv(overrides: Partial<Bindings> = {}): MockBindings {
         const url = new URL(request.url)
 
         if (url.pathname === '/' || url.pathname === '/index.html') {
-          return Promise.resolve(new Response('<!doctype html><div id="app"></div>', {
-            headers: { 'content-type': 'text/html' },
-          }))
+          return Promise.resolve(
+            new Response('<!doctype html><div id="app"></div>', {
+              headers: { 'content-type': 'text/html' },
+            }),
+          )
         }
 
         return Promise.resolve(new Response('Not found', { status: 404 }))

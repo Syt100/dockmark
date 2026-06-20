@@ -10,4 +10,3 @@ export const requireAuth = createMiddleware<AppEnv>(async (c, next) => {
 
   await next()
 })
-

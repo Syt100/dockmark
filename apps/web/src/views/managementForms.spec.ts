@@ -64,7 +64,9 @@ describe('management form mapping', () => {
       sortOrder: 2,
       createdAt: '2026-05-29T00:00:00.000Z',
       updatedAt: '2026-05-29T00:00:00.000Z',
-      tags: [{ id: 'tag_photo', name: 'Photos', slug: 'photos', createdAt: '2026-05-29T00:00:00.000Z' }],
+      tags: [
+        { id: 'tag_photo', name: 'Photos', slug: 'photos', createdAt: '2026-05-29T00:00:00.000Z' },
+      ],
       endpoints: [
         {
           id: 'endpoint_lan',

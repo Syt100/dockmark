@@ -1,8 +1,4 @@
-import {
-  extensionHostPermissions,
-  extensionIdentity,
-  extensionPermissions,
-} from './extension.js'
+import { extensionHostPermissions, extensionIdentity, extensionPermissions } from './extension.js'
 
 export type ExtensionManifest = {
   manifest_version: 3

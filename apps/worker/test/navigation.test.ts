@@ -7,17 +7,27 @@ async function json(response: Response): Promise<unknown> {
   return response.json()
 }
 
-async function createBuiltinSessionCookie(): Promise<{ env: ReturnType<typeof createMockEnv>; cookie: string }> {
-  const env = createMockEnv({ AUTH_MODE: 'builtin', SETUP_TOKEN: 'setup-secret' })
-  const response = await app.request('/api/auth/setup', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      setupToken: 'setup-secret',
-      email: 'owner@example.com',
-      password: 'correct horse battery staple',
-    }),
-  }, env)
+async function createBuiltinSessionCookie(): Promise<{
+  env: ReturnType<typeof createMockEnv>
+  cookie: string
+}> {
+  const env = createMockEnv({
+    AUTH_MODE: 'builtin',
+    SETUP_TOKEN: 'setup-secret',
+  })
+  const response = await app.request(
+    '/api/auth/setup',
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        setupToken: 'setup-secret',
+        email: 'owner@example.com',
+        password: 'correct horse battery staple',
+      }),
+    },
+    env,
+  )
   const cookie = response.headers.get('set-cookie')?.split(';')[0]
 
   if (!cookie) {
@@ -31,7 +41,13 @@ describe('navigation API', () => {
   it('requires authentication for data read APIs outside health checks', async () => {
     const env = createMockEnv({ AUTH_MODE: 'builtin' })
 
-    for (const path of ['/api/nav', '/api/categories', '/api/tags', '/api/items', '/api/items/item_missing']) {
+    for (const path of [
+      '/api/nav',
+      '/api/categories',
+      '/api/tags',
+      '/api/items',
+      '/api/items/item_missing',
+    ]) {
       const response = await app.request(path, {}, env)
       expect(response.status).toBe(401)
       await expect(response.json()).resolves.toMatchObject({
@@ -65,7 +81,9 @@ describe('navigation API', () => {
       env,
     )
     expect(categoryResponse.status).toBe(201)
-    const categoryBody = await json(categoryResponse) as { category: { id: string } }
+    const categoryBody = (await json(categoryResponse)) as {
+      category: { id: string }
+    }
 
     const tagResponse = await app.request(
       '/api/tags',
@@ -77,7 +95,7 @@ describe('navigation API', () => {
       env,
     )
     expect(tagResponse.status).toBe(201)
-    const tagBody = await json(tagResponse) as { tag: { id: string } }
+    const tagBody = (await json(tagResponse)) as { tag: { id: string } }
 
     const itemResponse = await app.request(
       '/api/items',
@@ -111,8 +129,11 @@ describe('navigation API', () => {
     const navResponse = await app.request('/api/nav', {}, env)
     expect(navResponse.headers.get('X-Dockmark-Cache')).toBe('miss')
 
-    const nav = await json(navResponse) as {
-      categories: Array<{ name: string; items: Array<{ name: string; primaryEndpoint: { url: string } }> }>
+    const nav = (await json(navResponse)) as {
+      categories: Array<{
+        name: string
+        items: Array<{ name: string; primaryEndpoint: { url: string } }>
+      }>
     }
 
     expect(nav.categories[0]?.name).toBe('Media')
@@ -127,19 +148,29 @@ describe('navigation API', () => {
     const env = createMockEnv()
     const headers = { 'content-type': 'application/json' }
 
-    const categoryResponse = await app.request('/api/categories', {
-      method: 'POST',
-      body: JSON.stringify({ name: 'Media', icon: 'play' }),
-      headers,
-    }, env)
-    const categoryBody = await json(categoryResponse) as { category: { id: string } }
+    const categoryResponse = await app.request(
+      '/api/categories',
+      {
+        method: 'POST',
+        body: JSON.stringify({ name: 'Media', icon: 'play' }),
+        headers,
+      },
+      env,
+    )
+    const categoryBody = (await json(categoryResponse)) as {
+      category: { id: string }
+    }
 
-    const tagResponse = await app.request('/api/tags', {
-      method: 'POST',
-      body: JSON.stringify({ name: 'photos' }),
-      headers,
-    }, env)
-    const tagBody = await json(tagResponse) as { tag: { id: string } }
+    const tagResponse = await app.request(
+      '/api/tags',
+      {
+        method: 'POST',
+        body: JSON.stringify({ name: 'photos' }),
+        headers,
+      },
+      env,
+    )
+    const tagBody = (await json(tagResponse)) as { tag: { id: string } }
 
     const readCategory = await app.request(`/api/categories/${categoryBody.category.id}`, {}, env)
     expect(readCategory.status).toBe(200)
@@ -280,10 +311,13 @@ describe('navigation API', () => {
   it('ignores pre-versioned navigation cache entries after upgrading cache metadata', async () => {
     const env = createMockEnv()
 
-    await env.KV.put('nav:home:v1', JSON.stringify({
-      categories: [],
-      uncategorized: [],
-    }))
+    await env.KV.put(
+      'nav:home:v1',
+      JSON.stringify({
+        categories: [],
+        uncategorized: [],
+      }),
+    )
 
     const itemResponse = await app.request(
       '/api/items',
@@ -291,12 +325,14 @@ describe('navigation API', () => {
         method: 'POST',
         body: JSON.stringify({
           name: 'Grafana',
-          endpoints: [{
-            label: 'Public',
-            url: 'https://grafana.example.com',
-            kind: 'public',
-            isPrimary: true,
-          }],
+          endpoints: [
+            {
+              label: 'Public',
+              url: 'https://grafana.example.com',
+              kind: 'public',
+              isPrimary: true,
+            },
+          ],
         }),
         headers: { 'content-type': 'application/json' },
       },
@@ -307,7 +343,7 @@ describe('navigation API', () => {
     const navResponse = await app.request('/api/nav', {}, env)
     expect(navResponse.headers.get('X-Dockmark-Cache')).toBe('miss')
 
-    const nav = await json(navResponse) as {
+    const nav = (await json(navResponse)) as {
       uncategorized: Array<{ name: string }>
     }
     expect(nav.uncategorized[0]?.name).toBe('Grafana')
@@ -355,7 +391,9 @@ describe('navigation API', () => {
 
     const refreshed = await app.request('/api/nav', {}, env)
     expect(refreshed.headers.get('X-Dockmark-Cache')).toBe('miss')
-    const body = await json(refreshed) as { categories: Array<{ name: string }> }
+    const body = (await json(refreshed)) as {
+      categories: Array<{ name: string }>
+    }
     expect(body.categories.map((category) => category.name)).toEqual(['Infra', 'Media'])
   })
 
@@ -371,7 +409,7 @@ describe('navigation API', () => {
       },
       env,
     )
-    const tagBody = await json(tagResponse) as { tag: { id: string } }
+    const tagBody = (await json(tagResponse)) as { tag: { id: string } }
 
     await app.request('/api/nav', {}, env)
     const cached = await app.request('/api/nav', {}, env)
@@ -388,7 +426,9 @@ describe('navigation API', () => {
     )
 
     expect(updateResponse.status).toBe(200)
-    const updateBody = await json(updateResponse) as { tag: { name: string; slug: string } }
+    const updateBody = (await json(updateResponse)) as {
+      tag: { name: string; slug: string }
+    }
     expect(updateBody.tag.name).toBe('媒体')
     expect(updateBody.tag.slug).toBe('media-cn')
 
@@ -420,21 +460,31 @@ describe('navigation API', () => {
     const env = createMockEnv()
     const headers = { 'content-type': 'application/json' }
 
-    const first = await app.request('/api/tags', {
-      method: 'POST',
-      body: JSON.stringify({ name: 'media' }),
-      headers,
-    }, env)
+    const first = await app.request(
+      '/api/tags',
+      {
+        method: 'POST',
+        body: JSON.stringify({ name: 'media' }),
+        headers,
+      },
+      env,
+    )
     expect(first.status).toBe(201)
 
-    const duplicate = await app.request('/api/tags', {
-      method: 'POST',
-      body: JSON.stringify({ name: 'media' }),
-      headers,
-    }, env)
+    const duplicate = await app.request(
+      '/api/tags',
+      {
+        method: 'POST',
+        body: JSON.stringify({ name: 'media' }),
+        headers,
+      },
+      env,
+    )
 
     expect(duplicate.status).toBe(409)
-    const body = await duplicate.json() as { error: { code: string; message: string } }
+    const body = (await duplicate.json()) as {
+      error: { code: string; message: string }
+    }
     expect(body).toMatchObject({
       error: {
         code: 'conflict',

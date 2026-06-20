@@ -22,10 +22,17 @@ function shouldShowEndpointKind(endpoint: NavItem['primaryEndpoint']) {
   <article class="dm-surface p-[var(--dm-panel-padding)]">
     <div class="flex items-start justify-between gap-3">
       <div class="flex min-w-0 flex-1 items-start gap-3">
-        <ServiceIcon :icon="item.icon" :icon-type="item.iconType" :name="item.name" :primary-url="item.primaryEndpoint.url" />
+        <ServiceIcon
+          :icon="item.icon"
+          :icon-type="item.iconType"
+          :name="item.name"
+          :primary-url="item.primaryEndpoint.url"
+        />
         <div class="min-w-0">
           <h3 class="truncate font-semibold text-[var(--dm-text)]">{{ item.name }}</h3>
-          <p v-if="item.description" class="mt-1 text-sm leading-6 text-[var(--dm-text-muted)]">{{ item.description }}</p>
+          <p v-if="item.description" class="mt-1 text-sm leading-6 text-[var(--dm-text-muted)]">
+            {{ item.description }}
+          </p>
         </div>
       </div>
       <a
@@ -43,19 +50,27 @@ function shouldShowEndpointKind(endpoint: NavItem['primaryEndpoint']) {
         :key="endpoint.id"
         :class="[
           'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[var(--dm-radius-control)] px-2 py-1.5 text-sm transition hover:bg-[var(--dm-surface-muted)]',
-          index === 0 ? 'text-[var(--dm-primary)]' : 'text-[var(--dm-text-muted)] hover:text-[var(--dm-text)]',
+          index === 0
+            ? 'text-[var(--dm-primary)]'
+            : 'text-[var(--dm-text-muted)] hover:text-[var(--dm-text)]',
         ]"
         :href="endpoint.url"
         target="_blank"
       >
         <span class="min-w-0 truncate font-medium">{{ endpoint.label }}</span>
-        <AppBadge v-if="shouldShowEndpointKind(endpoint)" :tone="index === 0 ? 'primary' : 'neutral'">
+        <AppBadge
+          v-if="shouldShowEndpointKind(endpoint)"
+          :tone="index === 0 ? 'primary' : 'neutral'"
+        >
           {{ endpointKindLabels[endpoint.kind] }}
         </AppBadge>
       </a>
     </div>
 
-    <p v-if="item.credentialHint" class="mt-4 rounded-[var(--dm-radius-control)] bg-[var(--dm-surface-muted)] p-2 text-xs leading-5 text-[var(--dm-text-muted)]">
+    <p
+      v-if="item.credentialHint"
+      class="mt-4 rounded-[var(--dm-radius-control)] bg-[var(--dm-surface-muted)] p-2 text-xs leading-5 text-[var(--dm-text-muted)]"
+    >
       {{ item.credentialHint }}
     </p>
 

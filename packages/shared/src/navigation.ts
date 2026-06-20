@@ -1,4 +1,12 @@
-export const endpointKinds = ['public', 'lan', 'tailscale', 'admin', 'backup', 'docs', 'api'] as const
+export const endpointKinds = [
+  'public',
+  'lan',
+  'tailscale',
+  'admin',
+  'backup',
+  'docs',
+  'api',
+] as const
 export const itemStatuses = ['active', 'hidden', 'archived'] as const
 export const iconTypes = ['emoji', 'url', 'favicon', 'r2', 'simple-icons'] as const
 
@@ -111,15 +119,17 @@ export type ServiceItemInput = {
   tagIds?: string[]
 }
 
-export type ValidationResult<T> =
-  | { ok: true; value: T }
-  | { ok: false; errors: string[] }
+export type ValidationResult<T> = { ok: true; value: T } | { ok: false; errors: string[] }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function optionalString(value: unknown, field: string, errors: string[]): string | null | undefined {
+function optionalString(
+  value: unknown,
+  field: string,
+  errors: string[],
+): string | null | undefined {
   if (value === undefined) {
     return undefined
   }
@@ -303,8 +313,10 @@ export function validateServiceItemInput(input: unknown): ValidationResult<Servi
         const endpointId = optionalString(endpoint.id, `endpoints.${index}.id`, errors)
         const label = requiredString(endpoint.label, `endpoints.${index}.label`, errors)
         const url = requiredString(endpoint.url, `endpoints.${index}.url`, errors)
-        const kind = enumValue(endpoint.kind, endpointKinds, `endpoints.${index}.kind`, errors) ?? 'public'
-        const sort = optionalInteger(endpoint.sortOrder, `endpoints.${index}.sortOrder`, errors) ?? index
+        const kind =
+          enumValue(endpoint.kind, endpointKinds, `endpoints.${index}.kind`, errors) ?? 'public'
+        const sort =
+          optionalInteger(endpoint.sortOrder, `endpoints.${index}.sortOrder`, errors) ?? index
 
         if (url && !isValidUrl(url)) {
           errors.push(`endpoints.${index}.url must be a valid URL`)
@@ -332,7 +344,9 @@ export function validateServiceItemInput(input: unknown): ValidationResult<Servi
   }
 
   const tagIds = Array.isArray(input.tagIds)
-    ? input.tagIds.filter((tagId): tagId is string => typeof tagId === 'string' && tagId.trim() !== '')
+    ? input.tagIds.filter(
+        (tagId): tagId is string => typeof tagId === 'string' && tagId.trim() !== '',
+      )
     : []
 
   if (input.tagIds !== undefined && !Array.isArray(input.tagIds)) {

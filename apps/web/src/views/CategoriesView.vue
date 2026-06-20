@@ -38,7 +38,13 @@ const {
 const hasEditor = computed(() => route.name === 'category-new' || route.name === 'category-edit')
 const filteredCategories = computed(() =>
   categories.value.filter((category) =>
-    matchesSearchQuery(query.value, [category.name, category.slug, category.icon, category.color, String(category.sortOrder)]),
+    matchesSearchQuery(query.value, [
+      category.name,
+      category.slug,
+      category.icon,
+      category.color,
+      String(category.sortOrder),
+    ]),
   ),
 )
 
@@ -72,16 +78,26 @@ watch(
       <FeedbackMessage tone="error" :message="error" />
 
       <section class="md:max-w-sm">
-        <SearchInput v-model="query" label="搜索分类" name="categories-search" placeholder="搜索分类、Slug 或颜色" />
+        <SearchInput
+          v-model="query"
+          label="搜索分类"
+          name="categories-search"
+          placeholder="搜索分类、Slug 或颜色"
+        />
       </section>
 
-      <section v-if="isLoading" class="dm-surface p-[var(--dm-panel-padding)] text-sm text-[var(--dm-text-muted)]">
+      <section
+        v-if="isLoading"
+        class="dm-surface p-[var(--dm-panel-padding)] text-sm text-[var(--dm-text-muted)]"
+      >
         正在加载分类...
       </section>
 
       <section v-else-if="categories.length === 0" class="dm-surface p-8 text-center">
         <p class="text-base font-medium text-[var(--dm-text)]">还没有分类</p>
-        <p class="mt-1 text-sm text-[var(--dm-text-muted)]">创建分类后，服务可以按区域、用途或系统分组。</p>
+        <p class="mt-1 text-sm text-[var(--dm-text-muted)]">
+          创建分类后，服务可以按区域、用途或系统分组。
+        </p>
       </section>
 
       <section v-else-if="filteredCategories.length === 0" class="dm-surface p-8 text-center">
@@ -91,7 +107,9 @@ watch(
 
       <section v-else>
         <div class="dm-list-shell hidden md:block">
-          <div class="dm-list-head grid grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_8rem_10rem] px-4 py-3 text-xs font-medium">
+          <div
+            class="dm-list-head grid grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_8rem_10rem] px-4 py-3 text-xs font-medium"
+          >
             <span>分类</span>
             <span>Slug</span>
             <span>排序</span>
@@ -104,19 +122,31 @@ watch(
               class="dm-list-row grid grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_8rem_10rem] items-center px-4 py-3"
             >
               <div class="flex min-w-0 items-center gap-3">
-                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--dm-radius-control)] bg-[var(--dm-surface-muted)] text-base font-semibold text-[var(--dm-text-muted)]">
+                <span
+                  class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--dm-radius-control)] bg-[var(--dm-surface-muted)] text-base font-semibold text-[var(--dm-text-muted)]"
+                >
                   {{ category.icon || '•' }}
                 </span>
                 <div class="min-w-0">
                   <p class="truncate font-semibold text-[var(--dm-text)]">{{ category.name }}</p>
-                  <p v-if="category.color" class="mt-1 truncate text-xs text-[var(--dm-text-subtle)]">{{ category.color }}</p>
+                  <p
+                    v-if="category.color"
+                    class="mt-1 truncate text-xs text-[var(--dm-text-subtle)]"
+                  >
+                    {{ category.color }}
+                  </p>
                 </div>
               </div>
               <p class="truncate text-sm text-[var(--dm-text-muted)]">{{ category.slug }}</p>
               <p class="text-sm text-[var(--dm-text-muted)]">{{ category.sortOrder }}</p>
               <div class="flex items-center justify-end gap-1">
-                <AppLinkButton :to="`/categories/${category.id}/edit`" tone="ghost">编辑</AppLinkButton>
-                <ConfirmAction :message="`确认删除分类“${category.name}”？服务会变为未分类。`" @confirm="remove(category.id)" />
+                <AppLinkButton :to="`/categories/${category.id}/edit`" tone="ghost"
+                  >编辑</AppLinkButton
+                >
+                <ConfirmAction
+                  :message="`确认删除分类“${category.name}”？服务会变为未分类。`"
+                  @confirm="remove(category.id)"
+                />
               </div>
             </article>
           </div>
@@ -126,8 +156,12 @@ watch(
           <article v-for="category in filteredCategories" :key="category.id" class="dm-mobile-card">
             <div class="flex items-start justify-between gap-4">
               <div class="min-w-0">
-                <p class="text-base font-semibold text-[var(--dm-text)]">{{ category.icon || '•' }} {{ category.name }}</p>
-                <p class="mt-1 break-all text-sm text-[var(--dm-text-muted)]">{{ category.slug }}</p>
+                <p class="text-base font-semibold text-[var(--dm-text)]">
+                  {{ category.icon || '•' }} {{ category.name }}
+                </p>
+                <p class="mt-1 break-all text-sm text-[var(--dm-text-muted)]">
+                  {{ category.slug }}
+                </p>
                 <div class="mt-3 flex flex-wrap gap-2">
                   <AppBadge>排序 {{ category.sortOrder }}</AppBadge>
                   <AppBadge v-if="category.color">{{ category.color }}</AppBadge>
@@ -135,8 +169,13 @@ watch(
               </div>
             </div>
             <div class="mt-4 flex flex-wrap gap-2">
-              <AppLinkButton :to="`/categories/${category.id}/edit`" tone="ghost">编辑</AppLinkButton>
-              <ConfirmAction :message="`确认删除分类“${category.name}”？服务会变为未分类。`" @confirm="remove(category.id)" />
+              <AppLinkButton :to="`/categories/${category.id}/edit`" tone="ghost"
+                >编辑</AppLinkButton
+              >
+              <ConfirmAction
+                :message="`确认删除分类“${category.name}”？服务会变为未分类。`"
+                @confirm="remove(category.id)"
+              />
             </div>
           </article>
         </div>

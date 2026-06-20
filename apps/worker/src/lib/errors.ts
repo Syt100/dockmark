@@ -60,7 +60,13 @@ export async function apiErrorResponseFromUnknown(error: unknown): Promise<Respo
   if (error instanceof HTTPException) {
     const response = error.getResponse()
     const message = error.message || messageFromResponse(response)
-    return apiErrorResponse(new ApiHttpError(response.status as ContentfulStatusCode, codeForStatus(response.status), message))
+    return apiErrorResponse(
+      new ApiHttpError(
+        response.status as ContentfulStatusCode,
+        codeForStatus(response.status),
+        message,
+      ),
+    )
   }
 
   if (isD1UniqueConstraintError(error)) {

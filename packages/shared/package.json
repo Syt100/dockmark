@@ -14,9 +14,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "lint": "corepack pnpm run lint:check",
-    "lint:check": "echo \"No shared lint yet\"",
-    "lint:fix": "echo \"No shared lint fix yet\"",
-    "format": "echo \"No shared format yet\""
+    "lint:check": "tsc -p tsconfig.json --noEmit",
+    "lint:fix": "corepack pnpm --dir ../.. exec prettier --write packages/shared",
+    "format": "corepack pnpm --dir ../.. exec prettier --write packages/shared"
   },
   "devDependencies": {
     "typescript": "~6.0.0",

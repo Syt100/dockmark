@@ -30,13 +30,15 @@ export class ApiError extends Error {
 }
 
 function isApiErrorResponse(value: unknown): value is ApiErrorResponse {
-  return typeof value === 'object' &&
+  return (
+    typeof value === 'object' &&
     value !== null &&
     'error' in value &&
     typeof (value as ApiErrorResponse).error === 'object' &&
     (value as ApiErrorResponse).error !== null &&
     typeof (value as ApiErrorResponse).error.code === 'string' &&
     typeof (value as ApiErrorResponse).error.message === 'string'
+  )
 }
 
 async function readError(response: Response): Promise<ApiError> {

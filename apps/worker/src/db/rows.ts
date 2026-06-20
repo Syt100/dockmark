@@ -99,4 +99,3 @@ export function mapServiceItem(row: ItemRow, endpoints: Endpoint[], tags: Tag[])
     tags,
   }
 }
-

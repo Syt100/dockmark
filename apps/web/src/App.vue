@@ -33,11 +33,16 @@ async function logout() {
 <template>
   <div class="min-h-screen bg-[var(--dm-bg)] text-[var(--dm-text)]">
     <header class="border-b border-[var(--dm-border)] bg-[var(--dm-surface)]">
-      <div class="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-3 sm:px-6 sm:py-4 md:flex-row md:items-center md:justify-between">
+      <div
+        class="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-3 sm:px-6 sm:py-4 md:flex-row md:items-center md:justify-between"
+      >
         <RouterLink to="/" class="text-lg font-semibold text-[var(--dm-text)]">Dockmark</RouterLink>
 
         <div class="flex flex-wrap items-center gap-2 md:justify-end">
-          <nav v-if="currentUser" class="-mx-1 flex max-w-full items-center gap-1 overflow-x-auto px-1 text-sm text-[var(--dm-text-muted)]">
+          <nav
+            v-if="currentUser"
+            class="-mx-1 flex max-w-full items-center gap-1 overflow-x-auto px-1 text-sm text-[var(--dm-text-muted)]"
+          >
             <RouterLink
               v-for="item in navItems"
               :key="item.to"
@@ -47,7 +52,10 @@ async function logout() {
               {{ item.label }}
             </RouterLink>
           </nav>
-          <div v-if="currentUser" class="hidden items-center gap-2 text-sm text-[var(--dm-text-muted)] sm:flex">
+          <div
+            v-if="currentUser"
+            class="hidden items-center gap-2 text-sm text-[var(--dm-text-muted)] sm:flex"
+          >
             <span class="max-w-40 truncate">{{ userLabel }}</span>
             <AppButton :disabled="loggingOut" size="sm" tone="ghost" @click="logout">
               退出

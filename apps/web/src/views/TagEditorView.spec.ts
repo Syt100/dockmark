@@ -71,20 +71,23 @@ describe('TagEditorView', () => {
   })
 
   it('shows not found feedback for a missing tag', async () => {
-    vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          error: {
-            code: 'not_found',
-            message: 'Tag not found',
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: {
+              code: 'not_found',
+              message: 'Tag not found',
+            },
+          }),
+          {
+            status: 404,
+            headers: { 'content-type': 'application/json' },
           },
-        }),
-        {
-          status: 404,
-          headers: { 'content-type': 'application/json' },
-        },
+        ),
       ),
-    ))
+    )
 
     const router = createTestRouter()
     await router.isReady()

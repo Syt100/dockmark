@@ -69,7 +69,10 @@ withDefaults(
       <span class="dm-skeleton h-14"></span>
     </div>
 
-    <div class="flex flex-col-reverse gap-2 border-t border-[var(--dm-border)] pt-4 sm:flex-row sm:justify-end" aria-hidden="true">
+    <div
+      class="flex flex-col-reverse gap-2 border-t border-[var(--dm-border)] pt-4 sm:flex-row sm:justify-end"
+      aria-hidden="true"
+    >
       <span class="dm-skeleton h-10 w-full sm:w-20"></span>
       <span class="dm-skeleton h-10 w-full sm:w-24"></span>
     </div>

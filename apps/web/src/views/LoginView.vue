@@ -51,15 +51,34 @@ async function submit() {
       <form class="grid gap-[var(--dm-form-gap)]" @submit.prevent="submit">
         <label class="grid gap-2">
           <span class="dm-label">邮箱</span>
-          <AppInput v-model="email" autocomplete="username" name="email" placeholder="you@example.com" required type="email" />
+          <AppInput
+            v-model="email"
+            autocomplete="username"
+            name="email"
+            placeholder="you@example.com"
+            required
+            type="email"
+          />
         </label>
 
         <label class="grid gap-2">
           <span class="dm-label">密码</span>
-          <AppInput v-model="password" autocomplete="current-password" name="password" placeholder="管理员密码" required type="password" />
+          <AppInput
+            v-model="password"
+            autocomplete="current-password"
+            name="password"
+            placeholder="管理员密码"
+            required
+            type="password"
+          />
         </label>
 
-        <AppButton :disabled="loading || Boolean(configurationMessage)" class="w-full" tone="primary" type="submit">
+        <AppButton
+          :disabled="loading || Boolean(configurationMessage)"
+          class="w-full"
+          tone="primary"
+          type="submit"
+        >
           {{ loading ? '正在登录...' : '登录' }}
         </AppButton>
       </form>

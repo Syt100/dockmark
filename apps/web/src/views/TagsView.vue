@@ -35,7 +35,9 @@ const {
   },
 })
 const hasEditor = computed(() => route.name === 'tag-new' || route.name === 'tag-edit')
-const filteredTags = computed(() => tags.value.filter((tag) => matchesSearchQuery(query.value, [tag.name, tag.slug])))
+const filteredTags = computed(() =>
+  tags.value.filter((tag) => matchesSearchQuery(query.value, [tag.name, tag.slug])),
+)
 
 onMounted(() => {
   applySavedFlash(route.query.saved)
@@ -67,16 +69,26 @@ watch(
       <FeedbackMessage tone="error" :message="error" />
 
       <section class="md:max-w-sm">
-        <SearchInput v-model="query" label="搜索标签" name="tags-search" placeholder="搜索标签或 Slug" />
+        <SearchInput
+          v-model="query"
+          label="搜索标签"
+          name="tags-search"
+          placeholder="搜索标签或 Slug"
+        />
       </section>
 
-      <section v-if="isLoading" class="dm-surface p-[var(--dm-panel-padding)] text-sm text-[var(--dm-text-muted)]">
+      <section
+        v-if="isLoading"
+        class="dm-surface p-[var(--dm-panel-padding)] text-sm text-[var(--dm-text-muted)]"
+      >
         正在加载标签...
       </section>
 
       <section v-else-if="tags.length === 0" class="dm-surface p-8 text-center">
         <p class="text-base font-medium text-[var(--dm-text)]">还没有标签</p>
-        <p class="mt-1 text-sm text-[var(--dm-text-muted)]">标签适合标记媒体、监控、内网、生产等服务属性。</p>
+        <p class="mt-1 text-sm text-[var(--dm-text-muted)]">
+          标签适合标记媒体、监控、内网、生产等服务属性。
+        </p>
       </section>
 
       <section v-else-if="filteredTags.length === 0" class="dm-surface p-8 text-center">
@@ -86,7 +98,9 @@ watch(
 
       <section v-else>
         <div class="dm-list-shell hidden md:block">
-          <div class="dm-list-head grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_10rem] px-4 py-3 text-xs font-medium">
+          <div
+            class="dm-list-head grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_10rem] px-4 py-3 text-xs font-medium"
+          >
             <span>标签</span>
             <span>Slug</span>
             <span class="text-right">操作</span>

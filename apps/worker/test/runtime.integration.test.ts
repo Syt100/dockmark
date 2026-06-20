@@ -61,7 +61,9 @@ describe('runtime-backed Worker integration', () => {
       headers: { cookie },
     })
     expect(me.status).toBe(200)
-    await expect(me.json()).resolves.toMatchObject({ user: { email: 'owner@example.com' } })
+    await expect(me.json()).resolves.toMatchObject({
+      user: { email: 'owner@example.com' },
+    })
 
     const logout = await SELF.fetch('https://dockmark.test/api/auth/logout', {
       method: 'POST',
@@ -88,7 +90,9 @@ describe('runtime-backed Worker integration', () => {
       body: JSON.stringify({ name: 'Media' }),
     })
     expect(categoryResponse.status).toBe(201)
-    const categoryBody = await json(categoryResponse) as { category: { id: string } }
+    const categoryBody = (await json(categoryResponse)) as {
+      category: { id: string }
+    }
 
     const tagResponse = await SELF.fetch('https://dockmark.test/api/tags', {
       method: 'POST',
@@ -96,7 +100,7 @@ describe('runtime-backed Worker integration', () => {
       body: JSON.stringify({ name: 'photos' }),
     })
     expect(tagResponse.status).toBe(201)
-    const tagBody = await json(tagResponse) as { tag: { id: string } }
+    const tagBody = (await json(tagResponse)) as { tag: { id: string } }
 
     const itemResponse = await SELF.fetch('https://dockmark.test/api/items', {
       method: 'POST',
@@ -104,21 +108,27 @@ describe('runtime-backed Worker integration', () => {
       body: JSON.stringify({
         name: 'Immich',
         categoryId: categoryBody.category.id,
-        endpoints: [{
-          label: 'Public',
-          url: 'https://photos.example.com',
-          kind: 'public',
-          isPrimary: true,
-        }],
+        endpoints: [
+          {
+            label: 'Public',
+            url: 'https://photos.example.com',
+            kind: 'public',
+            isPrimary: true,
+          },
+        ],
         tagIds: [tagBody.tag.id],
       }),
     })
     expect(itemResponse.status).toBe(201)
 
-    const nav = await SELF.fetch('https://dockmark.test/api/nav', { headers: { cookie } })
+    const nav = await SELF.fetch('https://dockmark.test/api/nav', {
+      headers: { cookie },
+    })
     expect(nav.headers.get('X-Dockmark-Cache')).toBe('miss')
 
-    const cached = await SELF.fetch('https://dockmark.test/api/nav', { headers: { cookie } })
+    const cached = await SELF.fetch('https://dockmark.test/api/nav', {
+      headers: { cookie },
+    })
     expect(cached.headers.get('X-Dockmark-Cache')).toBe('hit')
 
     const missingUpdate = await SELF.fetch('https://dockmark.test/api/tags/tag_missing', {
@@ -128,7 +138,9 @@ describe('runtime-backed Worker integration', () => {
     })
     expect(missingUpdate.status).toBe(404)
 
-    const stillCached = await SELF.fetch('https://dockmark.test/api/nav', { headers: { cookie } })
+    const stillCached = await SELF.fetch('https://dockmark.test/api/nav', {
+      headers: { cookie },
+    })
     expect(stillCached.headers.get('X-Dockmark-Cache')).toBe('hit')
 
     const updated = await SELF.fetch(`https://dockmark.test/api/tags/${tagBody.tag.id}`, {
@@ -138,7 +150,9 @@ describe('runtime-backed Worker integration', () => {
     })
     expect(updated.status).toBe(200)
 
-    const refreshed = await SELF.fetch('https://dockmark.test/api/nav', { headers: { cookie } })
+    const refreshed = await SELF.fetch('https://dockmark.test/api/nav', {
+      headers: { cookie },
+    })
     expect(refreshed.headers.get('X-Dockmark-Cache')).toBe('miss')
   })
 
@@ -159,7 +173,9 @@ describe('runtime-backed Worker integration', () => {
       body: JSON.stringify({ name: 'media' }),
     })
     expect(duplicate.status).toBe(409)
-    const duplicateBody = await duplicate.json() as { error: { code: string; message: string } }
+    const duplicateBody = (await duplicate.json()) as {
+      error: { code: string; message: string }
+    }
     expect(duplicateBody).toMatchObject({
       error: { code: 'conflict', message: 'Resource already exists' },
     })

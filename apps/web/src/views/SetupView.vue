@@ -42,7 +42,9 @@ async function submit() {
       <div>
         <p class="text-sm font-medium text-[var(--dm-primary)]">Dockmark</p>
         <h1 class="mt-1 text-2xl font-semibold text-[var(--dm-text)]">初始化管理员</h1>
-        <p class="mt-2 text-sm leading-6 text-[var(--dm-text-muted)]">使用部署时配置的一次性令牌创建管理员账号。</p>
+        <p class="mt-2 text-sm leading-6 text-[var(--dm-text-muted)]">
+          使用部署时配置的一次性令牌创建管理员账号。
+        </p>
       </div>
 
       <FeedbackMessage tone="error" :message="error" />
@@ -50,13 +52,27 @@ async function submit() {
       <form class="grid gap-[var(--dm-form-gap)]" @submit.prevent="submit">
         <label class="grid gap-2">
           <span class="dm-label">初始化令牌</span>
-          <AppInput v-model="setupToken" autocomplete="off" name="setup-token" placeholder="SETUP_TOKEN" required type="password" />
+          <AppInput
+            v-model="setupToken"
+            autocomplete="off"
+            name="setup-token"
+            placeholder="SETUP_TOKEN"
+            required
+            type="password"
+          />
         </label>
 
         <div class="grid gap-[var(--dm-form-gap)] sm:grid-cols-2">
           <label class="grid gap-2">
             <span class="dm-label">邮箱</span>
-            <AppInput v-model="email" autocomplete="username" name="email" placeholder="you@example.com" required type="email" />
+            <AppInput
+              v-model="email"
+              autocomplete="username"
+              name="email"
+              placeholder="you@example.com"
+              required
+              type="email"
+            />
           </label>
 
           <label class="grid gap-2">
@@ -67,7 +83,15 @@ async function submit() {
 
         <label class="grid gap-2">
           <span class="dm-label">密码</span>
-          <AppInput v-model="password" autocomplete="new-password" minlength="12" name="password" placeholder="至少 12 个字符" required type="password" />
+          <AppInput
+            v-model="password"
+            autocomplete="new-password"
+            minlength="12"
+            name="password"
+            placeholder="至少 12 个字符"
+            required
+            type="password"
+          />
         </label>
 
         <AppButton :disabled="loading" class="w-full" tone="primary" type="submit">

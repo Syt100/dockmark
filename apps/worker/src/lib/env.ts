@@ -4,7 +4,11 @@ export type AuthMode = 'builtin' | 'cloudflare-access' | 'development' | 'oidc'
 
 type GeneratedBindings = Omit<CloudflareBindings, 'AUTH_MODE'>
 type WidenStringLiterals<T> = {
-  [Key in keyof T]: T[Key] extends string | undefined ? (undefined extends T[Key] ? string | undefined : string) : T[Key]
+  [Key in keyof T]: T[Key] extends string | undefined
+    ? undefined extends T[Key]
+      ? string | undefined
+      : string
+    : T[Key]
 }
 
 export type AppVars = {

@@ -13,12 +13,7 @@ import {
   getItem,
   updateItemStatements,
 } from '../db/items'
-import {
-  createTagStatement,
-  deleteTagStatement,
-  getTag,
-  updateTagStatement,
-} from '../db/tags'
+import { createTagStatement, deleteTagStatement, getTag, updateTagStatement } from '../db/tags'
 import { navCacheVersionIncrementStatement } from '../lib/cache'
 
 type Store = {
@@ -40,7 +35,11 @@ export async function createCategoryWithNavInvalidation(store: Store, input: Cat
   return category
 }
 
-export async function updateCategoryWithNavInvalidation(store: Store, id: string, input: CategoryInput) {
+export async function updateCategoryWithNavInvalidation(
+  store: Store,
+  id: string,
+  input: CategoryInput,
+) {
   const existing = await getCategory(store.DB, id)
 
   if (!existing) {
@@ -55,7 +54,10 @@ export async function updateCategoryWithNavInvalidation(store: Store, id: string
   return getCategory(store.DB, id)
 }
 
-export async function deleteCategoryWithNavInvalidation(store: Store, id: string): Promise<boolean> {
+export async function deleteCategoryWithNavInvalidation(
+  store: Store,
+  id: string,
+): Promise<boolean> {
   const existing = await getCategory(store.DB, id)
 
   if (!existing) {
@@ -130,7 +132,11 @@ export async function createItemWithNavInvalidation(store: Store, input: Service
   return item
 }
 
-export async function updateItemWithNavInvalidation(store: Store, id: string, input: ServiceItemInput) {
+export async function updateItemWithNavInvalidation(
+  store: Store,
+  id: string,
+  input: ServiceItemInput,
+) {
   const existing = await getItem(store.DB, id)
 
   if (!existing) {

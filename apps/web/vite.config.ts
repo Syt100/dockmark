@@ -13,11 +13,13 @@ const rootPackageJson = JSON.parse(
 
 function readGitCommitShort(): string {
   try {
-    return execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
-      cwd: workspaceRoot,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim() || 'unknown'
+    return (
+      execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
+        cwd: workspaceRoot,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }).trim() || 'unknown'
+    )
   } catch {
     return 'unknown'
   }
@@ -30,10 +32,7 @@ export default defineConfig({
     __BUILD_TIME__: JSON.stringify(process.env.BUILD_TIME ?? new Date().toISOString()),
     __GIT_COMMIT_SHORT__: JSON.stringify(process.env.GIT_COMMIT_SHORT ?? readGitCommitShort()),
   },
-  plugins: [
-    vue(),
-    tailwindcss(),
-  ],
+  plugins: [vue(), tailwindcss()],
   server: {
     proxy: {
       '/api': 'http://127.0.0.1:8789',
@@ -41,7 +40,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
 })

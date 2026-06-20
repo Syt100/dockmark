@@ -101,7 +101,9 @@ onMounted(load)
           </label>
         </div>
 
-        <div class="flex flex-col-reverse gap-2 border-t border-[var(--dm-border)] pt-4 sm:flex-row sm:justify-end">
+        <div
+          class="flex flex-col-reverse gap-2 border-t border-[var(--dm-border)] pt-4 sm:flex-row sm:justify-end"
+        >
           <AppButton type="button" @click="router.push('/categories')">取消</AppButton>
           <AppButton tone="primary" type="submit" :disabled="isSaving">
             {{ isSaving ? '保存中...' : '保存分类' }}

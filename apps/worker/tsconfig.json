@@ -6,10 +6,12 @@
     "moduleResolution": "Bundler",
     "strict": true,
     "skipLibCheck": true,
-    "lib": [
-      "ESNext"
-    ],
-    "types": ["@cloudflare/workers-types", "@cloudflare/vitest-pool-workers/types", "vitest/globals"]
+    "lib": ["ESNext"],
+    "types": [
+      "@cloudflare/workers-types",
+      "@cloudflare/vitest-pool-workers/types",
+      "vitest/globals"
+    ]
   },
   "include": ["src/**/*.ts", "test/**/*.ts"]
 }

@@ -18,7 +18,12 @@ import {
   revokeAuthSession,
   markAuthUserLogin,
 } from '../db/auth'
-import { createPasswordVerifier, defaultPbkdf2Iterations, timingSafeEqual, verifyPassword } from '../lib/crypto'
+import {
+  createPasswordVerifier,
+  defaultPbkdf2Iterations,
+  timingSafeEqual,
+  verifyPassword,
+} from '../lib/crypto'
 import { apiError } from '../lib/errors'
 import { createAuthAdapter } from '../lib/auth'
 import type { AppEnv } from '../lib/env'
@@ -136,7 +141,7 @@ authRoute.post('/setup', async (c) => {
     throw apiError(503, 'config_error', 'SETUP_TOKEN is required before creating the administrator')
   }
 
-  const body = await readJson(c) as Partial<AuthSetupRequest>
+  const body = (await readJson(c)) as Partial<AuthSetupRequest>
   const submittedToken = requireString(body.setupToken, 'setupToken')
 
   if (!timingSafeEqual(setupToken, submittedToken)) {
@@ -168,7 +173,7 @@ authRoute.post('/setup', async (c) => {
 authRoute.post('/login', async (c) => {
   requireBuiltinMode(c.env.AUTH_MODE)
 
-  const body = await readJson(c) as Partial<AuthLoginRequest>
+  const body = (await readJson(c)) as Partial<AuthLoginRequest>
   const email = requireEmail(body.email)
   const password = requireString(body.password, 'password')
   const user = await getAuthUserByEmail(c.env.DB, email)
