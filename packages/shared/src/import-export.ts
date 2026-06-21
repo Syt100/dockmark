@@ -10,6 +10,13 @@ import {
 
 export const dockmarkExportSchemaVersion = 1
 export const importModes = ['additive', 'replaceAll'] as const
+export const importLimits = {
+  maxJsonBytes: 1024 * 1024,
+  maxCategories: 500,
+  maxTags: 1000,
+  maxItems: 2000,
+  maxEndpoints: 8000,
+} as const
 
 export type DockmarkImportMode = (typeof importModes)[number]
 
@@ -78,6 +85,7 @@ export type ImportPreviewResponse = {
   ok: boolean
   mode: DockmarkImportMode
   summary: ImportSummary
+  currentSummary?: ImportSummary
   errors: string[]
 }
 
@@ -88,6 +96,11 @@ export type ImportResultResponse = {
 export type ImportRequest = {
   mode: DockmarkImportMode
   document: DockmarkExportDocument
+}
+
+export type ImportLimitCheckInput = {
+  byteLength?: number
+  summary: ImportSummary
 }
 
 const forbiddenExportFields = [
@@ -422,6 +435,36 @@ export function summarizeImportDocument(document: DockmarkExportDocument): Impor
     items: document.items.length,
     endpoints: document.items.reduce((count, item) => count + item.endpoints.length, 0),
   }
+}
+
+export function estimateJsonByteLength(value: unknown): number {
+  return new TextEncoder().encode(JSON.stringify(value)).byteLength
+}
+
+export function validateImportLimits(input: ImportLimitCheckInput): string[] {
+  const errors: string[] = []
+
+  if (input.byteLength !== undefined && input.byteLength > importLimits.maxJsonBytes) {
+    errors.push(`document size must be at most ${importLimits.maxJsonBytes} bytes`)
+  }
+
+  if (input.summary.categories > importLimits.maxCategories) {
+    errors.push(`categories must be at most ${importLimits.maxCategories}`)
+  }
+
+  if (input.summary.tags > importLimits.maxTags) {
+    errors.push(`tags must be at most ${importLimits.maxTags}`)
+  }
+
+  if (input.summary.items > importLimits.maxItems) {
+    errors.push(`items must be at most ${importLimits.maxItems}`)
+  }
+
+  if (input.summary.endpoints > importLimits.maxEndpoints) {
+    errors.push(`endpoints must be at most ${importLimits.maxEndpoints}`)
+  }
+
+  return errors
 }
 
 export function validateImportMode(input: unknown): ValidationResult<DockmarkImportMode> {

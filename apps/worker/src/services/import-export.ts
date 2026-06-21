@@ -1,7 +1,9 @@
 import {
   dockmarkExportSchemaVersion,
+  estimateJsonByteLength,
   summarizeImportDocument,
   validateDockmarkExportDocument,
+  validateImportLimits,
   type DockmarkExportDocument,
   type DockmarkImportMode,
   type ExportEndpoint,
@@ -22,6 +24,8 @@ type ConflictRow = {
 type Store = {
   DB: D1Database
 }
+
+const emptySummary: ImportSummary = { categories: 0, tags: 0, items: 0, endpoints: 0 }
 
 function placeholders(values: string[]): string {
   return values.map(() => '?').join(', ')
@@ -90,6 +94,10 @@ export async function buildExportDocument(db: D1Database): Promise<DockmarkExpor
   }
 }
 
+export async function getCurrentImportSummary(db: D1Database): Promise<ImportSummary> {
+  return summarizeImportDocument(await buildExportDocument(db))
+}
+
 export async function previewImport(
   db: D1Database,
   mode: DockmarkImportMode,
@@ -101,18 +109,29 @@ export async function previewImport(
     return {
       ok: false,
       mode,
-      summary: { categories: 0, tags: 0, items: 0, endpoints: 0 },
+      summary: emptySummary,
+      ...(mode === 'replaceAll' ? { currentSummary: await getCurrentImportSummary(db) } : {}),
       errors: validation.errors,
       document: null,
     }
   }
 
-  const errors = mode === 'additive' ? await additiveConflictErrors(db, validation.value) : []
+  const summary = summarizeImportDocument(validation.value)
+  const limitErrors = validateImportLimits({
+    byteLength: estimateJsonByteLength(input),
+    summary,
+  })
+  const conflictErrors =
+    mode === 'additive' && limitErrors.length === 0
+      ? await additiveConflictErrors(db, validation.value)
+      : []
+  const errors = [...limitErrors, ...conflictErrors]
 
   return {
     ok: errors.length === 0,
     mode,
-    summary: summarizeImportDocument(validation.value),
+    summary,
+    ...(mode === 'replaceAll' ? { currentSummary: await getCurrentImportSummary(db) } : {}),
     errors,
     document: validation.value,
   }

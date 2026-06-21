@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { dockmarkExportSchemaVersion, type DockmarkExportDocument } from '@dockmark/shared'
+import {
+  dockmarkExportSchemaVersion,
+  importLimits,
+  type DockmarkExportDocument,
+} from '@dockmark/shared'
 
 import app from '../src/index'
 import { createMockEnv } from './mock-env'
@@ -228,5 +232,42 @@ describe('import/export API', () => {
 
     const refreshed = await app.request('/api/nav', {}, env)
     expect(refreshed.headers.get('X-Dockmark-Cache')).toBe('miss')
+  })
+
+  it('rejects imports that exceed record limits without writing data', async () => {
+    const env = createMockEnv()
+    const oversized = document({
+      categories: Array.from({ length: importLimits.maxCategories + 1 }, (_, index) => ({
+        id: `cat_${index}`,
+        name: `Category ${index}`,
+        slug: `category-${index}`,
+        icon: null,
+        color: null,
+        sortOrder: index,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      })),
+      items: [],
+    })
+
+    const response = await app.request(
+      '/api/import-export/preview',
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ mode: 'additive', document: oversized }),
+      },
+      env,
+    )
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      ok: false,
+      errors: [`categories must be at most ${importLimits.maxCategories}`],
+    })
+
+    const imported = await importRequest(env, 'additive', oversized)
+    expect(imported.status).toBe(400)
+    expect(env.__testStore.categories).toHaveLength(0)
   })
 })

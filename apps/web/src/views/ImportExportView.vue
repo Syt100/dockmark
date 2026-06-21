@@ -23,21 +23,22 @@ const feedback = ref<string | null>(null)
 const isExporting = ref(false)
 const isPreviewing = ref(false)
 const isImporting = ref(false)
-const replaceAllConfirmed = ref(false)
+const replaceAllConfirmation = ref('')
 
 const canImport = computed(
   () =>
     document.value !== null &&
     preview.value?.ok === true &&
     !isImporting.value &&
-    (mode.value !== 'replaceAll' || replaceAllConfirmed.value),
+    (mode.value !== 'replaceAll' || replaceAllConfirmation.value.trim() === '替换全部'),
 )
 const summary = computed(() => preview.value?.summary ?? null)
+const currentSummary = computed(() => preview.value?.currentSummary ?? null)
 
 function resetPreview() {
   preview.value = null
   feedback.value = null
-  replaceAllConfirmed.value = false
+  replaceAllConfirmation.value = ''
 }
 
 function downloadJson(payload: DockmarkExportDocument) {
@@ -97,7 +98,7 @@ async function previewImport() {
   error.value = null
   feedback.value = null
   preview.value = null
-  replaceAllConfirmed.value = false
+  replaceAllConfirmation.value = ''
 
   try {
     preview.value = await previewDockmarkImport(mode.value, document.value)
@@ -121,7 +122,7 @@ async function executeImport() {
     const result = await importDockmarkData(mode.value, document.value)
     feedback.value = `导入完成：${result.imported.items} 个服务，${result.imported.endpoints} 个地址`
     preview.value = null
-    replaceAllConfirmed.value = false
+    replaceAllConfirmation.value = ''
   } catch (caught) {
     error.value = toChineseError(caught, '导入失败')
   } finally {
@@ -197,9 +198,20 @@ async function executeImport() {
           class="rounded-[var(--dm-radius-surface)] border border-[var(--dm-danger)] bg-[var(--dm-danger-soft)] p-3 text-sm text-[var(--dm-danger)]"
         >
           替换全部会删除现有服务导航数据，再导入文件内容。
-          <label class="mt-2 flex items-center gap-2">
-            <input v-model="replaceAllConfirmed" type="checkbox" />
-            我确认要替换全部数据
+          <p v-if="currentSummary" class="mt-2">
+            当前数据：{{ currentSummary.categories }} 个分类，{{ currentSummary.tags }} 个标签，{{
+              currentSummary.items
+            }}
+            个服务，{{ currentSummary.endpoints }} 个地址。
+          </p>
+          <label class="mt-2 grid gap-1">
+            <span class="font-medium">输入“替换全部”以确认</span>
+            <input
+              v-model="replaceAllConfirmation"
+              class="min-h-10 rounded-[var(--dm-radius-control)] border border-[var(--dm-danger)] bg-[var(--dm-surface)] px-3 py-2 text-sm text-[var(--dm-text)]"
+              autocomplete="off"
+              type="text"
+            />
           </label>
         </div>
 

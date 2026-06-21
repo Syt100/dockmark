@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   dockmarkExportSchemaVersion,
   summarizeImportDocument,
+  validateImportLimits,
   validateDockmarkExportDocument,
   validateImportMode,
 } from './import-export'
@@ -161,5 +162,25 @@ describe('import/export contracts', () => {
       ok: false,
       errors: ['mode must be one of: additive, replaceAll'],
     })
+  })
+
+  it('validates import safety limits', () => {
+    expect(
+      validateImportLimits({
+        byteLength: 1024 * 1024 + 1,
+        summary: {
+          categories: 501,
+          tags: 1001,
+          items: 2001,
+          endpoints: 8001,
+        },
+      }),
+    ).toEqual([
+      'document size must be at most 1048576 bytes',
+      'categories must be at most 500',
+      'tags must be at most 1000',
+      'items must be at most 2000',
+      'endpoints must be at most 8000',
+    ])
   })
 })

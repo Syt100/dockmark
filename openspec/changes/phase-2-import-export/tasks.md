@@ -22,3 +22,11 @@
 
 - [x] 4.1 Run `corepack pnpm validate`.
 - [x] 4.2 Run `openspec validate --all --strict --no-interactive`.
+
+## 5. Import/Export Hardening
+
+- [x] 5.1 Add import payload size and record count limits shared between preview and execution.
+- [x] 5.2 Strengthen replace-all UI confirmation by requiring a typed phrase and showing current data counts.
+- [x] 5.3 Add real D1 integration tests for import/export replace-all success, rollback, and limit rejection.
+- [x] 5.4 Run `corepack pnpm validate`.
+- [x] 5.5 Run `openspec validate --all --strict --no-interactive`.

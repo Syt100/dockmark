@@ -111,6 +111,7 @@ describe('ImportExportView', () => {
         ok: true,
         mode: 'replaceAll',
         summary: { categories: 1, tags: 1, items: 1, endpoints: 1 },
+        currentSummary: { categories: 2, tags: 3, items: 4, endpoints: 5 },
         errors: [],
       }),
     )
@@ -129,12 +130,13 @@ describe('ImportExportView', () => {
 
     await vi.waitFor(() => {
       expect(wrapper.text()).toContain('预检通过')
+      expect(wrapper.text()).toContain('当前数据：2 个分类，3 个标签，4 个服务，5 个地址')
     })
 
     const importButton = wrapper.findAll('button')[2]!
     expect(importButton.attributes('disabled')).toBeDefined()
 
-    await wrapper.find('input[type="checkbox"]').setValue(true)
+    await wrapper.find('input[type="text"]').setValue('替换全部')
     expect(wrapper.findAll('button')[2]!.attributes('disabled')).toBeUndefined()
   })
 

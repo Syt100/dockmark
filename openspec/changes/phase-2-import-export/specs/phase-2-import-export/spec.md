@@ -45,6 +45,12 @@ Dockmark SHALL import Dockmark JSON documents that match a supported schema vers
 - **AND** it SHALL return a summary of categories, tags, items, and endpoints that would be imported
 - **AND** it SHALL return actionable validation or conflict errors when the document cannot be imported
 
+#### Scenario: Import exceeds safety limits
+
+- **WHEN** an import document exceeds the supported payload size or record count limits
+- **THEN** the API SHALL reject it with actionable validation errors
+- **AND** it SHALL NOT write any data
+
 ### Requirement: Import conflict behavior
 
 Dockmark SHALL define deterministic behavior for duplicate slugs, service IDs, endpoint IDs, and tag names during import.
@@ -68,6 +74,12 @@ Dockmark SHALL define deterministic behavior for duplicate slugs, service IDs, e
 - **THEN** the UI SHALL require a mode selection of additive or replace-all
 - **AND** additive SHALL be the default mode
 - **AND** replace-all SHALL be presented as destructive and require explicit confirmation
+
+#### Scenario: User confirms replace-all import
+
+- **WHEN** a user previews a replace-all import
+- **THEN** the UI SHALL require the user to type a confirmation phrase before enabling the final import action
+- **AND** the confirmation area SHALL show the current data counts that would be replaced
 
 ### Requirement: Export and import UI
 
