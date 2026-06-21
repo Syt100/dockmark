@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
   dockmarkExportSchemaVersion,
+  dockmarkExportFormat,
+  dockmarkExportSource,
   summarizeImportDocument,
   validateImportLimits,
   validateDockmarkExportDocument,
@@ -12,6 +14,9 @@ const timestamp = '2026-06-21T00:00:00.000Z'
 
 function validDocument() {
   return {
+    format: dockmarkExportFormat,
+    source: dockmarkExportSource,
+    appVersion: '0.1.0-test',
     schemaVersion: dockmarkExportSchemaVersion,
     generatedAt: timestamp,
     categories: [

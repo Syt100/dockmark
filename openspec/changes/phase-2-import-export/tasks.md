@@ -39,3 +39,13 @@
 - [x] 6.4 Add shared, Worker, integration, and Web tests for grouped conflicts and skip-conflicts import.
 - [x] 6.5 Run `corepack pnpm validate`.
 - [x] 6.6 Run `openspec validate --all --strict --no-interactive`.
+
+## 7. Preview Detail and Guidance
+
+- [x] 7.1 Add export metadata, record-level import details, import result details, and secret-warning contracts.
+- [x] 7.2 Implement Worker preview/result detail generation and secret-warning issues.
+- [x] 7.3 Update import/export UI with mode explanations, record-level details, confirmation summaries, friendlier issue text, and result details.
+- [x] 7.4 Document import/export API format, modes, limits, and warning behavior.
+- [x] 7.5 Add shared, Worker, integration, and Web tests for metadata, secret warnings, record details, and UI guidance.
+- [x] 7.6 Run `corepack pnpm validate`.
+- [x] 7.7 Run `openspec validate --all --strict --no-interactive`.

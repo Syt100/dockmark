@@ -11,7 +11,7 @@ Dockmark SHALL export all Phase 1 service navigation data as a portable JSON doc
 #### Scenario: User exports data
 
 - **WHEN** the user requests a JSON export
-- **THEN** the API SHALL return a JSON document with top-level `schemaVersion`, `generatedAt`, `categories`, `tags`, and `items` fields
+- **THEN** the API SHALL return a JSON document with top-level `format`, `source`, `appVersion`, `schemaVersion`, `generatedAt`, `categories`, `tags`, and `items` fields
 - **AND** each exported item SHALL include its endpoints inline
 - **AND** each exported item SHALL include its tag relationships as tag IDs
 - **AND** the export SHALL include a schema version and generated timestamp
@@ -116,6 +116,31 @@ Dockmark SHALL provide a UI for exporting and importing Dockmark JSON.
 - **WHEN** an additive import preview has conflicts
 - **THEN** the UI SHALL group conflicts by category, tag, service, endpoint, and file-level issues
 - **AND** it SHALL offer a skip-conflicts import action when the safe subset can be imported
+
+#### Scenario: User reviews record-level import detail
+
+- **WHEN** an import preview is available
+- **THEN** the UI SHALL show importable and skipped record names where available
+- **AND** issue messages SHALL use user-facing names when available
+- **AND** the UI SHALL explain each import mode before the user confirms
+
+#### Scenario: User reviews import confirmation summary
+
+- **WHEN** a user is about to confirm a skip-conflicts or replace-all import
+- **THEN** the UI SHALL show a final summary of records to import, skip, or replace
+- **AND** replace-all SHALL retain typed confirmation before execution
+
+#### Scenario: Import text may contain secrets
+
+- **WHEN** credential hints or notes contain text that resembles a password, token, API key, or long encoded secret
+- **THEN** the API SHALL return warning issues during preview
+- **AND** those warning issues SHALL NOT block import by themselves
+
+#### Scenario: Import completes
+
+- **WHEN** an import succeeds
+- **THEN** the API SHALL return imported record names where available
+- **AND** the UI SHALL show a result summary with a route to review imported services
 
 ### Requirement: Phase 2 backup boundary
 

@@ -1,5 +1,7 @@
 import {
+  dockmarkExportFormat,
   dockmarkExportSchemaVersion,
+  dockmarkExportSource,
   estimateJsonByteLength,
   issuesFromMessages,
   summarizeImportDocument,
@@ -10,6 +12,7 @@ import {
   type ExportEndpoint,
   type ExportItem,
   type ImportIssue,
+  type ImportPlanDetails,
   type ImportPreviewResponse,
   type ImportSummary,
 } from '@dockmark/shared'
@@ -37,6 +40,7 @@ type ImportPlan = {
   document: DockmarkExportDocument
   importable: ImportSummary
   skipped: ImportSummary
+  details: ImportPlanDetails
 }
 
 type Store = {
@@ -66,7 +70,10 @@ async function existingValues(
   return new Set(result.results.map((row) => row.value))
 }
 
-export async function buildExportDocument(db: D1Database): Promise<DockmarkExportDocument> {
+export async function buildExportDocument(
+  db: D1Database,
+  appVersion = '0.1.0',
+): Promise<DockmarkExportDocument> {
   const [categories, tags, items] = await Promise.all([
     listCategories(db),
     listTags(db),
@@ -74,6 +81,9 @@ export async function buildExportDocument(db: D1Database): Promise<DockmarkExpor
   ])
 
   return {
+    format: dockmarkExportFormat,
+    source: dockmarkExportSource,
+    appVersion,
     schemaVersion: dockmarkExportSchemaVersion,
     generatedAt: new Date().toISOString(),
     categories,
@@ -148,7 +158,8 @@ export async function previewImport(
     mode === 'additiveSkipConflicts' && limitIssues.length === 0
       ? planSkipConflicts(validation.value, conflictSet)
       : null
-  const issues = [...limitIssues, ...conflictIssues, ...(plan?.issues ?? [])]
+  const secretIssues = secretWarningIssues(validation.value)
+  const issues = [...limitIssues, ...conflictIssues, ...secretIssues, ...(plan?.issues ?? [])]
   const errors = issues.filter((issue) => issue.severity === 'error').map((issue) => issue.message)
   const canImport =
     mode === 'additiveSkipConflicts'
@@ -163,8 +174,9 @@ export async function previewImport(
       ? {
           importable: plan.importable,
           skipped: plan.skipped,
+          details: plan.details,
         }
-      : {}),
+      : { details: detailsForDocument(validation.value) }),
     ...(mode === 'replaceAll' ? { currentSummary: await getCurrentImportSummary(db) } : {}),
     issues,
     errors,
@@ -176,18 +188,24 @@ export async function importDocument(
   store: Store,
   mode: DockmarkImportMode,
   input: unknown,
-): Promise<ImportSummary> {
+): Promise<{ imported: ImportSummary; details: ImportPlanDetails }> {
   const preview = await previewImport(store.DB, mode, input)
 
   if (!preview.ok || !preview.document) {
     throw new Error(preview.errors.join('; ') || 'Import document is invalid')
   }
 
-  const document =
-    mode === 'additiveSkipConflicts'
-      ? planSkipConflicts(preview.document, await additiveConflictSet(store.DB, preview.document))
-          .document
-      : preview.document
+  let document = preview.document
+  let details = detailsForDocument(document)
+
+  if (mode === 'additiveSkipConflicts') {
+    const plan = planSkipConflicts(
+      preview.document,
+      await additiveConflictSet(store.DB, preview.document),
+    )
+    document = plan.document
+    details = plan.details
+  }
 
   await store.DB.batch([
     ...(mode === 'replaceAll' ? replaceAllStatements(store.DB) : []),
@@ -195,7 +213,7 @@ export async function importDocument(
     navCacheVersionIncrementStatement(store.DB),
   ])
 
-  return summarizeImportDocument(document)
+  return { imported: summarizeImportDocument(document), details }
 }
 
 async function additiveConflictSet(
@@ -256,6 +274,7 @@ function emptyConflictSet(): ConflictSet {
 function conflictIssue(
   entityType: ImportIssue['entityType'],
   entityId: string,
+  entityName: string,
   field: string,
   value: string,
   label: string,
@@ -266,9 +285,10 @@ function conflictIssue(
     kind: 'conflict',
     entityType,
     entityId,
+    entityName,
     field,
     value,
-    message: `${label} already exists: ${value}`,
+    message: `${label} 已存在：${entityName} (${value})`,
   }
 }
 
@@ -282,37 +302,61 @@ function conflictIssuesForDocument(
   for (const category of document.categories) {
     if (conflicts.categoryIds.has(category.id)) {
       issues.push(
-        conflictIssue('category', category.id, 'id', category.id, 'category id', severity),
+        conflictIssue(
+          'category',
+          category.id,
+          category.name,
+          'id',
+          category.id,
+          '分类 ID',
+          severity,
+        ),
       )
     }
     if (conflicts.categorySlugs.has(category.slug)) {
       issues.push(
-        conflictIssue('category', category.id, 'slug', category.slug, 'category slug', severity),
+        conflictIssue(
+          'category',
+          category.id,
+          category.name,
+          'slug',
+          category.slug,
+          '分类 slug',
+          severity,
+        ),
       )
     }
   }
 
   for (const tag of document.tags) {
     if (conflicts.tagIds.has(tag.id)) {
-      issues.push(conflictIssue('tag', tag.id, 'id', tag.id, 'tag id', severity))
+      issues.push(conflictIssue('tag', tag.id, tag.name, 'id', tag.id, '标签 ID', severity))
     }
     if (conflicts.tagNames.has(tag.name)) {
-      issues.push(conflictIssue('tag', tag.id, 'name', tag.name, 'tag name', severity))
+      issues.push(conflictIssue('tag', tag.id, tag.name, 'name', tag.name, '标签名称', severity))
     }
     if (conflicts.tagSlugs.has(tag.slug)) {
-      issues.push(conflictIssue('tag', tag.id, 'slug', tag.slug, 'tag slug', severity))
+      issues.push(conflictIssue('tag', tag.id, tag.name, 'slug', tag.slug, '标签 slug', severity))
     }
   }
 
   for (const item of document.items) {
     if (conflicts.itemIds.has(item.id)) {
-      issues.push(conflictIssue('item', item.id, 'id', item.id, 'item id', severity))
+      issues.push(conflictIssue('item', item.id, item.name, 'id', item.id, '服务 ID', severity))
     }
 
     for (const endpoint of item.endpoints) {
       if (conflicts.endpointIds.has(endpoint.id)) {
         issues.push(
-          conflictIssue('endpoint', endpoint.id, 'id', endpoint.id, 'endpoint id', severity),
+          conflictIssue(
+            'endpoint',
+            endpoint.id,
+            endpoint.label,
+            'id',
+            endpoint.id,
+            '地址 ID',
+            severity,
+          ),
         )
       }
     }
@@ -385,6 +429,10 @@ function planSkipConflicts(
     document: plannedDocument,
     importable,
     skipped,
+    details: {
+      importable: detailGroup(plannedDocument),
+      skipped: skippedDetailGroup(document, plannedDocument),
+    },
     issues: skippedIssues(document, plannedDocument, skippedCategoryIds, skippedTagIds),
     importableHasRecords:
       importable.categories > 0 ||
@@ -409,7 +457,8 @@ function skippedIssues(
       kind: 'skip',
       entityType: 'category',
       entityId: categoryId,
-      message: `category will be skipped: ${categoryId}`,
+      entityName: original.categories.find((category) => category.id === categoryId)?.name,
+      message: `将跳过分类：${original.categories.find((category) => category.id === categoryId)?.name ?? categoryId}`,
     })
   }
 
@@ -419,7 +468,8 @@ function skippedIssues(
       kind: 'skip',
       entityType: 'tag',
       entityId: tagId,
-      message: `tag will be skipped: ${tagId}`,
+      entityName: original.tags.find((tag) => tag.id === tagId)?.name,
+      message: `将跳过标签：${original.tags.find((tag) => tag.id === tagId)?.name ?? tagId}`,
     })
   }
 
@@ -430,8 +480,77 @@ function skippedIssues(
         kind: 'skip',
         entityType: 'item',
         entityId: item.id,
-        message: `service will be skipped: ${item.id}`,
+        entityName: item.name,
+        message: `将跳过服务：${item.name}`,
       })
+    }
+  }
+
+  return issues
+}
+
+function detailGroup(document: DockmarkExportDocument): ImportPlanDetails['importable'] {
+  return {
+    categories: document.categories.map((category) => ({ id: category.id, name: category.name })),
+    tags: document.tags.map((tag) => ({ id: tag.id, name: tag.name })),
+    items: document.items.map((item) => ({ id: item.id, name: item.name })),
+  }
+}
+
+function skippedDetailGroup(
+  original: DockmarkExportDocument,
+  planned: DockmarkExportDocument,
+): ImportPlanDetails['skipped'] {
+  const categoryIds = new Set(planned.categories.map((category) => category.id))
+  const tagIds = new Set(planned.tags.map((tag) => tag.id))
+  const itemIds = new Set(planned.items.map((item) => item.id))
+
+  return {
+    categories: original.categories
+      .filter((category) => !categoryIds.has(category.id))
+      .map((category) => ({ id: category.id, name: category.name, reason: '冲突或依赖冲突' })),
+    tags: original.tags
+      .filter((tag) => !tagIds.has(tag.id))
+      .map((tag) => ({ id: tag.id, name: tag.name, reason: '冲突' })),
+    items: original.items
+      .filter((item) => !itemIds.has(item.id))
+      .map((item) => ({ id: item.id, name: item.name, reason: '冲突或依赖冲突' })),
+  }
+}
+
+function detailsForDocument(document: DockmarkExportDocument): ImportPlanDetails {
+  return {
+    importable: detailGroup(document),
+    skipped: { categories: [], tags: [], items: [] },
+  }
+}
+
+function secretWarningIssues(document: DockmarkExportDocument): ImportIssue[] {
+  const issues: ImportIssue[] = []
+  const patterns = [
+    /password\s*[:=]/i,
+    /api[_-]?key\s*[:=]/i,
+    /token\s*[:=]/i,
+    /secret\s*[:=]/i,
+    /\b[A-Za-z0-9+/]{32,}={0,2}\b/,
+  ]
+
+  for (const item of document.items) {
+    for (const [field, value] of [
+      ['credentialHint', item.credentialHint],
+      ['note', item.note],
+    ] as const) {
+      if (value && patterns.some((pattern) => pattern.test(value))) {
+        issues.push({
+          severity: 'warning',
+          kind: 'secret',
+          entityType: 'item',
+          entityId: item.id,
+          entityName: item.name,
+          field,
+          message: `服务 ${item.name} 的${field === 'note' ? '备注' : '凭据提示'}可能包含敏感内容`,
+        })
+      }
     }
   }
 

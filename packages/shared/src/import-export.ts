@@ -9,6 +9,8 @@ import {
 } from './navigation'
 
 export const dockmarkExportSchemaVersion = 1
+export const dockmarkExportFormat = 'dockmark-navigation-export'
+export const dockmarkExportSource = 'dockmark'
 export const importModes = ['additive', 'additiveSkipConflicts', 'replaceAll'] as const
 export const importLimits = {
   maxJsonBytes: 1024 * 1024,
@@ -67,6 +69,9 @@ export type ExportItem = {
 }
 
 export type DockmarkExportDocument = {
+  format: typeof dockmarkExportFormat
+  source: typeof dockmarkExportSource
+  appVersion: string
   schemaVersion: typeof dockmarkExportSchemaVersion
   generatedAt: string
   categories: ExportCategory[]
@@ -88,12 +93,14 @@ export type ImportPreviewResponse = {
   importable?: ImportSummary
   skipped?: ImportSummary
   currentSummary?: ImportSummary
+  details?: ImportPlanDetails
   issues: ImportIssue[]
   errors: string[]
 }
 
 export type ImportResultResponse = {
   imported: ImportSummary
+  details?: ImportPlanDetails
 }
 
 export type ImportRequest = {
@@ -107,7 +114,7 @@ export type ImportLimitCheckInput = {
 }
 
 export type ImportIssueSeverity = 'error' | 'warning'
-export type ImportIssueKind = 'validation' | 'conflict' | 'limit' | 'skip'
+export type ImportIssueKind = 'validation' | 'conflict' | 'limit' | 'skip' | 'secret'
 export type ImportIssueEntityType = 'document' | 'category' | 'tag' | 'item' | 'endpoint'
 
 export type ImportIssue = {
@@ -115,9 +122,29 @@ export type ImportIssue = {
   kind: ImportIssueKind
   entityType: ImportIssueEntityType
   entityId?: string
+  entityName?: string
   field?: string
   value?: string
   message: string
+}
+
+export type ImportRecordDetail = {
+  id: string
+  name: string
+  reason?: string
+}
+
+export type ImportPlanDetails = {
+  importable: {
+    categories: ImportRecordDetail[]
+    tags: ImportRecordDetail[]
+    items: ImportRecordDetail[]
+  }
+  skipped: {
+    categories: ImportRecordDetail[]
+    tags: ImportRecordDetail[]
+    items: ImportRecordDetail[]
+  }
 }
 
 const forbiddenExportFields = [
@@ -515,6 +542,16 @@ export function validateDockmarkExportDocument(
 
   hasForbiddenFields(input, 'document', errors)
 
+  if (input.format !== dockmarkExportFormat) {
+    errors.push(`format must be ${dockmarkExportFormat}`)
+  }
+
+  if (input.source !== dockmarkExportSource) {
+    errors.push(`source must be ${dockmarkExportSource}`)
+  }
+
+  requireString(input.appVersion, 'appVersion', errors)
+
   if (input.schemaVersion !== dockmarkExportSchemaVersion) {
     errors.push(`schemaVersion must be ${dockmarkExportSchemaVersion}`)
   }
@@ -534,6 +571,9 @@ export function validateDockmarkExportDocument(
   }
 
   const document: DockmarkExportDocument = {
+    format: dockmarkExportFormat,
+    source: dockmarkExportSource,
+    appVersion: typeof input.appVersion === 'string' ? input.appVersion.trim() : '',
     schemaVersion: dockmarkExportSchemaVersion,
     generatedAt,
     categories: Array.isArray(input.categories)

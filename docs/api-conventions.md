@@ -151,3 +151,70 @@
 
 - Web UI 和 Worker 同仓发布时，可以保持轻量 API。
 - 浏览器扩展、第三方客户端、导入导出格式一旦稳定，应明确兼容策略。
+
+## 11. 导入导出 API
+
+导入导出接口用于 Phase 1 服务导航数据的手动备份、恢复和迁移。
+
+### 导出
+
+`GET /api/import-export/export`
+
+返回 Dockmark JSON 文档：
+
+```json
+{
+  "format": "dockmark-navigation-export",
+  "source": "dockmark",
+  "appVersion": "0.1.0",
+  "schemaVersion": 1,
+  "generatedAt": "2026-06-21T00:00:00.000Z",
+  "categories": [],
+  "tags": [],
+  "items": []
+}
+```
+
+约定：
+
+- `items` 内联 `endpoints`。
+- 标签关系通过 item 的 `tagIds` 表示。
+- 不导出认证用户、session、token、cookie、密码、API key 或 OTP seed。
+
+### 预检和导入
+
+`POST /api/import-export/preview`
+
+`POST /api/import-export/import`
+
+请求：
+
+```json
+{
+  "mode": "additive",
+  "document": {}
+}
+```
+
+支持模式：
+
+- `additive`：只追加新记录；发现冲突时整包拒绝且不写入。
+- `additiveSkipConflicts`：跳过冲突记录，只导入可安全导入的记录。
+- `replaceAll`：删除现有 Phase 1 服务导航数据后导入文件内容；UI 必须要求显式确认。
+
+安全限制：
+
+- JSON 最大 1 MiB。
+- 分类最多 500。
+- 标签最多 1000。
+- 服务最多 2000。
+- endpoints 最多 8000。
+
+预检响应包含：
+
+- `summary`：文件内总记录数。
+- `importable` / `skipped`：跳过冲突模式下的计划数量。
+- `details`：可导入和将跳过的分类、标签、服务名称。
+- `issues`：结构化问题列表，按 `validation`、`limit`、`conflict`、`skip`、`secret` 分类。
+
+`secret` issue 是 warning，不单独阻断导入；用于提示 `credentialHint` 或 `note` 里可能包含密码、token、API key 或长编码秘密。

@@ -11,6 +11,7 @@ import type {
 import { exportDockmarkData, importDockmarkData, previewDockmarkImport } from '../api/client'
 import { toChineseError } from '../api/errors'
 import AppButton from '../components/AppButton.vue'
+import AppLinkButton from '../components/AppLinkButton.vue'
 import AppSelect from '../components/AppSelect.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
 import PageHeader from '../components/PageHeader.vue'
@@ -21,6 +22,7 @@ const fileName = ref('')
 const preview = ref<ImportPreviewResponse | null>(null)
 const error = ref<string | null>(null)
 const feedback = ref<string | null>(null)
+const resultDetails = ref<ImportPreviewResponse['details'] | null>(null)
 const isExporting = ref(false)
 const isPreviewing = ref(false)
 const isImporting = ref(false)
@@ -37,11 +39,28 @@ const summary = computed(() => preview.value?.summary ?? null)
 const importableSummary = computed(() => preview.value?.importable ?? null)
 const skippedSummary = computed(() => preview.value?.skipped ?? null)
 const currentSummary = computed(() => preview.value?.currentSummary ?? null)
+const modeDescription = computed(() => {
+  if (mode.value === 'replaceAll') return '清空当前服务导航数据后恢复文件内容。'
+  if (mode.value === 'additiveSkipConflicts') return '自动跳过冲突记录，只导入安全的新记录。'
+  return '只追加新记录；如发现冲突会停止，不写入数据。'
+})
 const modeLabel = computed(() => {
   if (preview.value?.mode === 'replaceAll') return '替换全部'
   if (preview.value?.mode === 'additiveSkipConflicts') return '跳过冲突导入'
   return '追加导入'
 })
+const hasImportableDetails = computed(
+  () =>
+    (preview.value?.details?.importable.categories.length ?? 0) > 0 ||
+    (preview.value?.details?.importable.tags.length ?? 0) > 0 ||
+    (preview.value?.details?.importable.items.length ?? 0) > 0,
+)
+const hasSkippedDetails = computed(
+  () =>
+    (preview.value?.details?.skipped.categories.length ?? 0) > 0 ||
+    (preview.value?.details?.skipped.tags.length ?? 0) > 0 ||
+    (preview.value?.details?.skipped.items.length ?? 0) > 0,
+)
 const groupedIssues = computed(() => {
   const groups: Array<{
     key: ImportIssue['entityType']
@@ -78,12 +97,15 @@ const canSkipConflicts = computed(
     preview.value?.mode === 'additive' &&
     preview.value.ok === false &&
     (preview.value.issues ?? []).some((issue) => issue.kind === 'conflict') &&
-    !(preview.value.issues ?? []).some((issue) => issue.kind !== 'conflict'),
+    !(preview.value.issues ?? []).some(
+      (issue) => issue.severity === 'error' && issue.kind !== 'conflict',
+    ),
 )
 
 function resetPreview() {
   preview.value = null
   feedback.value = null
+  resultDetails.value = null
   replaceAllConfirmation.value = ''
 }
 
@@ -103,6 +125,7 @@ async function exportData() {
   isExporting.value = true
   error.value = null
   feedback.value = null
+  resultDetails.value = null
 
   try {
     downloadJson(await exportDockmarkData())
@@ -172,6 +195,7 @@ async function executeImport() {
   try {
     const result = await importDockmarkData(mode.value, document.value)
     feedback.value = `导入完成：${result.imported.items} 个服务，${result.imported.endpoints} 个地址`
+    resultDetails.value = result.details ?? null
     preview.value = null
     replaceAllConfirmation.value = ''
   } catch (caught) {
@@ -188,6 +212,33 @@ async function executeImport() {
 
     <FeedbackMessage tone="success" :message="feedback" />
     <FeedbackMessage tone="error" :message="error" />
+
+    <section v-if="resultDetails" class="dm-form-section">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 class="dm-section-title">导入结果</h2>
+          <p class="mt-1 text-sm text-[var(--dm-text-muted)]">
+            已导入 {{ resultDetails.importable.categories.length }} 个分类、{{
+              resultDetails.importable.tags.length
+            }}
+            个标签、{{ resultDetails.importable.items.length }} 个服务。
+          </p>
+        </div>
+        <AppLinkButton to="/services" tone="primary">查看服务</AppLinkButton>
+      </div>
+      <div v-if="resultDetails.importable.items.length > 0" class="mt-4">
+        <h3 class="text-sm font-medium text-[var(--dm-text)]">已导入服务</h3>
+        <div class="mt-2 flex flex-wrap gap-2">
+          <span
+            v-for="item in resultDetails.importable.items"
+            :key="item.id"
+            class="rounded-[var(--dm-radius-control)] bg-[var(--dm-surface-muted)] px-2 py-1 text-sm text-[var(--dm-text-muted)]"
+          >
+            {{ item.name }}
+          </span>
+        </div>
+      </div>
+    </section>
 
     <section class="dm-form-section">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -242,6 +293,8 @@ async function executeImport() {
             {{ isPreviewing ? '预检中...' : '预检' }}
           </AppButton>
         </div>
+
+        <p class="text-sm text-[var(--dm-text-muted)]">{{ modeDescription }}</p>
 
         <p v-if="fileName" class="text-sm text-[var(--dm-text-muted)]">已选择：{{ fileName }}</p>
 
@@ -318,6 +371,42 @@ async function executeImport() {
             </div>
           </div>
 
+          <div
+            v-if="hasImportableDetails || hasSkippedDetails"
+            class="grid gap-3 border-t border-[var(--dm-border)] pt-3 text-sm md:grid-cols-2"
+          >
+            <section v-if="hasImportableDetails">
+              <h4 class="font-medium text-[var(--dm-text)]">将导入的记录</h4>
+              <div class="mt-2 grid gap-2 text-[var(--dm-text-muted)]">
+                <p v-if="preview.details?.importable.categories.length">
+                  分类：{{
+                    preview.details.importable.categories.map((item) => item.name).join('、')
+                  }}
+                </p>
+                <p v-if="preview.details?.importable.tags.length">
+                  标签：{{ preview.details.importable.tags.map((item) => item.name).join('、') }}
+                </p>
+                <p v-if="preview.details?.importable.items.length">
+                  服务：{{ preview.details.importable.items.map((item) => item.name).join('、') }}
+                </p>
+              </div>
+            </section>
+            <section v-if="hasSkippedDetails">
+              <h4 class="font-medium text-[var(--dm-text)]">将跳过的记录</h4>
+              <div class="mt-2 grid gap-2 text-[var(--dm-text-muted)]">
+                <p v-if="preview.details?.skipped.categories.length">
+                  分类：{{ preview.details.skipped.categories.map((item) => item.name).join('、') }}
+                </p>
+                <p v-if="preview.details?.skipped.tags.length">
+                  标签：{{ preview.details.skipped.tags.map((item) => item.name).join('、') }}
+                </p>
+                <p v-if="preview.details?.skipped.items.length">
+                  服务：{{ preview.details.skipped.items.map((item) => item.name).join('、') }}
+                </p>
+              </div>
+            </section>
+          </div>
+
           <div v-if="groupedIssues.length > 0" class="grid gap-3">
             <section
               v-for="group in groupedIssues"
@@ -343,6 +432,18 @@ async function executeImport() {
         </section>
 
         <div class="flex flex-wrap justify-end gap-2">
+          <p
+            v-if="preview && canImport"
+            class="basis-full text-right text-sm text-[var(--dm-text-muted)]"
+          >
+            {{
+              mode === 'replaceAll'
+                ? `确认后会替换当前数据，并导入 ${summary?.items ?? 0} 个服务。`
+                : mode === 'additiveSkipConflicts'
+                  ? `确认后会导入 ${importableSummary?.items ?? 0} 个服务，跳过 ${skippedSummary?.items ?? 0} 个服务。`
+                  : `确认后会追加导入 ${summary?.items ?? 0} 个服务。`
+            }}
+          </p>
           <AppButton v-if="canSkipConflicts" type="button" @click="previewSkipConflicts">
             跳过冲突并导入
           </AppButton>

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  dockmarkExportFormat,
   dockmarkExportSchemaVersion,
+  dockmarkExportSource,
   importLimits,
   type DockmarkExportDocument,
 } from '@dockmark/shared'
@@ -18,6 +20,9 @@ async function json(response: Response): Promise<unknown> {
 
 function document(overrides: Partial<DockmarkExportDocument> = {}): DockmarkExportDocument {
   return {
+    format: dockmarkExportFormat,
+    source: dockmarkExportSource,
+    appVersion: '0.1.0-test',
     schemaVersion: dockmarkExportSchemaVersion,
     generatedAt: timestamp,
     categories: [
@@ -105,6 +110,11 @@ describe('import/export API', () => {
       sessions?: unknown
     }
     expect(body.schemaVersion).toBe(1)
+    expect(body).toMatchObject({
+      format: dockmarkExportFormat,
+      source: dockmarkExportSource,
+      appVersion: '0.1.0-test',
+    })
     expect(body.categories[0]).toMatchObject({ id: 'cat_media', slug: 'media' })
     expect(body.items[0]).toMatchObject({
       id: 'item_immich',
@@ -133,6 +143,14 @@ describe('import/export API', () => {
       ok: true,
       mode: 'additive',
       summary: { categories: 1, tags: 1, items: 1, endpoints: 1 },
+      details: {
+        importable: {
+          categories: [{ id: 'cat_media', name: 'Media' }],
+          tags: [{ id: 'tag_photo', name: 'Photo' }],
+          items: [{ id: 'item_immich', name: 'Immich' }],
+        },
+        skipped: { categories: [], tags: [], items: [] },
+      },
       issues: [],
       errors: [],
     })
@@ -159,13 +177,13 @@ describe('import/export API', () => {
     expect(body.ok).toBe(false)
     expect(body.errors).toEqual(
       expect.arrayContaining([
-        'category id already exists: cat_media',
-        'category slug already exists: media',
-        'tag id already exists: tag_photo',
-        'tag name already exists: Photo',
-        'tag slug already exists: photo',
-        'item id already exists: item_immich',
-        'endpoint id already exists: end_immich',
+        '分类 ID 已存在：Media (cat_media)',
+        '分类 slug 已存在：Media (media)',
+        '标签 ID 已存在：Photo (tag_photo)',
+        '标签名称 已存在：Photo (Photo)',
+        '标签 slug 已存在：Photo (photo)',
+        '服务 ID 已存在：Immich (item_immich)',
+        '地址 ID 已存在：Public (end_immich)',
       ]),
     )
 
@@ -197,20 +215,62 @@ describe('import/export API', () => {
           kind: 'conflict',
           entityType: 'category',
           entityId: 'cat_media',
+          entityName: 'Media',
           field: 'id',
           value: 'cat_media',
-          message: 'category id already exists: cat_media',
+          message: '分类 ID 已存在：Media (cat_media)',
         },
         {
           severity: 'error',
           kind: 'conflict',
           entityType: 'item',
           entityId: 'item_immich',
+          entityName: 'Immich',
           field: 'id',
           value: 'item_immich',
-          message: 'item id already exists: item_immich',
+          message: '服务 ID 已存在：Immich (item_immich)',
         },
       ]),
+    })
+  })
+
+  it('warns when import text resembles stored secrets', async () => {
+    const env = createMockEnv()
+    const response = await app.request(
+      '/api/import-export/preview',
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          mode: 'additive',
+          document: document({
+            items: [
+              {
+                ...document().items[0],
+                credentialHint: 'password=correct-horse-battery-staple',
+              },
+            ],
+          }),
+        }),
+      },
+      env,
+    )
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      ok: true,
+      issues: [
+        {
+          severity: 'warning',
+          kind: 'secret',
+          entityType: 'item',
+          entityId: 'item_immich',
+          entityName: 'Immich',
+          field: 'credentialHint',
+          message: '服务 Immich 的凭据提示可能包含敏感内容',
+        },
+      ],
+      errors: [],
     })
   })
 
@@ -289,6 +349,18 @@ describe('import/export API', () => {
       mode: 'additiveSkipConflicts',
       importable: { categories: 1, tags: 1, items: 1, endpoints: 1 },
       skipped: { categories: 1, tags: 1, items: 1, endpoints: 1 },
+      details: {
+        importable: {
+          categories: [{ id: 'cat_books', name: 'Books' }],
+          tags: [{ id: 'tag_reading', name: 'Reading' }],
+          items: [{ id: 'item_calibre', name: 'Calibre' }],
+        },
+        skipped: {
+          categories: [{ id: 'cat_media', name: 'Media', reason: '冲突或依赖冲突' }],
+          tags: [{ id: 'tag_photo', name: 'Photo', reason: '冲突' }],
+          items: [{ id: 'item_immich', name: 'Immich', reason: '冲突或依赖冲突' }],
+        },
+      },
       issues: expect.arrayContaining([
         expect.objectContaining({
           severity: 'warning',
@@ -306,8 +378,13 @@ describe('import/export API', () => {
 
     const imported = await importRequest(env, 'additiveSkipConflicts', mixed)
     expect(imported.status).toBe(200)
-    await expect(imported.json()).resolves.toEqual({
+    await expect(imported.json()).resolves.toMatchObject({
       imported: { categories: 1, tags: 1, items: 1, endpoints: 1 },
+      details: {
+        importable: {
+          items: [{ id: 'item_calibre', name: 'Calibre' }],
+        },
+      },
     })
 
     const items = await app.request('/api/items', {}, env)
@@ -338,8 +415,13 @@ describe('import/export API', () => {
 
     const response = await importRequest(env, 'replaceAll')
     expect(response.status).toBe(200)
-    await expect(response.json()).resolves.toEqual({
+    await expect(response.json()).resolves.toMatchObject({
       imported: { categories: 1, tags: 1, items: 1, endpoints: 1 },
+      details: {
+        importable: {
+          items: [{ id: 'item_immich', name: 'Immich' }],
+        },
+      },
     })
 
     const categories = await app.request('/api/categories', {}, env)

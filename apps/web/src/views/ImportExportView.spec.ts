@@ -21,6 +21,19 @@ function jsonResponse(body: unknown) {
   )
 }
 
+function mountView() {
+  return mount(ImportExportView, {
+    global: {
+      stubs: {
+        AppLinkButton: {
+          props: ['to'],
+          template: '<a :href="to"><slot /></a>',
+        },
+      },
+    },
+  })
+}
+
 describe('ImportExportView', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
@@ -34,6 +47,9 @@ describe('ImportExportView', () => {
     const createElement = document.createElement.bind(document)
     const fetchMock = vi.fn<typeof fetch>().mockImplementation(() =>
       jsonResponse({
+        format: 'dockmark-navigation-export',
+        source: 'dockmark',
+        appVersion: '0.1.0-test',
         schemaVersion: 1,
         generatedAt: timestamp,
         categories: [],
@@ -59,7 +75,7 @@ describe('ImportExportView', () => {
       return createElement(tagName)
     })
 
-    const wrapper = mount(ImportExportView)
+    const wrapper = mountView()
 
     await wrapper.find('button').trigger('click')
 
@@ -95,7 +111,7 @@ describe('ImportExportView', () => {
     )
     vi.stubGlobal('fetch', fetchMock)
 
-    const wrapper = mount(ImportExportView)
+    const wrapper = mountView()
     const input = wrapper.find('input[type="file"]')
 
     Object.defineProperty(input.element, 'files', {
@@ -126,7 +142,7 @@ describe('ImportExportView', () => {
     )
     vi.stubGlobal('fetch', fetchMock)
 
-    const wrapper = mount(ImportExportView)
+    const wrapper = mountView()
     await wrapper.find('select').setValue('replaceAll')
 
     const input = wrapper.find('input[type="file"]')
@@ -157,6 +173,14 @@ describe('ImportExportView', () => {
           ok: true,
           mode: 'additive',
           summary: { categories: 1, tags: 1, items: 1, endpoints: 2 },
+          details: {
+            importable: {
+              categories: [{ id: 'cat_media', name: 'Media' }],
+              tags: [{ id: 'tag_photo', name: 'Photo' }],
+              items: [{ id: 'item_immich', name: 'Immich' }],
+            },
+            skipped: { categories: [], tags: [], items: [] },
+          },
           issues: [],
           errors: [],
         }),
@@ -164,11 +188,19 @@ describe('ImportExportView', () => {
       .mockImplementationOnce(() =>
         jsonResponse({
           imported: { categories: 1, tags: 1, items: 1, endpoints: 2 },
+          details: {
+            importable: {
+              categories: [{ id: 'cat_media', name: 'Media' }],
+              tags: [{ id: 'tag_photo', name: 'Photo' }],
+              items: [{ id: 'item_immich', name: 'Immich' }],
+            },
+            skipped: { categories: [], tags: [], items: [] },
+          },
         }),
       )
     vi.stubGlobal('fetch', fetchMock)
 
-    const wrapper = mount(ImportExportView)
+    const wrapper = mountView()
     const input = wrapper.find('input[type="file"]')
     Object.defineProperty(input.element, 'files', {
       value: [createFile('{"schemaVersion":1}')],
@@ -185,6 +217,8 @@ describe('ImportExportView', () => {
 
     await vi.waitFor(() => {
       expect(wrapper.text()).toContain('导入完成：1 个服务，2 个地址')
+      expect(wrapper.text()).toContain('导入结果')
+      expect(wrapper.text()).toContain('Immich')
       expect(fetchMock).toHaveBeenLastCalledWith(
         '/api/import-export/import',
         expect.objectContaining({ method: 'POST' }),
@@ -206,21 +240,23 @@ describe('ImportExportView', () => {
               kind: 'conflict',
               entityType: 'category',
               entityId: 'cat_media',
+              entityName: 'Media',
               field: 'slug',
               value: 'media',
-              message: 'category slug already exists: media',
+              message: '分类 slug 已存在：Media (media)',
             },
             {
               severity: 'error',
               kind: 'conflict',
               entityType: 'item',
               entityId: 'item_immich',
+              entityName: 'Immich',
               field: 'id',
               value: 'item_immich',
-              message: 'item id already exists: item_immich',
+              message: '服务 ID 已存在：Immich (item_immich)',
             },
           ],
-          errors: ['category slug already exists: media', 'item id already exists: item_immich'],
+          errors: ['分类 slug 已存在：Media (media)', '服务 ID 已存在：Immich (item_immich)'],
         }),
       )
       .mockImplementationOnce(() =>
@@ -230,15 +266,28 @@ describe('ImportExportView', () => {
           summary: { categories: 2, tags: 2, items: 2, endpoints: 2 },
           importable: { categories: 1, tags: 1, items: 1, endpoints: 1 },
           skipped: { categories: 1, tags: 1, items: 1, endpoints: 1 },
+          details: {
+            importable: {
+              categories: [{ id: 'cat_books', name: 'Books' }],
+              tags: [{ id: 'tag_reading', name: 'Reading' }],
+              items: [{ id: 'item_calibre', name: 'Calibre' }],
+            },
+            skipped: {
+              categories: [{ id: 'cat_media', name: 'Media', reason: '冲突或依赖冲突' }],
+              tags: [{ id: 'tag_photo', name: 'Photo', reason: '冲突' }],
+              items: [{ id: 'item_immich', name: 'Immich', reason: '冲突或依赖冲突' }],
+            },
+          },
           issues: [
             {
               severity: 'warning',
               kind: 'conflict',
               entityType: 'category',
               entityId: 'cat_media',
+              entityName: 'Media',
               field: 'slug',
               value: 'media',
-              message: 'category slug already exists: media',
+              message: '分类 slug 已存在：Media (media)',
             },
           ],
           errors: [],
@@ -247,11 +296,23 @@ describe('ImportExportView', () => {
       .mockImplementationOnce(() =>
         jsonResponse({
           imported: { categories: 1, tags: 1, items: 1, endpoints: 1 },
+          details: {
+            importable: {
+              categories: [{ id: 'cat_books', name: 'Books' }],
+              tags: [{ id: 'tag_reading', name: 'Reading' }],
+              items: [{ id: 'item_calibre', name: 'Calibre' }],
+            },
+            skipped: {
+              categories: [{ id: 'cat_media', name: 'Media', reason: '冲突或依赖冲突' }],
+              tags: [{ id: 'tag_photo', name: 'Photo', reason: '冲突' }],
+              items: [{ id: 'item_immich', name: 'Immich', reason: '冲突或依赖冲突' }],
+            },
+          },
         }),
       )
     vi.stubGlobal('fetch', fetchMock)
 
-    const wrapper = mount(ImportExportView)
+    const wrapper = mountView()
     const input = wrapper.find('input[type="file"]')
     Object.defineProperty(input.element, 'files', {
       value: [createFile('{"schemaVersion":1}')],
@@ -263,7 +324,7 @@ describe('ImportExportView', () => {
     await vi.waitFor(() => {
       expect(wrapper.text()).toContain('分类冲突')
       expect(wrapper.text()).toContain('服务冲突')
-      expect(wrapper.text()).toContain('category slug already exists: media')
+      expect(wrapper.text()).toContain('分类 slug 已存在：Media (media)')
       expect(wrapper.text()).toContain('跳过冲突并导入')
     })
 
@@ -273,6 +334,8 @@ describe('ImportExportView', () => {
       expect(wrapper.text()).toContain('跳过冲突导入')
       expect(wrapper.text()).toContain('可导入')
       expect(wrapper.text()).toContain('将跳过')
+      expect(wrapper.text()).toContain('Calibre')
+      expect(wrapper.text()).toContain('Immich')
     })
 
     await wrapper.findAll('button').at(-1)!.trigger('click')
@@ -286,6 +349,54 @@ describe('ImportExportView', () => {
           body: expect.stringContaining('additiveSkipConflicts'),
         }),
       )
+    })
+  })
+
+  it('allows skip-conflicts import when conflicts include non-blocking warnings', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(() =>
+      jsonResponse({
+        ok: false,
+        mode: 'additive',
+        summary: { categories: 1, tags: 0, items: 1, endpoints: 1 },
+        issues: [
+          {
+            severity: 'error',
+            kind: 'conflict',
+            entityType: 'item',
+            entityId: 'item_immich',
+            entityName: 'Immich',
+            field: 'id',
+            value: 'item_immich',
+            message: '服务 ID 已存在：Immich (item_immich)',
+          },
+          {
+            severity: 'warning',
+            kind: 'secret',
+            entityType: 'item',
+            entityId: 'item_immich',
+            entityName: 'Immich',
+            field: 'credentialHint',
+            message: '服务 Immich 的凭据提示可能包含敏感内容',
+          },
+        ],
+        errors: ['服务 ID 已存在：Immich (item_immich)'],
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const wrapper = mountView()
+    const input = wrapper.find('input[type="file"]')
+    Object.defineProperty(input.element, 'files', {
+      value: [createFile('{"schemaVersion":1}')],
+      configurable: true,
+    })
+    await input.trigger('change')
+    await wrapper.findAll('button')[1]!.trigger('click')
+
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain('服务 ID 已存在：Immich (item_immich)')
+      expect(wrapper.text()).toContain('服务 Immich 的凭据提示可能包含敏感内容')
+      expect(wrapper.text()).toContain('跳过冲突并导入')
     })
   })
 })

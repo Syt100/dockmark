@@ -48,6 +48,9 @@ const exportTimestamp = '2026-06-21T00:00:00.000Z'
 
 function exportDocument(overrides: Partial<DockmarkExportDocument> = {}): DockmarkExportDocument {
   return {
+    format: 'dockmark-navigation-export',
+    source: 'dockmark',
+    appVersion: '0.1.0-test',
     schemaVersion: 1,
     generatedAt: exportTimestamp,
     categories: [

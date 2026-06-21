@@ -29,7 +29,7 @@ function readImportRequest(input: unknown) {
 }
 
 importExportRoute.get('/export', requireAuth, async (c) => {
-  const document = await buildExportDocument(c.env.DB)
+  const document = await buildExportDocument(c.env.DB, c.env.APP_VERSION)
 
   return c.json(document, 200, {
     'content-disposition': `attachment; filename="dockmark-export-${document.generatedAt.slice(0, 10)}.json"`,
@@ -48,8 +48,8 @@ importExportRoute.post('/import', requireAuth, async (c) => {
   const request = readImportRequest(await readJson(c))
 
   try {
-    const imported = await importDocument(c.env, request.mode, request.document)
-    const body: ImportResultResponse = { imported }
+    const result = await importDocument(c.env, request.mode, request.document)
+    const body: ImportResultResponse = result
     return c.json(body)
   } catch (caught) {
     throw apiError(
