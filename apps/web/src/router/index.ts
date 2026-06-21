@@ -67,6 +67,11 @@ const router = createRouter({
       component: () => import('../views/AboutView.vue'),
     },
     {
+      path: '/import-export',
+      name: 'import-export',
+      component: () => import('../views/ImportExportView.vue'),
+    },
+    {
       path: '/login',
       name: 'login',
       component: () => import('../views/LoginView.vue'),

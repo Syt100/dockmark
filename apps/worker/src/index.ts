@@ -7,6 +7,7 @@ import { apiError, apiErrorResponseFromUnknown } from './lib/errors'
 import type { AppEnv } from './lib/env'
 import { authRoute, currentUserHandler } from './routes/auth'
 import { categoriesRoute } from './routes/categories'
+import { importExportRoute } from './routes/import-export'
 import { itemsRoute } from './routes/items'
 import { navRoute } from './routes/nav'
 import { tagsRoute } from './routes/tags'
@@ -59,6 +60,7 @@ app.route('/api/categories', categoriesRoute)
 app.route('/api/tags', tagsRoute)
 app.route('/api/items', itemsRoute)
 app.route('/api/nav', navRoute)
+app.route('/api/import-export', importExportRoute)
 app.route('/api/auth', authRoute)
 app.get('/api/me', currentUserHandler)
 

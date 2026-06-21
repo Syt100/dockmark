@@ -12,6 +12,7 @@ const navItems = [
   { to: '/services', label: '服务' },
   { to: '/categories', label: '分类' },
   { to: '/tags', label: '标签' },
+  { to: '/import-export', label: '导入导出' },
   { to: '/about', label: '关于' },
 ]
 

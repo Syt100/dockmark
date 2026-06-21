@@ -1,8 +1,4 @@
-## Purpose
-
-Define manual Dockmark JSON import and export so users can back up, restore, and move service navigation data without requiring R2 or scheduled backups.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Dockmark JSON export
 
@@ -82,12 +78,3 @@ Dockmark SHALL provide a UI for exporting and importing Dockmark JSON.
 - **WHEN** the user visits the import/export view
 - **THEN** they SHALL be able to download a JSON export
 - **AND** they SHALL be able to upload a JSON import file, choose an import mode, preview the import summary, and review validation errors before writing data
-
-### Requirement: Phase 2 backup boundary
-
-Phase 2 SHALL support manual JSON import/export only and SHALL NOT require R2, automatic scheduled backups, encrypted backups, or backup retention policies.
-
-#### Scenario: R2 is not configured
-
-- **WHEN** the user exports data
-- **THEN** the application SHALL still provide a direct JSON download

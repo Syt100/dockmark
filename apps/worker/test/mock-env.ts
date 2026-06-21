@@ -325,8 +325,29 @@ class MockStatement {
       return { results: sortByOrderAndName(this.store.categories) }
     }
 
+    if (sql.startsWith('SELECT id AS value FROM categories WHERE id')) {
+      const ids = new Set(this.values as string[])
+      return {
+        results: this.store.categories
+          .filter((category) => ids.has(category.id))
+          .map((category) => ({ value: category.id })),
+      }
+    }
+
+    if (sql.startsWith('SELECT slug AS value FROM categories WHERE slug')) {
+      const slugs = new Set(this.values as string[])
+      return {
+        results: this.store.categories
+          .filter((category) => slugs.has(category.slug))
+          .map((category) => ({ value: category.slug })),
+      }
+    }
+
     if (sql.startsWith('INSERT INTO categories')) {
       const slug = this.values[2] as string
+      if (this.store.categories.some((category) => category.id === this.values[0])) {
+        throw uniqueConstraintFailed('categories.id')
+      }
       if (this.store.categories.some((category) => category.slug === slug)) {
         throw uniqueConstraintFailed('categories.slug')
       }
@@ -338,8 +359,8 @@ class MockStatement {
         icon: this.values[3] as string | null,
         color: this.values[4] as string | null,
         sort_order: this.values[5] as number,
-        created_at: now(),
-        updated_at: now(),
+        created_at: (this.values[6] as string | undefined) ?? now(),
+        updated_at: (this.values[7] as string | undefined) ?? now(),
       })
       return { meta: { changes: 1 } }
     }
@@ -363,6 +384,12 @@ class MockStatement {
     }
 
     if (sql.startsWith('DELETE FROM categories')) {
+      if (this.values.length === 0) {
+        const changes = this.store.categories.length
+        this.store.categories = []
+        return { meta: { changes } }
+      }
+
       const before = this.store.categories.length
       this.store.categories = this.store.categories.filter(
         (category) => category.id !== this.values[0],
@@ -387,9 +414,37 @@ class MockStatement {
       }
     }
 
+    if (sql.startsWith('SELECT id AS value FROM tags WHERE id')) {
+      const ids = new Set(this.values as string[])
+      return {
+        results: this.store.tags.filter((tag) => ids.has(tag.id)).map((tag) => ({ value: tag.id })),
+      }
+    }
+
+    if (sql.startsWith('SELECT name AS value FROM tags WHERE name')) {
+      const names = new Set(this.values as string[])
+      return {
+        results: this.store.tags
+          .filter((tag) => names.has(tag.name))
+          .map((tag) => ({ value: tag.name })),
+      }
+    }
+
+    if (sql.startsWith('SELECT slug AS value FROM tags WHERE slug')) {
+      const slugs = new Set(this.values as string[])
+      return {
+        results: this.store.tags
+          .filter((tag) => slugs.has(tag.slug))
+          .map((tag) => ({ value: tag.slug })),
+      }
+    }
+
     if (sql.startsWith('INSERT INTO tags')) {
       const name = this.values[1] as string
       const slug = this.values[2] as string
+      if (this.store.tags.some((tag) => tag.id === this.values[0])) {
+        throw uniqueConstraintFailed('tags.id')
+      }
       if (this.store.tags.some((tag) => tag.name === name)) {
         throw uniqueConstraintFailed('tags.name')
       }
@@ -401,7 +456,7 @@ class MockStatement {
         id: this.values[0] as string,
         name,
         slug,
-        created_at: now(),
+        created_at: (this.values[3] as string | undefined) ?? now(),
       })
       return { meta: { changes: 1 } }
     }
@@ -425,6 +480,12 @@ class MockStatement {
     }
 
     if (sql.startsWith('DELETE FROM tags')) {
+      if (this.values.length === 0) {
+        const changes = this.store.tags.length
+        this.store.tags = []
+        return { meta: { changes } }
+      }
+
       const before = this.store.tags.length
       this.store.tags = this.store.tags.filter((tag) => tag.id !== this.values[0])
       this.store.itemTags = this.store.itemTags.filter((link) => link.tag_id !== this.values[0])
@@ -441,7 +502,20 @@ class MockStatement {
       return { results: sortByOrderAndName(this.store.items) }
     }
 
+    if (sql.startsWith('SELECT id AS value FROM items WHERE id')) {
+      const ids = new Set(this.values as string[])
+      return {
+        results: this.store.items
+          .filter((item) => ids.has(item.id))
+          .map((item) => ({ value: item.id })),
+      }
+    }
+
     if (sql.startsWith('INSERT INTO items')) {
+      if (this.store.items.some((item) => item.id === this.values[0])) {
+        throw uniqueConstraintFailed('items.id')
+      }
+
       this.store.items.push({
         id: this.values[0] as string,
         category_id: this.values[1] as string | null,
@@ -453,8 +527,8 @@ class MockStatement {
         note: this.values[7] as string | null,
         status: this.values[8] as ItemRecord['status'],
         sort_order: this.values[9] as number,
-        created_at: now(),
-        updated_at: now(),
+        created_at: (this.values[10] as string | undefined) ?? now(),
+        updated_at: (this.values[11] as string | undefined) ?? now(),
       })
       return { meta: { changes: 1 } }
     }
@@ -477,6 +551,12 @@ class MockStatement {
     }
 
     if (sql.startsWith('DELETE FROM items')) {
+      if (this.values.length === 0) {
+        const changes = this.store.items.length
+        this.store.items = []
+        return { meta: { changes } }
+      }
+
       const before = this.store.items.length
       this.store.items = this.store.items.filter((item) => item.id !== this.values[0])
       this.store.endpoints = this.store.endpoints.filter(
@@ -487,6 +567,12 @@ class MockStatement {
     }
 
     if (sql.startsWith('DELETE FROM endpoints')) {
+      if (this.values.length === 0) {
+        const changes = this.store.endpoints.length
+        this.store.endpoints = []
+        return { meta: { changes } }
+      }
+
       const before = this.store.endpoints.length
       this.store.endpoints = this.store.endpoints.filter(
         (endpoint) => endpoint.item_id !== this.values[0],
@@ -495,12 +581,39 @@ class MockStatement {
     }
 
     if (sql.startsWith('DELETE FROM item_tags')) {
+      if (this.values.length === 0) {
+        const changes = this.store.itemTags.length
+        this.store.itemTags = []
+        return { meta: { changes } }
+      }
+
       const before = this.store.itemTags.length
       this.store.itemTags = this.store.itemTags.filter((link) => link.item_id !== this.values[0])
       return { meta: { changes: before - this.store.itemTags.length } }
     }
 
+    if (sql.startsWith('SELECT id AS value FROM endpoints WHERE id')) {
+      const ids = new Set(this.values as string[])
+      return {
+        results: this.store.endpoints
+          .filter((endpoint) => ids.has(endpoint.id))
+          .map((endpoint) => ({ value: endpoint.id })),
+      }
+    }
+
     if (sql.startsWith('INSERT INTO endpoints')) {
+      if (this.store.endpoints.some((endpoint) => endpoint.id === this.values[0])) {
+        throw uniqueConstraintFailed('endpoints.id')
+      }
+      if (
+        this.values[5] === 1 &&
+        this.store.endpoints.some(
+          (endpoint) => endpoint.item_id === this.values[1] && endpoint.is_primary === 1,
+        )
+      ) {
+        throw uniqueConstraintFailed('endpoints.item_id')
+      }
+
       this.store.endpoints.push({
         id: this.values[0] as string,
         item_id: this.values[1] as string,
@@ -509,9 +622,22 @@ class MockStatement {
         kind: this.values[4] as EndpointRecord['kind'],
         is_primary: this.values[5] as number,
         sort_order: this.values[6] as number,
-        created_at: now(),
-        updated_at: now(),
+        created_at: (this.values[7] as string | undefined) ?? now(),
+        updated_at: (this.values[8] as string | undefined) ?? now(),
       })
+      return { meta: { changes: 1 } }
+    }
+
+    if (sql.startsWith('INSERT INTO item_tags')) {
+      const item_id = this.values[0] as string
+      const tag_id = this.values[1] as string
+      const exists = this.store.itemTags.some(
+        (link) => link.item_id === item_id && link.tag_id === tag_id,
+      )
+      if (exists) {
+        throw uniqueConstraintFailed('item_tags.item_id, item_tags.tag_id')
+      }
+      this.store.itemTags.push({ item_id, tag_id })
       return { meta: { changes: 1 } }
     }
 

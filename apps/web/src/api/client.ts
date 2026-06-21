@@ -9,6 +9,10 @@ import type {
   Category,
   CategoryResponse,
   CategoryInput,
+  DockmarkExportDocument,
+  DockmarkImportMode,
+  ImportPreviewResponse,
+  ImportResultResponse,
   NavResponse,
   ServiceItem,
   ServiceItemInput,
@@ -219,4 +223,28 @@ export async function updateItem(id: string, input: ServiceItemInput): Promise<S
 
 export async function deleteItem(id: string): Promise<void> {
   await request<void>(`/api/items/${id}`, { method: 'DELETE' })
+}
+
+export async function exportDockmarkData(): Promise<DockmarkExportDocument> {
+  return request<DockmarkExportDocument>('/api/import-export/export')
+}
+
+export async function previewDockmarkImport(
+  mode: DockmarkImportMode,
+  document: unknown,
+): Promise<ImportPreviewResponse> {
+  return jsonRequest<ImportPreviewResponse>('/api/import-export/preview', {
+    method: 'POST',
+    body: { mode, document },
+  })
+}
+
+export async function importDockmarkData(
+  mode: DockmarkImportMode,
+  document: unknown,
+): Promise<ImportResultResponse> {
+  return jsonRequest<ImportResultResponse>('/api/import-export/import', {
+    method: 'POST',
+    body: { mode, document },
+  })
 }
