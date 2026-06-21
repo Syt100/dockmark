@@ -1,6 +1,7 @@
 import {
   dockmarkExportSchemaVersion,
   estimateJsonByteLength,
+  issuesFromMessages,
   summarizeImportDocument,
   validateDockmarkExportDocument,
   validateImportLimits,
@@ -8,6 +9,7 @@ import {
   type DockmarkImportMode,
   type ExportEndpoint,
   type ExportItem,
+  type ImportIssue,
   type ImportPreviewResponse,
   type ImportSummary,
 } from '@dockmark/shared'
@@ -21,6 +23,22 @@ type ConflictRow = {
   value: string
 }
 
+type ConflictSet = {
+  categoryIds: Set<string>
+  categorySlugs: Set<string>
+  tagIds: Set<string>
+  tagNames: Set<string>
+  tagSlugs: Set<string>
+  itemIds: Set<string>
+  endpointIds: Set<string>
+}
+
+type ImportPlan = {
+  document: DockmarkExportDocument
+  importable: ImportSummary
+  skipped: ImportSummary
+}
+
 type Store = {
   DB: D1Database
 }
@@ -29,12 +47,6 @@ const emptySummary: ImportSummary = { categories: 0, tags: 0, items: 0, endpoint
 
 function placeholders(values: string[]): string {
   return values.map(() => '?').join(', ')
-}
-
-function conflictErrors(label: string, values: string[], existing: Set<string>): string[] {
-  return values
-    .filter((value) => existing.has(value))
-    .map((value) => `${label} already exists: ${value}`)
 }
 
 async function existingValues(
@@ -111,6 +123,7 @@ export async function previewImport(
       mode,
       summary: emptySummary,
       ...(mode === 'replaceAll' ? { currentSummary: await getCurrentImportSummary(db) } : {}),
+      issues: issuesFromMessages(validation.errors, 'validation'),
       errors: validation.errors,
       document: null,
     }
@@ -121,17 +134,39 @@ export async function previewImport(
     byteLength: estimateJsonByteLength(input),
     summary,
   })
-  const conflictErrors =
-    mode === 'additive' && limitErrors.length === 0
-      ? await additiveConflictErrors(db, validation.value)
-      : []
-  const errors = [...limitErrors, ...conflictErrors]
+  const limitIssues = issuesFromMessages(limitErrors, 'limit')
+  const conflictSet =
+    mode !== 'replaceAll' && limitErrors.length === 0
+      ? await additiveConflictSet(db, validation.value)
+      : emptyConflictSet()
+  const conflictIssues = conflictIssuesForDocument(
+    validation.value,
+    conflictSet,
+    mode === 'additiveSkipConflicts' ? 'warning' : 'error',
+  )
+  const plan =
+    mode === 'additiveSkipConflicts' && limitIssues.length === 0
+      ? planSkipConflicts(validation.value, conflictSet)
+      : null
+  const issues = [...limitIssues, ...conflictIssues, ...(plan?.issues ?? [])]
+  const errors = issues.filter((issue) => issue.severity === 'error').map((issue) => issue.message)
+  const canImport =
+    mode === 'additiveSkipConflicts'
+      ? limitIssues.length === 0 && plan !== null && plan.importableHasRecords
+      : errors.length === 0
 
   return {
-    ok: errors.length === 0,
+    ok: canImport,
     mode,
     summary,
+    ...(plan
+      ? {
+          importable: plan.importable,
+          skipped: plan.skipped,
+        }
+      : {}),
     ...(mode === 'replaceAll' ? { currentSummary: await getCurrentImportSummary(db) } : {}),
+    issues,
     errors,
     document: validation.value,
   }
@@ -148,19 +183,25 @@ export async function importDocument(
     throw new Error(preview.errors.join('; ') || 'Import document is invalid')
   }
 
+  const document =
+    mode === 'additiveSkipConflicts'
+      ? planSkipConflicts(preview.document, await additiveConflictSet(store.DB, preview.document))
+          .document
+      : preview.document
+
   await store.DB.batch([
     ...(mode === 'replaceAll' ? replaceAllStatements(store.DB) : []),
-    ...insertDocumentStatements(store.DB, preview.document),
+    ...insertDocumentStatements(store.DB, document),
     navCacheVersionIncrementStatement(store.DB),
   ])
 
-  return preview.summary
+  return summarizeImportDocument(document)
 }
 
-async function additiveConflictErrors(
+async function additiveConflictSet(
   db: D1Database,
   document: DockmarkExportDocument,
-): Promise<string[]> {
+): Promise<ConflictSet> {
   const categoryIds = document.categories.map((category) => category.id)
   const categorySlugs = document.categories.map((category) => category.slug)
   const tagIds = document.tags.map((tag) => tag.id)
@@ -172,13 +213,13 @@ async function additiveConflictErrors(
   )
 
   const [
-    existingCategoryIds,
-    existingCategorySlugs,
-    existingTagIds,
-    existingTagNames,
-    existingTagSlugs,
-    existingItemIds,
-    existingEndpointIds,
+    categoryIdsSet,
+    categorySlugsSet,
+    tagIdsSet,
+    tagNamesSet,
+    tagSlugsSet,
+    itemIdsSet,
+    endpointIdsSet,
   ] = await Promise.all([
     existingValues(db, 'SELECT id AS value FROM categories WHERE id', categoryIds),
     existingValues(db, 'SELECT slug AS value FROM categories WHERE slug', categorySlugs),
@@ -189,15 +230,212 @@ async function additiveConflictErrors(
     existingValues(db, 'SELECT id AS value FROM endpoints WHERE id', endpointIds),
   ])
 
-  return [
-    ...conflictErrors('category id', categoryIds, existingCategoryIds),
-    ...conflictErrors('category slug', categorySlugs, existingCategorySlugs),
-    ...conflictErrors('tag id', tagIds, existingTagIds),
-    ...conflictErrors('tag name', tagNames, existingTagNames),
-    ...conflictErrors('tag slug', tagSlugs, existingTagSlugs),
-    ...conflictErrors('item id', itemIds, existingItemIds),
-    ...conflictErrors('endpoint id', endpointIds, existingEndpointIds),
-  ]
+  return {
+    categoryIds: categoryIdsSet,
+    categorySlugs: categorySlugsSet,
+    tagIds: tagIdsSet,
+    tagNames: tagNamesSet,
+    tagSlugs: tagSlugsSet,
+    itemIds: itemIdsSet,
+    endpointIds: endpointIdsSet,
+  }
+}
+
+function emptyConflictSet(): ConflictSet {
+  return {
+    categoryIds: new Set(),
+    categorySlugs: new Set(),
+    tagIds: new Set(),
+    tagNames: new Set(),
+    tagSlugs: new Set(),
+    itemIds: new Set(),
+    endpointIds: new Set(),
+  }
+}
+
+function conflictIssue(
+  entityType: ImportIssue['entityType'],
+  entityId: string,
+  field: string,
+  value: string,
+  label: string,
+  severity: ImportIssue['severity'],
+): ImportIssue {
+  return {
+    severity,
+    kind: 'conflict',
+    entityType,
+    entityId,
+    field,
+    value,
+    message: `${label} already exists: ${value}`,
+  }
+}
+
+function conflictIssuesForDocument(
+  document: DockmarkExportDocument,
+  conflicts: ConflictSet,
+  severity: ImportIssue['severity'],
+): ImportIssue[] {
+  const issues: ImportIssue[] = []
+
+  for (const category of document.categories) {
+    if (conflicts.categoryIds.has(category.id)) {
+      issues.push(
+        conflictIssue('category', category.id, 'id', category.id, 'category id', severity),
+      )
+    }
+    if (conflicts.categorySlugs.has(category.slug)) {
+      issues.push(
+        conflictIssue('category', category.id, 'slug', category.slug, 'category slug', severity),
+      )
+    }
+  }
+
+  for (const tag of document.tags) {
+    if (conflicts.tagIds.has(tag.id)) {
+      issues.push(conflictIssue('tag', tag.id, 'id', tag.id, 'tag id', severity))
+    }
+    if (conflicts.tagNames.has(tag.name)) {
+      issues.push(conflictIssue('tag', tag.id, 'name', tag.name, 'tag name', severity))
+    }
+    if (conflicts.tagSlugs.has(tag.slug)) {
+      issues.push(conflictIssue('tag', tag.id, 'slug', tag.slug, 'tag slug', severity))
+    }
+  }
+
+  for (const item of document.items) {
+    if (conflicts.itemIds.has(item.id)) {
+      issues.push(conflictIssue('item', item.id, 'id', item.id, 'item id', severity))
+    }
+
+    for (const endpoint of item.endpoints) {
+      if (conflicts.endpointIds.has(endpoint.id)) {
+        issues.push(
+          conflictIssue('endpoint', endpoint.id, 'id', endpoint.id, 'endpoint id', severity),
+        )
+      }
+    }
+  }
+
+  return issues
+}
+
+function categoryHasConflict(
+  category: DockmarkExportDocument['categories'][number],
+  conflicts: ConflictSet,
+) {
+  return conflicts.categoryIds.has(category.id) || conflicts.categorySlugs.has(category.slug)
+}
+
+function tagHasConflict(tag: DockmarkExportDocument['tags'][number], conflicts: ConflictSet) {
+  return (
+    conflicts.tagIds.has(tag.id) ||
+    conflicts.tagNames.has(tag.name) ||
+    conflicts.tagSlugs.has(tag.slug)
+  )
+}
+
+function itemHasConflict(item: ExportItem, conflicts: ConflictSet) {
+  return (
+    conflicts.itemIds.has(item.id) ||
+    item.endpoints.some((endpoint) => conflicts.endpointIds.has(endpoint.id))
+  )
+}
+
+function planSkipConflicts(
+  document: DockmarkExportDocument,
+  conflicts: ConflictSet,
+): ImportPlan & { issues: ImportIssue[]; importableHasRecords: boolean } {
+  const skippedCategoryIds = new Set(
+    document.categories
+      .filter((category) => categoryHasConflict(category, conflicts))
+      .map((category) => category.id),
+  )
+  const skippedTagIds = new Set(
+    document.tags.filter((tag) => tagHasConflict(tag, conflicts)).map((tag) => tag.id),
+  )
+
+  const categories = document.categories.filter((category) => !skippedCategoryIds.has(category.id))
+  const tags = document.tags.filter((tag) => !skippedTagIds.has(tag.id))
+  const items = document.items
+    .filter((item) => !itemHasConflict(item, conflicts))
+    .filter((item) => !item.categoryId || !skippedCategoryIds.has(item.categoryId))
+    .map((item) => ({
+      ...item,
+      tagIds: item.tagIds.filter((tagId) => !skippedTagIds.has(tagId)),
+    }))
+  const plannedDocument = {
+    ...document,
+    categories,
+    tags,
+    items,
+  }
+  const importable = summarizeImportDocument(plannedDocument)
+  const skipped = {
+    categories: document.categories.length - categories.length,
+    tags: document.tags.length - tags.length,
+    items: document.items.length - items.length,
+    endpoints:
+      summarizeImportDocument(document).endpoints -
+      items.reduce((count, item) => count + item.endpoints.length, 0),
+  }
+
+  return {
+    document: plannedDocument,
+    importable,
+    skipped,
+    issues: skippedIssues(document, plannedDocument, skippedCategoryIds, skippedTagIds),
+    importableHasRecords:
+      importable.categories > 0 ||
+      importable.tags > 0 ||
+      importable.items > 0 ||
+      importable.endpoints > 0,
+  }
+}
+
+function skippedIssues(
+  original: DockmarkExportDocument,
+  planned: DockmarkExportDocument,
+  skippedCategoryIds: Set<string>,
+  skippedTagIds: Set<string>,
+): ImportIssue[] {
+  const plannedItemIds = new Set(planned.items.map((item) => item.id))
+  const issues: ImportIssue[] = []
+
+  for (const categoryId of skippedCategoryIds) {
+    issues.push({
+      severity: 'warning',
+      kind: 'skip',
+      entityType: 'category',
+      entityId: categoryId,
+      message: `category will be skipped: ${categoryId}`,
+    })
+  }
+
+  for (const tagId of skippedTagIds) {
+    issues.push({
+      severity: 'warning',
+      kind: 'skip',
+      entityType: 'tag',
+      entityId: tagId,
+      message: `tag will be skipped: ${tagId}`,
+    })
+  }
+
+  for (const item of original.items) {
+    if (!plannedItemIds.has(item.id)) {
+      issues.push({
+        severity: 'warning',
+        kind: 'skip',
+        entityType: 'item',
+        entityId: item.id,
+        message: `service will be skipped: ${item.id}`,
+      })
+    }
+  }
+
+  return issues
 }
 
 function replaceAllStatements(db: D1Database): D1PreparedStatement[] {

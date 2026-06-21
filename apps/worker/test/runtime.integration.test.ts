@@ -370,4 +370,97 @@ describe('runtime-backed Worker integration', () => {
       categories: [],
     })
   })
+
+  it('imports safe additive skip-conflicts records through real D1 storage', async () => {
+    const cookie = await setupSession()
+    const headers = { cookie, 'content-type': 'application/json' }
+
+    const first = await SELF.fetch('https://dockmark.test/api/import-export/import', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ mode: 'additive', document: exportDocument() }),
+    })
+    expect(first.status).toBe(200)
+
+    const mixed = exportDocument({
+      categories: [
+        ...exportDocument().categories,
+        {
+          id: 'cat_books',
+          name: 'Books',
+          slug: 'books',
+          icon: null,
+          color: null,
+          sortOrder: 1,
+          createdAt: exportTimestamp,
+          updatedAt: exportTimestamp,
+        },
+      ],
+      tags: [
+        ...exportDocument().tags,
+        {
+          id: 'tag_reading',
+          name: 'Reading',
+          slug: 'reading',
+          createdAt: exportTimestamp,
+        },
+      ],
+      items: [
+        ...exportDocument().items,
+        {
+          id: 'item_calibre',
+          categoryId: 'cat_books',
+          name: 'Calibre',
+          description: null,
+          icon: null,
+          iconType: 'favicon',
+          credentialHint: null,
+          note: null,
+          status: 'active',
+          sortOrder: 1,
+          createdAt: exportTimestamp,
+          updatedAt: exportTimestamp,
+          endpoints: [
+            {
+              id: 'end_calibre',
+              label: 'Public',
+              url: 'https://books.example.com',
+              kind: 'public',
+              isPrimary: true,
+              sortOrder: 0,
+              createdAt: exportTimestamp,
+              updatedAt: exportTimestamp,
+            },
+          ],
+          tagIds: ['tag_photo', 'tag_reading'],
+        },
+      ],
+    })
+
+    const preview = await SELF.fetch('https://dockmark.test/api/import-export/preview', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ mode: 'additiveSkipConflicts', document: mixed }),
+    })
+    expect(preview.status).toBe(200)
+    await expect(preview.json()).resolves.toMatchObject({
+      ok: true,
+      importable: { categories: 1, tags: 1, items: 1, endpoints: 1 },
+      skipped: { categories: 1, tags: 1, items: 1, endpoints: 1 },
+    })
+
+    const imported = await SELF.fetch('https://dockmark.test/api/import-export/import', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ mode: 'additiveSkipConflicts', document: mixed }),
+    })
+    expect(imported.status).toBe(200)
+
+    const exported = await SELF.fetch('https://dockmark.test/api/import-export/export', {
+      headers: { cookie },
+    })
+    const body = (await exported.json()) as DockmarkExportDocument
+    expect(body.items.map((item) => item.id)).toEqual(['item_immich', 'item_calibre'])
+    expect(body.items.find((item) => item.id === 'item_calibre')?.tagIds).toEqual(['tag_reading'])
+  })
 })

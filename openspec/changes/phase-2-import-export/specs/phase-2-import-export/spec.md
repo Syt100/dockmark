@@ -43,7 +43,7 @@ Dockmark SHALL import Dockmark JSON documents that match a supported schema vers
 - **WHEN** a user uploads a Dockmark JSON document for review
 - **THEN** the API SHALL validate the document without writing data
 - **AND** it SHALL return a summary of categories, tags, items, and endpoints that would be imported
-- **AND** it SHALL return actionable validation or conflict errors when the document cannot be imported
+- **AND** it SHALL return structured validation, limit, and conflict issues grouped by entity type when the document cannot be imported as-is
 
 #### Scenario: Import exceeds safety limits
 
@@ -60,6 +60,22 @@ Dockmark SHALL define deterministic behavior for duplicate slugs, service IDs, e
 - **WHEN** the user imports using the default additive mode
 - **THEN** the import SHALL reject the whole document if an imported category ID, category slug, tag ID, tag name, tag slug, item ID, or endpoint ID already exists
 - **AND** existing data SHALL remain unchanged
+
+#### Scenario: Additive skip-conflicts import plans safe records
+
+- **WHEN** the user previews using additive skip-conflicts mode
+- **THEN** the API SHALL compute importable and skipped summaries
+- **AND** category conflicts SHALL skip the category and services that reference it
+- **AND** tag conflicts SHALL skip the conflicting tag and skip only relationships that reference it
+- **AND** service or endpoint conflicts SHALL skip the owning service, its endpoints, and its tag relationships
+- **AND** validation and limit issues SHALL still prevent import
+
+#### Scenario: Additive skip-conflicts import writes safe records
+
+- **WHEN** the user confirms additive skip-conflicts import and the preview contains only conflict issues
+- **THEN** Dockmark SHALL import the safe subset in an all-or-nothing write
+- **AND** it SHALL preserve IDs, timestamps, and relationships for imported records
+- **AND** it SHALL leave skipped conflicting records unchanged
 
 #### Scenario: Replace-all import restores a full export
 
@@ -90,3 +106,9 @@ Dockmark SHALL provide a UI for exporting and importing Dockmark JSON.
 - **WHEN** the user visits the import/export view
 - **THEN** they SHALL be able to download a JSON export
 - **AND** they SHALL be able to upload a JSON import file, choose an import mode, preview the import summary, and review validation errors before writing data
+
+#### Scenario: User previews conflicts in the UI
+
+- **WHEN** an additive import preview has conflicts
+- **THEN** the UI SHALL group conflicts by category, tag, service, endpoint, and file-level issues
+- **AND** it SHALL offer a skip-conflicts import action when the safe subset can be imported

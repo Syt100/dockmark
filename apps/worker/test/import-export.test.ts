@@ -75,7 +75,7 @@ function document(overrides: Partial<DockmarkExportDocument> = {}): DockmarkExpo
 
 async function importRequest(
   env: ReturnType<typeof createMockEnv>,
-  mode: 'additive' | 'replaceAll',
+  mode: 'additive' | 'additiveSkipConflicts' | 'replaceAll',
   body: DockmarkExportDocument = document(),
 ): Promise<Response> {
   return app.request(
@@ -133,6 +133,7 @@ describe('import/export API', () => {
       ok: true,
       mode: 'additive',
       summary: { categories: 1, tags: 1, items: 1, endpoints: 1 },
+      issues: [],
       errors: [],
     })
     expect(env.__testStore.categories).toHaveLength(0)
@@ -171,6 +172,155 @@ describe('import/export API', () => {
     const importAgain = await importRequest(env, 'additive')
     expect(importAgain.status).toBe(400)
     expect(env.__testStore.categories).toHaveLength(1)
+  })
+
+  it('groups additive conflicts as structured issues', async () => {
+    const env = createMockEnv()
+    expect((await importRequest(env, 'additive')).status).toBe(200)
+
+    const response = await app.request(
+      '/api/import-export/preview',
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ mode: 'additive', document: document() }),
+      },
+      env,
+    )
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      ok: false,
+      issues: expect.arrayContaining([
+        {
+          severity: 'error',
+          kind: 'conflict',
+          entityType: 'category',
+          entityId: 'cat_media',
+          field: 'id',
+          value: 'cat_media',
+          message: 'category id already exists: cat_media',
+        },
+        {
+          severity: 'error',
+          kind: 'conflict',
+          entityType: 'item',
+          entityId: 'item_immich',
+          field: 'id',
+          value: 'item_immich',
+          message: 'item id already exists: item_immich',
+        },
+      ]),
+    })
+  })
+
+  it('imports safe records in additive skip-conflicts mode', async () => {
+    const env = createMockEnv()
+    expect((await importRequest(env, 'additive')).status).toBe(200)
+
+    const mixed = document({
+      categories: [
+        ...document().categories,
+        {
+          id: 'cat_books',
+          name: 'Books',
+          slug: 'books',
+          icon: null,
+          color: null,
+          sortOrder: 1,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        },
+      ],
+      tags: [
+        ...document().tags,
+        {
+          id: 'tag_reading',
+          name: 'Reading',
+          slug: 'reading',
+          createdAt: timestamp,
+        },
+      ],
+      items: [
+        ...document().items,
+        {
+          id: 'item_calibre',
+          categoryId: 'cat_books',
+          name: 'Calibre',
+          description: null,
+          icon: null,
+          iconType: 'favicon',
+          credentialHint: null,
+          note: null,
+          status: 'active',
+          sortOrder: 1,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+          endpoints: [
+            {
+              id: 'end_calibre',
+              label: 'Public',
+              url: 'https://books.example.com',
+              kind: 'public',
+              isPrimary: true,
+              sortOrder: 0,
+              createdAt: timestamp,
+              updatedAt: timestamp,
+            },
+          ],
+          tagIds: ['tag_photo', 'tag_reading'],
+        },
+      ],
+    })
+
+    const preview = await app.request(
+      '/api/import-export/preview',
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ mode: 'additiveSkipConflicts', document: mixed }),
+      },
+      env,
+    )
+
+    expect(preview.status).toBe(200)
+    await expect(preview.json()).resolves.toMatchObject({
+      ok: true,
+      mode: 'additiveSkipConflicts',
+      importable: { categories: 1, tags: 1, items: 1, endpoints: 1 },
+      skipped: { categories: 1, tags: 1, items: 1, endpoints: 1 },
+      issues: expect.arrayContaining([
+        expect.objectContaining({
+          severity: 'warning',
+          kind: 'conflict',
+          entityType: 'category',
+        }),
+        expect.objectContaining({
+          severity: 'warning',
+          kind: 'skip',
+          entityType: 'item',
+          entityId: 'item_immich',
+        }),
+      ]),
+    })
+
+    const imported = await importRequest(env, 'additiveSkipConflicts', mixed)
+    expect(imported.status).toBe(200)
+    await expect(imported.json()).resolves.toEqual({
+      imported: { categories: 1, tags: 1, items: 1, endpoints: 1 },
+    })
+
+    const items = await app.request('/api/items', {}, env)
+    const itemsBody = (await items.json()) as {
+      items: Array<{
+        id: string
+        tags: Array<{ id: string; name: string; slug: string; createdAt: string }>
+      }>
+    }
+    const importedItem = itemsBody.items.find((item) => item.id === 'item_calibre')
+    expect(importedItem?.tags).toEqual([
+      { id: 'tag_reading', name: 'Reading', slug: 'reading', createdAt: timestamp },
+    ])
   })
 
   it('replace-all restores a full document and removes previous records', async () => {

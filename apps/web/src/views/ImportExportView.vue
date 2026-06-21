@@ -4,6 +4,7 @@ import { computed, ref } from 'vue'
 import type {
   DockmarkExportDocument,
   DockmarkImportMode,
+  ImportIssue,
   ImportPreviewResponse,
 } from '@dockmark/shared'
 
@@ -33,7 +34,52 @@ const canImport = computed(
     (mode.value !== 'replaceAll' || replaceAllConfirmation.value.trim() === '替换全部'),
 )
 const summary = computed(() => preview.value?.summary ?? null)
+const importableSummary = computed(() => preview.value?.importable ?? null)
+const skippedSummary = computed(() => preview.value?.skipped ?? null)
 const currentSummary = computed(() => preview.value?.currentSummary ?? null)
+const modeLabel = computed(() => {
+  if (preview.value?.mode === 'replaceAll') return '替换全部'
+  if (preview.value?.mode === 'additiveSkipConflicts') return '跳过冲突导入'
+  return '追加导入'
+})
+const groupedIssues = computed(() => {
+  const groups: Array<{
+    key: ImportIssue['entityType']
+    label: string
+    issues: ImportIssue[]
+  }> = [
+    { key: 'document', label: '文件问题', issues: [] },
+    { key: 'category', label: '分类冲突', issues: [] },
+    { key: 'tag', label: '标签冲突', issues: [] },
+    { key: 'item', label: '服务冲突', issues: [] },
+    { key: 'endpoint', label: '地址冲突', issues: [] },
+  ]
+  const byKey = new Map(groups.map((group) => [group.key, group]))
+
+  for (const issue of preview.value?.issues ?? []) {
+    byKey.get(issue.entityType)?.issues.push(issue)
+  }
+
+  if ((preview.value?.issues.length ?? 0) === 0) {
+    for (const message of preview.value?.errors ?? []) {
+      byKey.get('document')?.issues.push({
+        severity: 'error',
+        kind: 'validation',
+        entityType: 'document',
+        message,
+      })
+    }
+  }
+
+  return groups.filter((group) => group.issues.length > 0)
+})
+const canSkipConflicts = computed(
+  () =>
+    preview.value?.mode === 'additive' &&
+    preview.value.ok === false &&
+    (preview.value.issues ?? []).some((issue) => issue.kind === 'conflict') &&
+    !(preview.value.issues ?? []).some((issue) => issue.kind !== 'conflict'),
+)
 
 function resetPreview() {
   preview.value = null
@@ -109,6 +155,11 @@ async function previewImport() {
   }
 }
 
+async function previewSkipConflicts() {
+  mode.value = 'additiveSkipConflicts'
+  await previewImport()
+}
+
 async function executeImport() {
   if (!canImport.value) {
     return
@@ -178,6 +229,7 @@ async function executeImport() {
             <span class="dm-label">导入模式</span>
             <AppSelect v-model="mode" @change="resetPreview">
               <option value="additive">追加导入</option>
+              <option value="additiveSkipConflicts">跳过冲突导入</option>
               <option value="replaceAll">替换全部</option>
             </AppSelect>
           </label>
@@ -220,9 +272,7 @@ async function executeImport() {
             <h3 class="text-base font-semibold text-[var(--dm-text)]">
               {{ preview.ok ? '预检通过' : '预检未通过' }}
             </h3>
-            <span class="text-sm text-[var(--dm-text-muted)]">
-              {{ preview.mode === 'additive' ? '追加导入' : '替换全部' }}
-            </span>
+            <span class="text-sm text-[var(--dm-text-muted)]">{{ modeLabel }}</span>
           </div>
 
           <dl v-if="summary" class="grid gap-3 text-sm sm:grid-cols-4" aria-label="导入摘要">
@@ -244,12 +294,58 @@ async function executeImport() {
             </div>
           </dl>
 
-          <ul v-if="preview.errors.length > 0" class="grid gap-1 text-sm text-[var(--dm-danger)]">
-            <li v-for="item in preview.errors" :key="item">{{ item }}</li>
-          </ul>
+          <div
+            v-if="importableSummary && skippedSummary"
+            class="grid gap-3 border-t border-[var(--dm-border)] pt-3 text-sm sm:grid-cols-2"
+          >
+            <div>
+              <h4 class="font-medium text-[var(--dm-text)]">可导入</h4>
+              <p class="mt-1 text-[var(--dm-text-muted)]">
+                {{ importableSummary.categories }} 个分类，{{ importableSummary.tags }} 个标签，{{
+                  importableSummary.items
+                }}
+                个服务，{{ importableSummary.endpoints }} 个地址
+              </p>
+            </div>
+            <div>
+              <h4 class="font-medium text-[var(--dm-text)]">将跳过</h4>
+              <p class="mt-1 text-[var(--dm-text-muted)]">
+                {{ skippedSummary.categories }} 个分类，{{ skippedSummary.tags }} 个标签，{{
+                  skippedSummary.items
+                }}
+                个服务，{{ skippedSummary.endpoints }} 个地址
+              </p>
+            </div>
+          </div>
+
+          <div v-if="groupedIssues.length > 0" class="grid gap-3">
+            <section
+              v-for="group in groupedIssues"
+              :key="group.key"
+              class="rounded-[var(--dm-radius-control)] border border-[var(--dm-border)] bg-[var(--dm-surface)] p-3"
+            >
+              <h4 class="text-sm font-medium text-[var(--dm-text)]">{{ group.label }}</h4>
+              <ul class="mt-2 grid gap-1 text-sm">
+                <li
+                  v-for="issue in group.issues"
+                  :key="`${issue.kind}:${issue.entityType}:${issue.entityId ?? ''}:${issue.field ?? ''}:${issue.message}`"
+                  :class="
+                    issue.severity === 'error'
+                      ? 'text-[var(--dm-danger)]'
+                      : 'text-[var(--dm-text-muted)]'
+                  "
+                >
+                  {{ issue.message }}
+                </li>
+              </ul>
+            </section>
+          </div>
         </section>
 
-        <div class="flex justify-end">
+        <div class="flex flex-wrap justify-end gap-2">
+          <AppButton v-if="canSkipConflicts" type="button" @click="previewSkipConflicts">
+            跳过冲突并导入
+          </AppButton>
           <AppButton type="button" tone="primary" :disabled="!canImport" @click="executeImport">
             {{ isImporting ? '导入中...' : '确认导入' }}
           </AppButton>

@@ -30,3 +30,12 @@
 - [x] 5.3 Add real D1 integration tests for import/export replace-all success, rollback, and limit rejection.
 - [x] 5.4 Run `corepack pnpm validate`.
 - [x] 5.5 Run `openspec validate --all --strict --no-interactive`.
+
+## 6. Skip Conflicts Import
+
+- [x] 6.1 Add structured import issues and additive skip-conflicts contracts.
+- [x] 6.2 Implement skip-conflicts planning and import execution with dependency-safe skipped records.
+- [x] 6.3 Update import preview UI to group issues and offer skip-conflicts import when safe.
+- [x] 6.4 Add shared, Worker, integration, and Web tests for grouped conflicts and skip-conflicts import.
+- [x] 6.5 Run `corepack pnpm validate`.
+- [x] 6.6 Run `openspec validate --all --strict --no-interactive`.

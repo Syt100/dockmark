@@ -82,6 +82,14 @@ describe('ImportExportView', () => {
         ok: false,
         mode: 'additive',
         summary: { categories: 0, tags: 0, items: 0, endpoints: 0 },
+        issues: [
+          {
+            severity: 'error',
+            kind: 'validation',
+            entityType: 'document',
+            message: 'schemaVersion must be 1',
+          },
+        ],
         errors: ['schemaVersion must be 1'],
       }),
     )
@@ -112,6 +120,7 @@ describe('ImportExportView', () => {
         mode: 'replaceAll',
         summary: { categories: 1, tags: 1, items: 1, endpoints: 1 },
         currentSummary: { categories: 2, tags: 3, items: 4, endpoints: 5 },
+        issues: [],
         errors: [],
       }),
     )
@@ -148,6 +157,7 @@ describe('ImportExportView', () => {
           ok: true,
           mode: 'additive',
           summary: { categories: 1, tags: 1, items: 1, endpoints: 2 },
+          issues: [],
           errors: [],
         }),
       )
@@ -178,6 +188,103 @@ describe('ImportExportView', () => {
       expect(fetchMock).toHaveBeenLastCalledWith(
         '/api/import-export/import',
         expect.objectContaining({ method: 'POST' }),
+      )
+    })
+  })
+
+  it('groups conflicts and continues with skip-conflicts import', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockImplementationOnce(() =>
+        jsonResponse({
+          ok: false,
+          mode: 'additive',
+          summary: { categories: 2, tags: 2, items: 2, endpoints: 2 },
+          issues: [
+            {
+              severity: 'error',
+              kind: 'conflict',
+              entityType: 'category',
+              entityId: 'cat_media',
+              field: 'slug',
+              value: 'media',
+              message: 'category slug already exists: media',
+            },
+            {
+              severity: 'error',
+              kind: 'conflict',
+              entityType: 'item',
+              entityId: 'item_immich',
+              field: 'id',
+              value: 'item_immich',
+              message: 'item id already exists: item_immich',
+            },
+          ],
+          errors: ['category slug already exists: media', 'item id already exists: item_immich'],
+        }),
+      )
+      .mockImplementationOnce(() =>
+        jsonResponse({
+          ok: true,
+          mode: 'additiveSkipConflicts',
+          summary: { categories: 2, tags: 2, items: 2, endpoints: 2 },
+          importable: { categories: 1, tags: 1, items: 1, endpoints: 1 },
+          skipped: { categories: 1, tags: 1, items: 1, endpoints: 1 },
+          issues: [
+            {
+              severity: 'warning',
+              kind: 'conflict',
+              entityType: 'category',
+              entityId: 'cat_media',
+              field: 'slug',
+              value: 'media',
+              message: 'category slug already exists: media',
+            },
+          ],
+          errors: [],
+        }),
+      )
+      .mockImplementationOnce(() =>
+        jsonResponse({
+          imported: { categories: 1, tags: 1, items: 1, endpoints: 1 },
+        }),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const wrapper = mount(ImportExportView)
+    const input = wrapper.find('input[type="file"]')
+    Object.defineProperty(input.element, 'files', {
+      value: [createFile('{"schemaVersion":1}')],
+      configurable: true,
+    })
+    await input.trigger('change')
+    await wrapper.findAll('button')[1]!.trigger('click')
+
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain('分类冲突')
+      expect(wrapper.text()).toContain('服务冲突')
+      expect(wrapper.text()).toContain('category slug already exists: media')
+      expect(wrapper.text()).toContain('跳过冲突并导入')
+    })
+
+    await wrapper.findAll('button')[2]!.trigger('click')
+
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain('跳过冲突导入')
+      expect(wrapper.text()).toContain('可导入')
+      expect(wrapper.text()).toContain('将跳过')
+    })
+
+    await wrapper.findAll('button').at(-1)!.trigger('click')
+
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain('导入完成：1 个服务，1 个地址')
+      expect(fetchMock).toHaveBeenLastCalledWith(
+        '/api/import-export/import',
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.stringContaining('additiveSkipConflicts'),
+        }),
       )
     })
   })

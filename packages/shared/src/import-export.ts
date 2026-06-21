@@ -9,7 +9,7 @@ import {
 } from './navigation'
 
 export const dockmarkExportSchemaVersion = 1
-export const importModes = ['additive', 'replaceAll'] as const
+export const importModes = ['additive', 'additiveSkipConflicts', 'replaceAll'] as const
 export const importLimits = {
   maxJsonBytes: 1024 * 1024,
   maxCategories: 500,
@@ -85,7 +85,10 @@ export type ImportPreviewResponse = {
   ok: boolean
   mode: DockmarkImportMode
   summary: ImportSummary
+  importable?: ImportSummary
+  skipped?: ImportSummary
   currentSummary?: ImportSummary
+  issues: ImportIssue[]
   errors: string[]
 }
 
@@ -101,6 +104,20 @@ export type ImportRequest = {
 export type ImportLimitCheckInput = {
   byteLength?: number
   summary: ImportSummary
+}
+
+export type ImportIssueSeverity = 'error' | 'warning'
+export type ImportIssueKind = 'validation' | 'conflict' | 'limit' | 'skip'
+export type ImportIssueEntityType = 'document' | 'category' | 'tag' | 'item' | 'endpoint'
+
+export type ImportIssue = {
+  severity: ImportIssueSeverity
+  kind: ImportIssueKind
+  entityType: ImportIssueEntityType
+  entityId?: string
+  field?: string
+  value?: string
+  message: string
 }
 
 const forbiddenExportFields = [
@@ -465,6 +482,18 @@ export function validateImportLimits(input: ImportLimitCheckInput): string[] {
   }
 
   return errors
+}
+
+export function issuesFromMessages(
+  messages: string[],
+  kind: Extract<ImportIssueKind, 'validation' | 'limit'>,
+): ImportIssue[] {
+  return messages.map((message) => ({
+    severity: 'error',
+    kind,
+    entityType: 'document',
+    message,
+  }))
 }
 
 export function validateImportMode(input: unknown): ValidationResult<DockmarkImportMode> {

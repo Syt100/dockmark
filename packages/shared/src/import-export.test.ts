@@ -158,9 +158,13 @@ describe('import/export contracts', () => {
 
   it('validates import modes', () => {
     expect(validateImportMode('additive')).toEqual({ ok: true, value: 'additive' })
+    expect(validateImportMode('additiveSkipConflicts')).toEqual({
+      ok: true,
+      value: 'additiveSkipConflicts',
+    })
     expect(validateImportMode('merge')).toEqual({
       ok: false,
-      errors: ['mode must be one of: additive, replaceAll'],
+      errors: ['mode must be one of: additive, additiveSkipConflicts, replaceAll'],
     })
   })
 
