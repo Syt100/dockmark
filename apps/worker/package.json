@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@dockmark/shared": "workspace:*",
-    "hono": "^4.12.26"
+    "hono": "^4.12.34"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.16.18",
