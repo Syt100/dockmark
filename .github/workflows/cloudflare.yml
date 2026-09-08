@@ -2,6 +2,11 @@ name: Cloudflare
 
 on:
   pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - closed
     paths:
       - ".github/workflows/cloudflare.yml"
       - "apps/**"
@@ -37,6 +42,7 @@ permissions:
 jobs:
   validate:
     name: Validate
+    if: github.event_name != 'pull_request' || github.event.action != 'closed'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -72,6 +78,7 @@ jobs:
     needs: validate
     if: >-
       github.event_name == 'pull_request' &&
+      github.event.action != 'closed' &&
       github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: read
@@ -79,6 +86,9 @@ jobs:
     concurrency:
       group: cloudflare-preview-pr-${{ github.event.pull_request.number }}
       cancel-in-progress: true
+    env:
+      PREVIEW_D1_DATABASE_NAME: dockmark-preview-pr-${{ github.event.pull_request.number }}
+      PREVIEW_KV_NAMESPACE_NAME: dockmark-preview
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -105,20 +115,20 @@ jobs:
         working-directory: apps/worker
         run: |
           corepack pnpm exec wrangler d1 list --json > "$RUNNER_TEMP/d1-list.json"
-          if node scripts/d1-exists.mjs "$RUNNER_TEMP/d1-list.json" dockmark-preview; then
-            echo "D1 database dockmark-preview already exists."
+          if node scripts/d1-exists.mjs "$RUNNER_TEMP/d1-list.json" "$PREVIEW_D1_DATABASE_NAME"; then
+            echo "D1 database $PREVIEW_D1_DATABASE_NAME already exists."
           else
-            echo "Creating D1 database dockmark-preview."
-            corepack pnpm exec wrangler d1 create dockmark-preview
+            echo "Creating D1 database $PREVIEW_D1_DATABASE_NAME."
+            corepack pnpm exec wrangler d1 create "$PREVIEW_D1_DATABASE_NAME"
             corepack pnpm exec wrangler d1 list --json > "$RUNNER_TEMP/d1-list.json"
           fi
 
           corepack pnpm exec wrangler kv namespace list > "$RUNNER_TEMP/kv-list.json"
-          if node -e "const fs=require('fs'); const xs=JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); process.exit(xs.some(x => x.title === 'dockmark-preview' || x.name === 'dockmark-preview') ? 0 : 1)" "$RUNNER_TEMP/kv-list.json"; then
-            echo "KV namespace dockmark-preview already exists."
+          if node -e "const fs=require('fs'); const xs=JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); const name=process.argv[2]; process.exit(xs.some(x => x.title === name || x.name === name) ? 0 : 1)" "$RUNNER_TEMP/kv-list.json" "$PREVIEW_KV_NAMESPACE_NAME"; then
+            echo "KV namespace $PREVIEW_KV_NAMESPACE_NAME already exists."
           else
-            echo "Creating KV namespace dockmark-preview."
-            corepack pnpm exec wrangler kv namespace create dockmark-preview
+            echo "Creating KV namespace $PREVIEW_KV_NAMESPACE_NAME."
+            corepack pnpm exec wrangler kv namespace create "$PREVIEW_KV_NAMESPACE_NAME"
             corepack pnpm exec wrangler kv namespace list > "$RUNNER_TEMP/kv-list.json"
           fi
         env:
@@ -128,7 +138,8 @@ jobs:
       - name: Generate preview Wrangler config
         working-directory: apps/worker
         run: |
-          PREVIEW_APP_VERSION="pr-${{ github.event.pull_request.number }}-${GITHUB_SHA::7}" \
+          PR_HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          PREVIEW_APP_VERSION="pr-${{ github.event.pull_request.number }}-${PR_HEAD_SHA::7}" \
             node scripts/write-preview-config.mjs \
               "$RUNNER_TEMP/d1-list.json" \
               "$RUNNER_TEMP/kv-list.json" \
@@ -154,32 +165,15 @@ jobs:
         id: upload-preview
         working-directory: apps/worker
         run: |
-          upload_version() {
-            corepack pnpm exec wrangler versions upload \
-              --config wrangler.preview.generated.jsonc \
-              --minify \
-              --preview-alias "pr-${{ github.event.pull_request.number }}" 2>&1
-          }
-
           set +e
-          upload_output="$(upload_version)"
+          upload_output="$(corepack pnpm exec wrangler versions upload \
+            --config wrangler.preview.generated.jsonc \
+            --minify \
+            --preview-alias "pr-${{ github.event.pull_request.number }}" 2>&1)"
           upload_status=$?
           set -e
+
           printf '%s\n' "$upload_output"
-
-          if [ "$upload_status" -ne 0 ] && printf '%s\n' "$upload_output" | grep -Fq 'does not yet exist'; then
-            echo "Preview Worker does not exist yet; creating its initial non-production deployment."
-            corepack pnpm exec wrangler deploy \
-              --config wrangler.preview.generated.jsonc \
-              --minify
-
-            set +e
-            upload_output="$(upload_version)"
-            upload_status=$?
-            set -e
-            printf '%s\n' "$upload_output"
-          fi
-
           if [ "$upload_status" -ne 0 ]; then
             exit "$upload_status"
           fi
@@ -202,8 +196,8 @@ jobs:
         with:
           script: |
             const marker = '<!-- dockmark-pr-preview -->'
-            const shortSha = context.sha.slice(0, 7)
-            const body = `${marker}\n## Cloudflare Preview ✅\n\n🌐 **Preview:** ${process.env.PREVIEW_URL}\n\nCommit: \`${shortSha}\`\n\nThis preview uses shared non-production D1/KV resources and demo data.`
+            const shortSha = context.payload.pull_request.head.sha.slice(0, 7)
+            const body = `${marker}\n## Cloudflare Preview ✅\n\n🌐 **Preview:** ${process.env.PREVIEW_URL}\n\nPR head: \`${shortSha}\`\n\nThis preview uses isolated D1 \`${process.env.PREVIEW_D1_DATABASE_NAME}\` and shared non-production KV with demo data.`
             const { owner, repo } = context.repo
             const issue_number = context.issue.number
             const comments = await github.paginate(github.rest.issues.listComments, {
@@ -226,6 +220,55 @@ jobs:
             } else {
               await github.rest.issues.createComment({ owner, repo, issue_number, body })
             }
+
+  cleanup-preview:
+    name: Cleanup preview D1
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.action == 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    concurrency:
+      group: cloudflare-preview-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
+    env:
+      PREVIEW_D1_DATABASE_NAME: dockmark-preview-pr-${{ github.event.pull_request.number }}
+    steps:
+      - name: Checkout base branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.24.0 --activate
+          corepack pnpm --version
+
+      - name: Install dependencies
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: Delete pull request D1
+        working-directory: apps/worker
+        run: |
+          corepack pnpm exec wrangler d1 list --json > "$RUNNER_TEMP/d1-list.json"
+          if node scripts/d1-exists.mjs "$RUNNER_TEMP/d1-list.json" "$PREVIEW_D1_DATABASE_NAME"; then
+            echo "Deleting D1 database $PREVIEW_D1_DATABASE_NAME."
+            corepack pnpm exec wrangler d1 delete "$PREVIEW_D1_DATABASE_NAME" --skip-confirmation
+          else
+            echo "D1 database $PREVIEW_D1_DATABASE_NAME is already absent."
+          fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   deploy:
     name: Deploy

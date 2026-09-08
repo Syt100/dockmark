@@ -8,14 +8,16 @@ Use Cloudflare Worker version uploads with aliased Preview URLs for pull request
 - Keep `AUTH_MODE=development` so reviewers can open the preview without provisioning Dockmark accounts.
 - Upload with `wrangler versions upload --preview-alias pr-<number>` so each pull request keeps a stable URL across commits.
 - Normal preview updates SHALL use version upload and SHALL NOT change production traffic.
-- Because Cloudflare cannot upload a version for a Worker that does not yet exist, the workflow MAY perform one initial `wrangler deploy` for the isolated `dockmark-preview` Worker only. After this bootstrap, subsequent PR previews use version uploads.
+- The isolated `dockmark-preview` Worker is already initialized; the workflow SHALL NOT contain first-run bootstrap deployment logic.
 
 ## Preview Storage
-Use shared non-production resources:
-- D1 database: `dockmark-preview`
+Use one D1 database per pull request and one shared non-production KV namespace:
+- D1 database: `dockmark-preview-pr-<number>`
 - KV namespace: `dockmark-preview`
 
-The workflow SHALL resolve or create these resources and write a generated Wrangler config containing their IDs. Preview migrations and demo seed data SHALL run against `dockmark-preview` only.
+The workflow SHALL resolve or create the pull-request D1 and shared KV resources and write a generated Wrangler config containing their IDs. Preview migrations and demo seed data SHALL run against the pull-request D1 only.
+
+When the pull request is closed, whether merged or not, CI SHALL delete only that pull request's D1 database. Cleanup SHALL be idempotent when the database is already absent.
 
 The existing local demo seed is idempotent and contains no secrets. For remote D1 execution, the workflow SHALL create a temporary seed copy without explicit SQL `BEGIN TRANSACTION` / `COMMIT` statements because remote D1 imports manage their own transaction boundary.
 
@@ -23,12 +25,15 @@ The existing local demo seed is idempotent and contains no secrets. For remote D
 After upload, the workflow SHALL add or update one bot-authored PR comment identified by a stable marker. The comment SHALL include:
 - Preview readiness
 - Preview URL
-- Short commit SHA
+- Short pull-request head commit SHA
+- Isolated preview D1 name
 
 Later commits SHALL update the same comment rather than create duplicates.
 
+The preview build may continue to use GitHub's pull-request merge ref so reviewers see the pull request integrated with the current base branch, but version metadata and the PR comment SHALL identify `github.event.pull_request.head.sha`, not the temporary merge commit SHA.
+
 ## Security
-- Fork PRs SHALL never execute the preview deployment job.
+- Fork PRs SHALL never execute the preview deployment or cleanup jobs.
 - Preview SHALL not bind production D1 or KV.
 - Preview SHALL use development auth and demo data only.
 - Production deployment behavior and secrets remain unchanged.
