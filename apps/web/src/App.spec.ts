@@ -5,30 +5,19 @@ import { afterEach, describe, expect, it } from 'vitest'
 import App from './App.vue'
 import { currentUser } from './auth/state'
 
-const RoutePage = defineComponent({
-  name: 'RoutePage',
+const RouterViewStub = defineComponent({
+  name: 'RouterView',
   setup() {
     return () => h('section', { 'data-testid': 'route-page' }, 'Route page')
   },
 })
 
-const RouterViewStub = defineComponent({
-  name: 'RouterView',
-  setup(_, { slots }) {
-    return () =>
-      slots.default?.({
-        Component: RoutePage,
-        route: { matched: [{ path: '/services' }], fullPath: '/services' },
-      })
-  },
-})
-
-describe('App route transition structure', () => {
+describe('App route rendering', () => {
   afterEach(() => {
     currentUser.value = null
   })
 
-  it('keeps the absolute transition viewport inside the padded page shell', () => {
+  it('renders top-level route content directly without a transition viewport', () => {
     const wrapper = mount(App, {
       global: {
         stubs: {
@@ -40,13 +29,11 @@ describe('App route transition structure', () => {
       },
     })
 
-    const viewport = wrapper.get('.dm-route-viewport')
-    const stage = wrapper.get('.dm-route-stage')
-    const pageShell = viewport.element.parentElement
+    const routePage = wrapper.get('[data-testid="route-page"]')
+    const pageShell = routePage.element.parentElement
 
-    expect(viewport.classes()).toContain('relative')
-    expect(stage.exists()).toBe(true)
     expect(pageShell?.className).toContain('px-[var(--dm-page-x)]')
-    expect(viewport.element.className).not.toContain('px-[var(--dm-page-x)]')
+    expect(wrapper.find('.dm-route-viewport').exists()).toBe(false)
+    expect(wrapper.find('.dm-route-stage').exists()).toBe(false)
   })
 })
