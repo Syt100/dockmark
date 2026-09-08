@@ -154,11 +154,18 @@ jobs:
         id: upload-preview
         working-directory: apps/worker
         run: |
+          set +e
           upload_output="$(corepack pnpm exec wrangler versions upload \
             --config wrangler.preview.generated.jsonc \
             --minify \
             --preview-alias "pr-${{ github.event.pull_request.number }}" 2>&1)"
+          upload_status=$?
+          set -e
+
           printf '%s\n' "$upload_output"
+          if [ "$upload_status" -ne 0 ]; then
+            exit "$upload_status"
+          fi
 
           preview_url="$(printf '%s\n' "$upload_output" | grep -Eo 'https://[A-Za-z0-9.-]+\.workers\.dev' | tail -n 1)"
           if [ -z "$preview_url" ]; then
