@@ -154,15 +154,32 @@ jobs:
         id: upload-preview
         working-directory: apps/worker
         run: |
+          upload_version() {
+            corepack pnpm exec wrangler versions upload \
+              --config wrangler.preview.generated.jsonc \
+              --minify \
+              --preview-alias "pr-${{ github.event.pull_request.number }}" 2>&1
+          }
+
           set +e
-          upload_output="$(corepack pnpm exec wrangler versions upload \
-            --config wrangler.preview.generated.jsonc \
-            --minify \
-            --preview-alias "pr-${{ github.event.pull_request.number }}" 2>&1)"
+          upload_output="$(upload_version)"
           upload_status=$?
           set -e
-
           printf '%s\n' "$upload_output"
+
+          if [ "$upload_status" -ne 0 ] && printf '%s\n' "$upload_output" | grep -Fq 'does not yet exist'; then
+            echo "Preview Worker does not exist yet; creating its initial non-production deployment."
+            corepack pnpm exec wrangler deploy \
+              --config wrangler.preview.generated.jsonc \
+              --minify
+
+            set +e
+            upload_output="$(upload_version)"
+            upload_status=$?
+            set -e
+            printf '%s\n' "$upload_output"
+          fi
+
           if [ "$upload_status" -ne 0 ]; then
             exit "$upload_status"
           fi
