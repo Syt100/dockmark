@@ -67,12 +67,16 @@ async function logout() {
       </div>
     </header>
 
-    <div class="relative mx-auto max-w-6xl px-[var(--dm-page-x)] py-[var(--dm-page-y)]">
-      <RouterView v-slot="{ Component, route }">
-        <Transition name="dm-route">
-          <component :is="Component" :key="routeTransitionKey(route)" />
-        </Transition>
-      </RouterView>
+    <div class="mx-auto max-w-6xl px-[var(--dm-page-x)] py-[var(--dm-page-y)]">
+      <div class="dm-route-viewport relative">
+        <RouterView v-slot="{ Component, route }">
+          <Transition name="dm-route">
+            <div :key="routeTransitionKey(route)" class="dm-route-stage">
+              <component :is="Component" />
+            </div>
+          </Transition>
+        </RouterView>
+      </div>
     </div>
   </div>
 </template>

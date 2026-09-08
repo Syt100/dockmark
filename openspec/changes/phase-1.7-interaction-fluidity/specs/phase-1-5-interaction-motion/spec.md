@@ -8,7 +8,8 @@ Dockmark SHALL make route and modal/editor transitions visually traceable withou
 #### Scenario: User changes top-level routes
 - **WHEN** the user navigates between Phase 1 frontend routes
 - **THEN** the newly rendered route content SHALL begin appearing immediately without waiting for the previous route to finish its leave transition
-- **AND** the transition SHALL use lightweight opacity/transform motion.
+- **AND** the top-level transition SHALL use a lightweight opacity crossfade without directional translate motion
+- **AND** entering and leaving route content SHALL retain the same page content-box geometry during the overlap so the transition itself does not introduce a visible positional snap.
 
 #### Scenario: User opens or closes a desktop editor
 - **WHEN** a desktop-width user opens or closes a create or edit route
