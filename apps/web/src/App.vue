@@ -7,7 +7,6 @@ import AppButton from './components/AppButton.vue'
 import ThemeToggle from './components/ThemeToggle.vue'
 
 const navItems = [
-  { to: '/', label: '首页' },
   { to: '/services', label: '服务' },
   { to: '/categories', label: '分类' },
   { to: '/tags', label: '标签' },
@@ -36,7 +35,7 @@ async function logout() {
       <div
         class="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-3 sm:px-6 sm:py-4 md:flex-row md:items-center md:justify-between"
       >
-        <RouterLink to="/" class="text-lg font-semibold text-[var(--dm-text)]">Dockmark</RouterLink>
+        <RouterLink to="/services" class="text-lg font-semibold text-[var(--dm-text)]">Dockmark</RouterLink>
 
         <div class="flex flex-wrap items-center gap-2 md:justify-end">
           <nav
