@@ -221,10 +221,7 @@ watch(
 <template>
   <main class="dm-page-grid">
     <div :class="hasEditor ? 'hidden md:grid md:gap-[var(--dm-section-gap)]' : 'dm-page-grid'">
-      <PageHeader
-        title="服务"
-        description="用卡片快速打开服务，或切换列表视图进行集中管理。"
-      >
+      <PageHeader title="服务" description="用卡片快速打开服务，或切换列表视图进行集中管理。">
         <template #actions>
           <RefreshIndicator :active="isRefreshing" />
 
@@ -415,11 +412,7 @@ watch(
                 <th class="px-3 py-3 text-right font-medium">操作</th>
               </tr>
             </thead>
-            <TransitionGroup
-              name="dm-list"
-              tag="tbody"
-              class="divide-y divide-[var(--dm-border)]"
-            >
+            <TransitionGroup name="dm-list" tag="tbody" class="divide-y divide-[var(--dm-border)]">
               <tr
                 v-for="row in serviceRows"
                 :key="row.item.id"
