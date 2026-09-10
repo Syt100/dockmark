@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { useManagementList } from './managementList'
 
+type TestRecord = { id: string; name: string }
+
 function deferred<T>() {
   let resolve!: (value: T) => void
   let reject!: (reason?: unknown) => void
@@ -25,11 +27,11 @@ const messages = {
 
 describe('useManagementList', () => {
   it('uses the blocking loading state only for the initial load', async () => {
-    const firstLoad = deferred<Array<{ id: string; name: string }>>()
-    const loadRecords = vi.fn(() => firstLoad.promise)
+    const firstLoad = deferred<TestRecord[]>()
+    const loadRecords = vi.fn<() => Promise<TestRecord[]>>(() => firstLoad.promise)
     const state = useManagementList({
       loadRecords,
-      deleteRecord: vi.fn(async () => undefined),
+      deleteRecord: vi.fn<(id: string) => Promise<void>>(async () => undefined),
       ...messages,
     })
 
@@ -45,14 +47,14 @@ describe('useManagementList', () => {
   })
 
   it('keeps existing records visible while a later refresh is pending', async () => {
-    const refresh = deferred<Array<{ id: string; name: string }>>()
+    const refresh = deferred<TestRecord[]>()
     const loadRecords = vi
-      .fn<() => Promise<Array<{ id: string; name: string }>>>()
+      .fn<() => Promise<TestRecord[]>>()
       .mockResolvedValueOnce([{ id: 'a', name: 'A' }])
       .mockImplementationOnce(() => refresh.promise)
     const state = useManagementList({
       loadRecords,
-      deleteRecord: vi.fn(async () => undefined),
+      deleteRecord: vi.fn<(id: string) => Promise<void>>(async () => undefined),
       ...messages,
     })
 
@@ -71,15 +73,15 @@ describe('useManagementList', () => {
   })
 
   it('removes a deleted record locally before the follow-up refresh completes', async () => {
-    const refresh = deferred<Array<{ id: string; name: string }>>()
+    const refresh = deferred<TestRecord[]>()
     const loadRecords = vi
-      .fn<() => Promise<Array<{ id: string; name: string }>>>()
+      .fn<() => Promise<TestRecord[]>>()
       .mockResolvedValueOnce([
         { id: 'a', name: 'A' },
         { id: 'b', name: 'B' },
       ])
       .mockImplementationOnce(() => refresh.promise)
-    const deleteRecord = vi.fn(async () => undefined)
+    const deleteRecord = vi.fn<(id: string) => Promise<void>>(async () => undefined)
     const state = useManagementList({ loadRecords, deleteRecord, ...messages })
 
     await state.load()
