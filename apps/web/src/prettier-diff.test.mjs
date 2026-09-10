@@ -8,8 +8,8 @@ test('prints the final ServicesView prettier diff', () => {
     stdio: 'pipe',
   })
 
-  const diff = execFileSync('git', ['diff', '--', 'apps/web/src/views/ServicesView.vue'], {
-    cwd: new URL('../../..', import.meta.url),
+  const diff = execFileSync('git', ['diff', '--', 'src/views/ServicesView.vue'], {
+    cwd: process.cwd(),
     encoding: 'utf8',
   })
 
