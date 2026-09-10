@@ -132,7 +132,12 @@ router.beforeEach(async (to, from) => {
     return { name: 'services' }
   }
 
-  if (isServiceEditor && from.name === 'services' && from.query.mode === 'manage' && to.query.mode !== 'manage') {
+  if (
+    isServiceEditor &&
+    from.name === 'services' &&
+    from.query.mode === 'manage' &&
+    to.query.mode !== 'manage'
+  ) {
     return {
       name: to.name,
       params: to.params,
