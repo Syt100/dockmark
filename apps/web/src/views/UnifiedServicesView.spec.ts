@@ -50,6 +50,6 @@ describe('UnifiedServicesView', () => {
     expect(router.currentRoute.value.query.mode).toBe('manage')
     expect(tabs[0]?.attributes('aria-selected')).toBe('false')
     expect(tabs[1]?.attributes('aria-selected')).toBe('true')
-    expect(wrapper.find('async-component-wrapper-stub').exists()).toBe(true)
+    expect(wrapper.find('home-view-stub').exists()).toBe(false)
   })
 })
