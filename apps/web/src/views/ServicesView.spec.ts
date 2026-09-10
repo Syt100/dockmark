@@ -111,7 +111,9 @@ describe('ServicesView', () => {
     expect(wrapper.find('[aria-label="列表视图"]').attributes('aria-pressed')).toBe('false')
     expect(wrapper.find('[aria-label="展开筛选"]').exists()).toBe(true)
     expect(wrapper.find('#service-filters').exists()).toBe(false)
-    expect(wrapper.find('a[aria-label="编辑服务"]').attributes('href')).toBe('/services/item_1/edit')
+    expect(wrapper.find('a[aria-label="编辑服务"]').attributes('href')).toBe(
+      '/services/item_1/edit',
+    )
 
     vi.unstubAllGlobals()
   })
@@ -145,7 +147,9 @@ describe('ServicesView', () => {
     const wrapper = mount(ServicesView, { global: { plugins: [router] } })
 
     await vi.waitFor(() => expect(wrapper.text()).toContain('Immich'))
-    const itemsRequestsBefore = fetchMock.mock.calls.filter(([input]) => String(input) === '/api/items').length
+    const itemsRequestsBefore = fetchMock.mock.calls.filter(
+      ([input]) => String(input) === '/api/items',
+    ).length
 
     await wrapper.get('[aria-label="列表视图"]').trigger('click')
     await vi.waitFor(() => expect(router.currentRoute.value.query.view).toBe('list'))
