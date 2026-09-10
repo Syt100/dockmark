@@ -1,8 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
 import { authSetupStatus, currentUser, ensureAuthState } from '../auth/state'
 
-const loadServicesView = () => import('../views/ServicesView.vue')
+const loadUnifiedServicesView = () => import('../views/UnifiedServicesView.vue')
 const loadServiceEditorView = () => import('../views/ServiceEditorView.vue')
 const loadCategoriesView = () => import('../views/CategoriesView.vue')
 const loadCategoryEditorView = () => import('../views/CategoryEditorView.vue')
@@ -15,7 +14,7 @@ const loadSetupView = () => import('../views/SetupView.vue')
 
 export function preloadPrimaryRoutes() {
   void Promise.allSettled([
-    loadServicesView(),
+    loadUnifiedServicesView(),
     loadCategoriesView(),
     loadTagsView(),
     loadImportExportView(),
@@ -29,12 +28,12 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomeView,
+      redirect: '/services',
     },
     {
       path: '/services',
       name: 'services',
-      component: loadServicesView,
+      component: loadUnifiedServicesView,
       children: [
         {
           path: 'new',
@@ -107,17 +106,19 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach(async (to) => {
+router.beforeEach(async (to, from) => {
   await ensureAuthState()
 
   const isPublic = to.meta.public === true
+  const isServiceEditor = to.name === 'service-new' || to.name === 'service-edit'
+  const cameFromServiceEditor = from.name === 'service-new' || from.name === 'service-edit'
 
   if (authSetupStatus.value?.needsSetup && to.name !== 'setup') {
     return { name: 'setup' }
   }
 
   if (!authSetupStatus.value?.needsSetup && to.name === 'setup') {
-    return { name: currentUser.value ? 'home' : 'login' }
+    return { name: currentUser.value ? 'services' : 'login' }
   }
 
   if (!currentUser.value && !isPublic) {
@@ -128,7 +129,22 @@ router.beforeEach(async (to) => {
   }
 
   if (currentUser.value && to.name === 'login') {
-    return { name: 'home' }
+    return { name: 'services' }
+  }
+
+  if (isServiceEditor && from.name === 'services' && from.query.mode === 'manage' && to.query.mode !== 'manage') {
+    return {
+      name: to.name,
+      params: to.params,
+      query: { ...to.query, mode: 'manage' },
+    }
+  }
+
+  if (to.name === 'services' && cameFromServiceEditor && to.query.mode !== 'manage') {
+    return {
+      name: 'services',
+      query: { ...to.query, mode: 'manage' },
+    }
   }
 
   return true
