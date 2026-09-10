@@ -72,6 +72,37 @@ describe('useManagementList', () => {
     expect(state.isRefreshing.value).toBe(false)
   })
 
+  it('keeps the newest refresh result when requests resolve out of order', async () => {
+    const olderRefresh = deferred<TestRecord[]>()
+    const newerRefresh = deferred<TestRecord[]>()
+    const loadRecords = vi
+      .fn<() => Promise<TestRecord[]>>()
+      .mockResolvedValueOnce([{ id: 'a', name: 'Initial' }])
+      .mockImplementationOnce(() => olderRefresh.promise)
+      .mockImplementationOnce(() => newerRefresh.promise)
+    const state = useManagementList({
+      loadRecords,
+      deleteRecord: vi.fn<(id: string) => Promise<void>>(async () => undefined),
+      ...messages,
+    })
+
+    await state.load()
+    const older = state.load()
+    const newer = state.load()
+
+    newerRefresh.resolve([{ id: 'a', name: 'Newest' }])
+    await newer
+
+    expect(state.records.value).toEqual([{ id: 'a', name: 'Newest' }])
+    expect(state.isRefreshing.value).toBe(false)
+
+    olderRefresh.resolve([{ id: 'a', name: 'Stale' }])
+    await older
+
+    expect(state.records.value).toEqual([{ id: 'a', name: 'Newest' }])
+    expect(state.isRefreshing.value).toBe(false)
+  })
+
   it('removes a deleted record locally before the follow-up refresh completes', async () => {
     const refresh = deferred<TestRecord[]>()
     const loadRecords = vi

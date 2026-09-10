@@ -36,8 +36,11 @@ export function useManagementList<T extends { id: string }>(options: {
   const isLoading = ref(false)
   const isRefreshing = ref(false)
   const hasLoaded = ref(false)
+  let latestLoadId = 0
 
   async function load() {
+    const loadId = ++latestLoadId
+
     if (hasLoaded.value) {
       isRefreshing.value = true
     } else {
@@ -46,13 +49,25 @@ export function useManagementList<T extends { id: string }>(options: {
     error.value = null
 
     try {
-      records.value = await options.loadRecords()
+      const nextRecords = await options.loadRecords()
+
+      if (loadId !== latestLoadId) {
+        return
+      }
+
+      records.value = nextRecords
       hasLoaded.value = true
     } catch (caught) {
+      if (loadId !== latestLoadId) {
+        return
+      }
+
       error.value = toChineseError(caught, options.loadErrorMessage)
     } finally {
-      isLoading.value = false
-      isRefreshing.value = false
+      if (loadId === latestLoadId) {
+        isLoading.value = false
+        isRefreshing.value = false
+      }
     }
   }
 

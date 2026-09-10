@@ -284,23 +284,6 @@ a {
   opacity: 0;
 }
 
-.dm-route-enter-active,
-.dm-route-leave-active {
-  transition:
-    opacity var(--dm-motion-base) var(--dm-motion-ease),
-    transform var(--dm-motion-base) var(--dm-motion-ease);
-}
-
-.dm-route-enter-from {
-  opacity: 0;
-  transform: translateY(0.25rem);
-}
-
-.dm-route-leave-to {
-  opacity: 0;
-  transform: translateY(-0.125rem);
-}
-
 .dm-panel-enter-active,
 .dm-panel-leave-active {
   transition:
@@ -328,8 +311,7 @@ a {
 }
 
 .dm-list-enter-active,
-.dm-list-leave-active,
-.dm-list-move {
+.dm-list-leave-active {
   transition:
     opacity var(--dm-motion-base) var(--dm-motion-ease),
     transform var(--dm-motion-base) var(--dm-motion-ease);
@@ -374,8 +356,6 @@ a {
     animation-iteration-count: 1 !important;
   }
 
-  .dm-route-enter-from,
-  .dm-route-leave-to,
   .dm-panel-enter-from,
   .dm-panel-leave-to,
   .dm-feedback-enter-from,

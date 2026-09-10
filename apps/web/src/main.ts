@@ -10,4 +10,8 @@ app.use(router)
 
 app.mount('#app')
 
-window.setTimeout(preloadPrimaryRoutes, 0)
+if ('requestIdleCallback' in window) {
+  window.requestIdleCallback(preloadPrimaryRoutes, { timeout: 1500 })
+} else {
+  window.setTimeout(preloadPrimaryRoutes, 1000)
+}

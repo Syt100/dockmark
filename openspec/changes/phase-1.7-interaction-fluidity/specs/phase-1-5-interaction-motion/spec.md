@@ -9,6 +9,7 @@ Dockmark SHALL make route and modal/editor transitions visually traceable withou
 - **WHEN** the user navigates between Phase 1 frontend routes
 - **THEN** the target route content SHALL replace the previous top-level route directly
 - **AND** Dockmark SHALL NOT overlap old and new top-level route content with a page-level enter/leave transition
+- **AND** obsolete page-level route transition styles SHALL NOT remain as active interaction behavior
 - **AND** the active navigation item SHALL provide immediate color/background feedback.
 
 #### Scenario: User opens or closes a desktop editor
@@ -35,11 +36,17 @@ Dockmark SHALL keep management pages visually stable during loading, refresh, an
 - **THEN** existing records SHALL remain rendered while the request is pending
 - **AND** a compact refresh status SHALL indicate background activity.
 
+#### Scenario: Management refreshes resolve out of order
+- **WHEN** multiple management-list loads are in flight and an older request resolves after a newer request
+- **THEN** only the newest request SHALL update rendered records or load errors
+- **AND** the older request SHALL NOT clear loading or refresh state owned by the newer request.
+
 #### Scenario: User deletes a management record
 - **WHEN** the delete request succeeds
 - **THEN** the deleted record SHALL be removed from local rendered state without waiting for the follow-up fetch
 - **AND** Dockmark SHALL perform a non-blocking refresh to reconcile with server state
-- **AND** record-level enter/leave feedback MAY animate locally without adding a top-level route transition.
+- **AND** the entering or leaving record MAY animate locally
+- **AND** remaining records SHALL NOT use move interpolation when their positions change.
 
 ### Requirement: Immediate Interaction Feedback
 Dockmark SHALL provide lightweight feedback for frequently used navigation and controls.
@@ -51,5 +58,6 @@ Dockmark SHALL provide lightweight feedback for frequently used navigation and c
 
 #### Scenario: Application becomes idle after startup
 - **WHEN** Dockmark has mounted and primary lazy routes have not yet been visited
-- **THEN** Dockmark SHALL begin loading the primary route code chunks in the background
+- **THEN** Dockmark SHALL schedule loading of the primary route code chunks during browser idle time
+- **AND** a delayed fallback SHALL be used when the browser does not support idle callbacks
 - **AND** this preload SHALL NOT itself request management data.
