@@ -131,7 +131,12 @@ router.beforeEach(async (to, from) => {
     return { name: 'services' }
   }
 
-  if (to.name === 'services' && cameFromServiceEditor && from.query.view === 'list' && to.query.view !== 'list') {
+  if (
+    to.name === 'services' &&
+    cameFromServiceEditor &&
+    from.query.view === 'list' &&
+    to.query.view !== 'list'
+  ) {
     return {
       name: 'services',
       query: { ...to.query, view: 'list' },
