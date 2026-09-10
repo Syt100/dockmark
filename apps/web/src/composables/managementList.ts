@@ -12,6 +12,7 @@ export type ManagementListState<T> = {
   error: Ref<string | null>
   feedback: Ref<string | null>
   isLoading: Ref<boolean>
+  isRefreshing: Ref<boolean>
   load: () => Promise<void>
   applySavedFlash: (value: unknown) => boolean
   remove: (id: string) => Promise<void>
@@ -21,7 +22,7 @@ export function isSavedMarker(value: unknown): value is keyof SavedFlashMessages
   return value === 'created' || value === 'updated'
 }
 
-export function useManagementList<T>(options: {
+export function useManagementList<T extends { id: string }>(options: {
   loadRecords: () => Promise<T[]>
   deleteRecord: (id: string) => Promise<void>
   loadErrorMessage: string
@@ -33,17 +34,40 @@ export function useManagementList<T>(options: {
   const error = ref<string | null>(null)
   const feedback = ref<string | null>(null)
   const isLoading = ref(false)
+  const isRefreshing = ref(false)
+  const hasLoaded = ref(false)
+  let latestLoadId = 0
 
   async function load() {
-    isLoading.value = true
+    const loadId = ++latestLoadId
+
+    if (hasLoaded.value) {
+      isRefreshing.value = true
+    } else {
+      isLoading.value = true
+    }
     error.value = null
 
     try {
-      records.value = await options.loadRecords()
+      const nextRecords = await options.loadRecords()
+
+      if (loadId !== latestLoadId) {
+        return
+      }
+
+      records.value = nextRecords
+      hasLoaded.value = true
     } catch (caught) {
+      if (loadId !== latestLoadId) {
+        return
+      }
+
       error.value = toChineseError(caught, options.loadErrorMessage)
     } finally {
-      isLoading.value = false
+      if (loadId === latestLoadId) {
+        isLoading.value = false
+        isRefreshing.value = false
+      }
     }
   }
 
@@ -62,6 +86,7 @@ export function useManagementList<T>(options: {
 
     try {
       await options.deleteRecord(id)
+      records.value = records.value.filter((record) => record.id !== id)
       feedback.value = options.deleteSuccessMessage
       await load()
     } catch (caught) {
@@ -74,6 +99,7 @@ export function useManagementList<T>(options: {
     error,
     feedback,
     isLoading,
+    isRefreshing,
     load,
     applySavedFlash,
     remove,

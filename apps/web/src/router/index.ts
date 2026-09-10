@@ -2,6 +2,27 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import { authSetupStatus, currentUser, ensureAuthState } from '../auth/state'
 
+const loadServicesView = () => import('../views/ServicesView.vue')
+const loadServiceEditorView = () => import('../views/ServiceEditorView.vue')
+const loadCategoriesView = () => import('../views/CategoriesView.vue')
+const loadCategoryEditorView = () => import('../views/CategoryEditorView.vue')
+const loadTagsView = () => import('../views/TagsView.vue')
+const loadTagEditorView = () => import('../views/TagEditorView.vue')
+const loadImportExportView = () => import('../views/ImportExportView.vue')
+const loadAboutView = () => import('../views/AboutView.vue')
+const loadLoginView = () => import('../views/LoginView.vue')
+const loadSetupView = () => import('../views/SetupView.vue')
+
+export function preloadPrimaryRoutes() {
+  void Promise.allSettled([
+    loadServicesView(),
+    loadCategoriesView(),
+    loadTagsView(),
+    loadImportExportView(),
+    loadAboutView(),
+  ])
+}
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -13,74 +34,74 @@ const router = createRouter({
     {
       path: '/services',
       name: 'services',
-      component: () => import('../views/ServicesView.vue'),
+      component: loadServicesView,
       children: [
         {
           path: 'new',
           name: 'service-new',
-          component: () => import('../views/ServiceEditorView.vue'),
+          component: loadServiceEditorView,
         },
         {
           path: ':id/edit',
           name: 'service-edit',
-          component: () => import('../views/ServiceEditorView.vue'),
+          component: loadServiceEditorView,
         },
       ],
     },
     {
       path: '/categories',
       name: 'categories',
-      component: () => import('../views/CategoriesView.vue'),
+      component: loadCategoriesView,
       children: [
         {
           path: 'new',
           name: 'category-new',
-          component: () => import('../views/CategoryEditorView.vue'),
+          component: loadCategoryEditorView,
         },
         {
           path: ':id/edit',
           name: 'category-edit',
-          component: () => import('../views/CategoryEditorView.vue'),
+          component: loadCategoryEditorView,
         },
       ],
     },
     {
       path: '/tags',
       name: 'tags',
-      component: () => import('../views/TagsView.vue'),
+      component: loadTagsView,
       children: [
         {
           path: 'new',
           name: 'tag-new',
-          component: () => import('../views/TagEditorView.vue'),
+          component: loadTagEditorView,
         },
         {
           path: ':id/edit',
           name: 'tag-edit',
-          component: () => import('../views/TagEditorView.vue'),
+          component: loadTagEditorView,
         },
       ],
     },
     {
       path: '/about',
       name: 'about',
-      component: () => import('../views/AboutView.vue'),
+      component: loadAboutView,
     },
     {
       path: '/import-export',
       name: 'import-export',
-      component: () => import('../views/ImportExportView.vue'),
+      component: loadImportExportView,
     },
     {
       path: '/login',
       name: 'login',
-      component: () => import('../views/LoginView.vue'),
+      component: loadLoginView,
       meta: { public: true },
     },
     {
       path: '/setup',
       name: 'setup',
-      component: () => import('../views/SetupView.vue'),
+      component: loadSetupView,
       meta: { public: true },
     },
   ],

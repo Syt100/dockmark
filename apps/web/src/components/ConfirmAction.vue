@@ -82,20 +82,24 @@ onBeforeUnmount(unlockBodyScroll)
   </span>
 
   <Teleport to="body">
-    <Transition name="dm-panel">
-      <div
-        v-if="isConfirming"
-        class="fixed inset-0 z-50 grid place-items-center p-4"
-        @keydown.esc.stop.prevent="closeConfirm"
-      >
+    <div
+      class="pointer-events-none fixed inset-0 z-50 grid place-items-center p-4"
+      @keydown.esc.stop.prevent="closeConfirm"
+    >
+      <Transition name="dm-fade">
         <button
-          class="absolute inset-0 cursor-default bg-[var(--dm-overlay)]"
+          v-if="isConfirming"
+          class="pointer-events-auto absolute inset-0 cursor-default bg-[var(--dm-overlay)]"
           type="button"
           aria-label="取消删除"
           @click="closeConfirm"
         ></button>
+      </Transition>
+
+      <Transition name="dm-panel">
         <section
-          class="relative grid w-[min(22rem,calc(100vw-2rem))] gap-4 rounded-[var(--dm-radius-surface)] border border-[var(--dm-border)] bg-[var(--dm-surface-elevated)] p-4 text-left shadow-[var(--dm-shadow-elevated)]"
+          v-if="isConfirming"
+          class="pointer-events-auto relative grid w-[min(22rem,calc(100vw-2rem))] gap-4 rounded-[var(--dm-radius-surface)] border border-[var(--dm-border)] bg-[var(--dm-surface-elevated)] p-4 text-left shadow-[var(--dm-shadow-elevated)]"
           role="dialog"
           aria-modal="true"
           aria-label="确认删除"
@@ -115,7 +119,7 @@ onBeforeUnmount(unlockBodyScroll)
             >
           </div>
         </section>
-      </div>
-    </Transition>
+      </Transition>
+    </div>
   </Teleport>
 </template>

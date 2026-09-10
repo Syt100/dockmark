@@ -39,11 +39,11 @@ describe('ResponsiveEditorShell', () => {
     document.body.style.overflow = ''
   })
 
-  it('locks body scroll and closes the desktop dialog with Escape', async () => {
+  it('closes the desktop dialog through its leave state before returning to the parent route', async () => {
     const router = createTestRouter()
     await router.isReady()
 
-    mount(ResponsiveEditorShell, {
+    const wrapper = mount(ResponsiveEditorShell, {
       props: {
         title: '新建服务',
         backTo: '/services',
@@ -57,11 +57,14 @@ describe('ResponsiveEditorShell', () => {
     })
 
     expect(document.body.style.overflow).toBe('hidden')
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(true)
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
     await nextTick()
-    await new Promise((resolve) => window.setTimeout(resolve, 0))
 
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
+
+    await new Promise((resolve) => window.setTimeout(resolve, 300))
     expect(router.currentRoute.value.path).toBe('/services')
   })
 

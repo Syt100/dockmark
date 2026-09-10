@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { RouterLink, useRouter, type RouteLocationRaw } from 'vue-router'
 
 import AppIconButton from './AppIconButton.vue'
 
@@ -9,17 +9,21 @@ const props = defineProps<{
   backTo: string
 }>()
 
+defineSlots<{
+  default(props: { close: (target?: RouteLocationRaw) => void }): unknown
+}>()
+
 const router = useRouter()
 const dialog = ref<HTMLElement | null>(null)
 const previouslyFocused = ref<Element | null>(null)
+const isVisible = ref(true)
+const isClosing = ref(false)
 
 let mediaQuery: MediaQueryList | null = null
 let originalBodyOverflow = ''
 let isBodyLocked = false
-
-function close() {
-  void router.push(props.backTo)
-}
+let pendingTarget: RouteLocationRaw = props.backTo
+let closeFallbackTimer: number | null = null
 
 function getDesktopMediaQuery() {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
@@ -35,6 +39,45 @@ function isDesktopEditor() {
   }
 
   return getDesktopMediaQuery()?.matches ?? window.innerWidth >= 768
+}
+
+function clearCloseFallback() {
+  if (closeFallbackTimer !== null) {
+    window.clearTimeout(closeFallbackTimer)
+    closeFallbackTimer = null
+  }
+}
+
+function close(target: RouteLocationRaw = props.backTo) {
+  if (isClosing.value) {
+    return
+  }
+
+  if (!isDesktopEditor()) {
+    void router.push(target)
+    return
+  }
+
+  pendingTarget = target
+  isClosing.value = true
+  isVisible.value = false
+  closeFallbackTimer = window.setTimeout(() => {
+    void finishClose()
+  }, 260)
+}
+
+async function finishClose() {
+  if (!isClosing.value) {
+    return
+  }
+
+  isClosing.value = false
+  clearCloseFallback()
+  const failure = await router.push(pendingTarget)
+
+  if (failure) {
+    isVisible.value = true
+  }
 }
 
 function lockBodyScroll() {
@@ -91,6 +134,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  clearCloseFallback()
   mediaQuery?.removeEventListener('change', syncBodyScrollLock)
   document.removeEventListener('keydown', handleKeydown)
   unlockBodyScroll()
@@ -113,21 +157,23 @@ onBeforeUnmount(() => {
         <h1 class="text-lg font-semibold text-[var(--dm-text)]">{{ title }}</h1>
         <span class="w-8" aria-hidden="true"></span>
       </div>
-      <slot />
+      <slot :close="close" />
     </div>
 
     <div class="hidden md:block">
       <Transition appear name="dm-fade">
         <button
+          v-if="isVisible"
           class="fixed inset-0 z-30 cursor-default bg-[var(--dm-overlay)]"
           type="button"
           aria-label="关闭编辑器"
-          @click="close"
+          @click="close()"
         ></button>
       </Transition>
-      <div class="fixed inset-0 z-40 grid place-items-center p-6 pointer-events-none">
-        <Transition appear name="dm-panel">
+      <div class="pointer-events-none fixed inset-0 z-40 grid place-items-center p-6">
+        <Transition appear name="dm-panel" @after-leave="finishClose">
           <section
+            v-if="isVisible"
             ref="dialog"
             class="pointer-events-auto max-h-[calc(100dvh-4rem)] w-[min(760px,calc(100vw-3rem))] overflow-auto rounded-[var(--dm-radius-surface)] bg-[var(--dm-surface-elevated)] shadow-[var(--dm-shadow-elevated)]"
             role="dialog"
@@ -139,7 +185,7 @@ onBeforeUnmount(() => {
               class="sticky top-0 z-10 flex items-center justify-between border-b border-[var(--dm-border)] bg-[var(--dm-surface-elevated)] px-5 py-4"
             >
               <h1 class="text-lg font-semibold text-[var(--dm-text)]">{{ title }}</h1>
-              <AppIconButton label="关闭" type="button" @click="close">
+              <AppIconButton label="关闭" type="button" @click="close()">
                 <svg
                   aria-hidden="true"
                   class="h-5 w-5"
@@ -153,7 +199,7 @@ onBeforeUnmount(() => {
               </AppIconButton>
             </div>
             <div class="p-5">
-              <slot />
+              <slot :close="close" />
             </div>
           </section>
         </Transition>

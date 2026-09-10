@@ -11,7 +11,9 @@ import AppLinkButton from '../components/AppLinkButton.vue'
 import AppSelect from '../components/AppSelect.vue'
 import ConfirmAction from '../components/ConfirmAction.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
+import ListLoadingSkeleton from '../components/ListLoadingSkeleton.vue'
 import PageHeader from '../components/PageHeader.vue'
+import RefreshIndicator from '../components/RefreshIndicator.vue'
 import SearchInput from '../components/SearchInput.vue'
 import ServiceIcon from '../components/ServiceIcon.vue'
 import { useManagementList } from '../composables/managementList'
@@ -34,6 +36,7 @@ const {
   error,
   feedback,
   isLoading,
+  isRefreshing,
   load,
   applySavedFlash,
   remove,
@@ -158,6 +161,7 @@ watch(
         description="管理自部署服务、访问地址、标签和 Vaultwarden 搜索提示。"
       >
         <template #actions>
+          <RefreshIndicator :active="isRefreshing" />
           <AppLinkButton to="/services/new" tone="primary">新建服务</AppLinkButton>
         </template>
       </PageHeader>
@@ -264,12 +268,7 @@ watch(
       <FeedbackMessage tone="success" :message="feedback" />
       <FeedbackMessage tone="error" :message="error" />
 
-      <section
-        v-if="isLoading"
-        class="dm-surface p-[var(--dm-panel-padding)] text-sm text-[var(--dm-text-muted)]"
-      >
-        正在加载服务...
-      </section>
+      <ListLoadingSkeleton v-if="isLoading" label="正在加载服务..." />
 
       <section v-else-if="filteredItems.length === 0" class="dm-surface p-8 text-center">
         <p class="text-base font-medium text-[var(--dm-text)]">
@@ -303,7 +302,7 @@ watch(
                 <th class="px-3 py-3 text-right font-medium">操作</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-[var(--dm-border)]">
+            <TransitionGroup name="dm-list" tag="tbody" class="divide-y divide-[var(--dm-border)]">
               <tr
                 v-for="row in serviceRows"
                 :key="row.item.id"
@@ -402,11 +401,11 @@ watch(
                   </div>
                 </td>
               </tr>
-            </tbody>
+            </TransitionGroup>
           </table>
         </div>
 
-        <div class="grid gap-2 lg:hidden">
+        <TransitionGroup name="dm-list" tag="div" class="grid gap-2 lg:hidden">
           <article
             v-for="row in serviceRows"
             :key="row.item.id"
@@ -492,7 +491,7 @@ watch(
               </div>
             </div>
           </article>
-        </div>
+        </TransitionGroup>
       </section>
     </div>
 
