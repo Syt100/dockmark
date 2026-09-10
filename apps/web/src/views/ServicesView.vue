@@ -358,7 +358,11 @@ watch(
           {{ hasFilters ? '没有符合筛选条件的服务' : '还没有服务' }}
         </p>
         <p class="mt-1 text-sm text-[var(--dm-text-muted)]">
-          {{ hasFilters ? '展开筛选后可以清空条件或换一个条件试试。' : '可以新建服务，开始整理自部署入口。' }}
+          {{
+            hasFilters
+              ? '展开筛选后可以清空条件或换一个条件试试。'
+              : '可以新建服务，开始整理自部署入口。'
+          }}
         </p>
         <div class="mt-4 flex justify-center gap-2">
           <AppButton v-if="hasFilters" type="button" @click="clearFilters">清空筛选</AppButton>
@@ -372,10 +376,16 @@ watch(
             <h2 class="text-lg font-semibold text-[var(--dm-text)]">
               {{ group.icon || '' }} {{ group.name }}
             </h2>
-            <span class="text-xs text-[var(--dm-text-subtle)]">{{ group.items.length }} 个服务</span>
+            <span class="text-xs text-[var(--dm-text-subtle)]">
+              {{ group.items.length }} 个服务
+            </span>
           </div>
 
-          <TransitionGroup name="dm-list" tag="div" class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <TransitionGroup
+            name="dm-list"
+            tag="div"
+            class="grid gap-3 md:grid-cols-2 xl:grid-cols-3"
+          >
             <ServiceNavCard
               v-for="item in group.items"
               :key="item.id"
@@ -405,7 +415,11 @@ watch(
                 <th class="px-3 py-3 text-right font-medium">操作</th>
               </tr>
             </thead>
-            <TransitionGroup name="dm-list" tag="tbody" class="divide-y divide-[var(--dm-border)]">
+            <TransitionGroup
+              name="dm-list"
+              tag="tbody"
+              class="divide-y divide-[var(--dm-border)]"
+            >
               <tr
                 v-for="row in serviceRows"
                 :key="row.item.id"
@@ -421,7 +435,9 @@ watch(
                     />
                     <div class="min-w-0">
                       <div class="flex min-w-0 items-center gap-2">
-                        <p class="truncate font-semibold text-[var(--dm-text)]">{{ row.item.name }}</p>
+                        <p class="truncate font-semibold text-[var(--dm-text)]">
+                          {{ row.item.name }}
+                        </p>
                         <span
                           :class="[
                             'shrink-0 rounded-[var(--dm-radius-full)] px-2 py-0.5 text-xs font-medium',
@@ -445,8 +461,13 @@ watch(
                 </td>
                 <td class="px-3 py-3 align-middle">
                   <template v-if="row.primaryEndpoint">
-                    <a class="dm-link block truncate" :href="row.primaryEndpoint.url" target="_blank">
-                      {{ row.primaryEndpoint.label }} · {{ endpointKindLabels[row.primaryEndpoint.kind] }}
+                    <a
+                      class="dm-link block truncate"
+                      :href="row.primaryEndpoint.url"
+                      target="_blank"
+                    >
+                      {{ row.primaryEndpoint.label }} ·
+                      {{ endpointKindLabels[row.primaryEndpoint.kind] }}
                     </a>
                     <p class="mt-1 truncate text-xs text-[var(--dm-text-subtle)]">
                       {{ row.primaryEndpoint.url }}
@@ -486,7 +507,9 @@ watch(
                     >
                       打开 ↗
                     </a>
-                    <AppLinkButton :to="editorTo(row.item.id)" tone="ghost" size="sm">编辑</AppLinkButton>
+                    <AppLinkButton :to="editorTo(row.item.id)" tone="ghost" size="sm">
+                      编辑
+                    </AppLinkButton>
                     <ConfirmAction
                       :message="`确认删除服务“${row.item.name}”？`"
                       size="sm"
@@ -515,7 +538,9 @@ watch(
                     :primary-url="row.primaryEndpoint?.url ?? null"
                     size="sm"
                   />
-                  <p class="truncate text-base font-semibold text-[var(--dm-text)]">{{ row.item.name }}</p>
+                  <p class="truncate text-base font-semibold text-[var(--dm-text)]">
+                    {{ row.item.name }}
+                  </p>
                   <span
                     :class="[
                       'shrink-0 rounded-[var(--dm-radius-full)] px-2 py-0.5 text-xs font-medium',
@@ -529,7 +554,10 @@ watch(
               </div>
             </div>
 
-            <p v-if="row.item.description" class="mt-3 text-sm leading-6 text-[var(--dm-text-muted)]">
+            <p
+              v-if="row.item.description"
+              class="mt-3 text-sm leading-6 text-[var(--dm-text-muted)]"
+            >
               {{ row.item.description }}
             </p>
 
@@ -558,7 +586,9 @@ watch(
             </div>
 
             <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
-              <span class="text-xs text-[var(--dm-text-subtle)]">{{ row.item.endpoints.length }} 个地址</span>
+              <span class="text-xs text-[var(--dm-text-subtle)]">
+                {{ row.item.endpoints.length }} 个地址
+              </span>
               <div class="flex flex-wrap gap-2">
                 <a
                   v-if="row.primaryEndpoint"
