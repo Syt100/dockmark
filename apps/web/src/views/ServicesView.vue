@@ -221,129 +221,145 @@ watch(
 <template>
   <main class="dm-page-grid">
     <div :class="hasEditor ? 'hidden md:grid md:gap-[var(--dm-section-gap)]' : 'dm-page-grid'">
-      <PageHeader title="服务" description="用卡片快速打开服务，或切换列表视图进行集中管理。">
-        <template #actions>
-          <RefreshIndicator :active="isRefreshing" />
+      <section class="grid">
+        <PageHeader title="服务" description="用卡片快速打开服务，或切换列表视图进行集中管理。">
+          <template #actions>
+            <RefreshIndicator :active="isRefreshing" />
 
-          <div
-            class="inline-flex items-center rounded-[var(--dm-radius-control)] bg-[var(--dm-surface-muted)] p-1"
-            role="group"
-            aria-label="服务显示方式"
-          >
+            <div
+              class="inline-flex items-center rounded-[var(--dm-radius-control)] bg-[var(--dm-surface-muted)] p-1"
+              role="group"
+              aria-label="服务显示方式"
+            >
+              <AppIconButton
+                label="卡片视图"
+                :aria-pressed="viewMode === 'cards'"
+                :class="
+                  viewMode === 'cards'
+                    ? 'bg-[var(--dm-surface)] text-[var(--dm-primary)] shadow-sm'
+                    : undefined
+                "
+                @click="setView('cards')"
+              >
+                <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M3 3h5v5H3V3Zm9 0h5v5h-5V3ZM3 12h5v5H3v-5Zm9 0h5v5h-5v-5Z" />
+                </svg>
+              </AppIconButton>
+              <AppIconButton
+                label="列表视图"
+                :aria-pressed="viewMode === 'list'"
+                :class="
+                  viewMode === 'list'
+                    ? 'bg-[var(--dm-surface)] text-[var(--dm-primary)] shadow-sm'
+                    : undefined
+                "
+                @click="setView('list')"
+              >
+                <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M3 4h14v2H3V4Zm0 5h14v2H3V9Zm0 5h14v2H3v-2Z" />
+                </svg>
+              </AppIconButton>
+            </div>
+
             <AppIconButton
-              label="卡片视图"
-              :aria-pressed="viewMode === 'cards'"
-              :class="
-                viewMode === 'cards'
-                  ? 'bg-[var(--dm-surface)] text-[var(--dm-primary)] shadow-sm'
-                  : undefined
-              "
-              @click="setView('cards')"
+              class="relative"
+              :label="areFiltersOpen ? '收起筛选' : '展开筛选'"
+              :aria-expanded="areFiltersOpen"
+              aria-controls="service-filters"
+              @click="toggleFilters"
             >
-              <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M3 3h5v5H3V3Zm9 0h5v5h-5V3ZM3 12h5v5H3v-5Zm9 0h5v5h-5v-5Z" />
+              <svg
+                aria-hidden="true"
+                class="h-4 w-4"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M3 4h14l-5.5 6.2V15l-3 1.5v-6.3L3 4Z" />
               </svg>
+              <span
+                v-if="hasFilters"
+                aria-hidden="true"
+                class="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[var(--dm-primary)]"
+              />
             </AppIconButton>
-            <AppIconButton
-              label="列表视图"
-              :aria-pressed="viewMode === 'list'"
-              :class="
-                viewMode === 'list'
-                  ? 'bg-[var(--dm-surface)] text-[var(--dm-primary)] shadow-sm'
-                  : undefined
-              "
-              @click="setView('list')"
+
+            <AppLinkButton :to="newServiceTo" tone="primary">新建服务</AppLinkButton>
+          </template>
+        </PageHeader>
+
+        <div
+          data-service-filter-collapse
+          :data-state="areFiltersOpen ? 'open' : 'closed'"
+          :class="[
+            'grid transition-[grid-template-rows] duration-[var(--dm-motion-slow)] ease-[var(--dm-motion-ease)] motion-reduce:transition-none',
+            areFiltersOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+          ]"
+        >
+          <div class="min-h-0 overflow-hidden" :inert="!areFiltersOpen">
+            <section
+              id="service-filters"
+              class="dm-surface mt-[var(--dm-section-gap)] p-3 transition-opacity duration-[var(--dm-motion-base)] sm:p-4"
+              :class="areFiltersOpen ? 'opacity-100' : 'opacity-0'"
+              :aria-hidden="!areFiltersOpen"
             >
-              <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M3 4h14v2H3V4Zm0 5h14v2H3V9Zm0 5h14v2H3v-2Z" />
-              </svg>
-            </AppIconButton>
+              <div
+                class="grid gap-3 md:grid-cols-[minmax(14rem,2fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_auto] md:items-center"
+              >
+                <SearchInput
+                  v-model="query"
+                  label="搜索服务"
+                  name="services-search"
+                  placeholder="搜索服务、URL、分类或标签"
+                />
+                <AppSelect
+                  v-model="selectedCategoryId"
+                  aria-label="按分类筛选服务"
+                  name="services-category-filter"
+                >
+                  <option value="">全部分类</option>
+                  <option value="__uncategorized">未分类</option>
+                  <option v-for="category in categories" :key="category.id" :value="category.id">
+                    {{ category.name }}
+                  </option>
+                </AppSelect>
+                <AppSelect
+                  v-model="selectedStatus"
+                  aria-label="按状态筛选服务"
+                  name="services-status-filter"
+                >
+                  <option value="">全部状态</option>
+                  <option v-for="(label, value) in statusLabels" :key="value" :value="value">
+                    {{ label }}
+                  </option>
+                </AppSelect>
+                <AppSelect
+                  v-model="selectedTagId"
+                  aria-label="按标签筛选服务"
+                  name="services-tag-filter"
+                >
+                  <option value="">全部标签</option>
+                  <option v-for="tag in availableTags" :key="tag.id" :value="tag.id">
+                    {{ tag.name }}
+                  </option>
+                </AppSelect>
+                <AppButton
+                  class="justify-self-start"
+                  :disabled="!hasFilters"
+                  tone="ghost"
+                  type="button"
+                  @click="clearFilters"
+                >
+                  清空
+                </AppButton>
+              </div>
+            </section>
           </div>
-
-          <AppIconButton
-            class="relative"
-            :label="areFiltersOpen ? '收起筛选' : '展开筛选'"
-            :aria-expanded="areFiltersOpen"
-            aria-controls="service-filters"
-            @click="toggleFilters"
-          >
-            <svg
-              aria-hidden="true"
-              class="h-4 w-4"
-              viewBox="0 0 20 20"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M3 4h14l-5.5 6.2V15l-3 1.5v-6.3L3 4Z" />
-            </svg>
-            <span
-              v-if="hasFilters"
-              aria-hidden="true"
-              class="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[var(--dm-primary)]"
-            />
-          </AppIconButton>
-
-          <AppLinkButton :to="newServiceTo" tone="primary">新建服务</AppLinkButton>
-        </template>
-      </PageHeader>
-
-      <Transition name="dm-collapse">
-        <section v-if="areFiltersOpen" id="service-filters" class="dm-surface p-3 sm:p-4">
-          <div
-            class="grid gap-3 md:grid-cols-[minmax(14rem,2fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_auto] md:items-center"
-          >
-            <SearchInput
-              v-model="query"
-              label="搜索服务"
-              name="services-search"
-              placeholder="搜索服务、URL、分类或标签"
-            />
-            <AppSelect
-              v-model="selectedCategoryId"
-              aria-label="按分类筛选服务"
-              name="services-category-filter"
-            >
-              <option value="">全部分类</option>
-              <option value="__uncategorized">未分类</option>
-              <option v-for="category in categories" :key="category.id" :value="category.id">
-                {{ category.name }}
-              </option>
-            </AppSelect>
-            <AppSelect
-              v-model="selectedStatus"
-              aria-label="按状态筛选服务"
-              name="services-status-filter"
-            >
-              <option value="">全部状态</option>
-              <option v-for="(label, value) in statusLabels" :key="value" :value="value">
-                {{ label }}
-              </option>
-            </AppSelect>
-            <AppSelect
-              v-model="selectedTagId"
-              aria-label="按标签筛选服务"
-              name="services-tag-filter"
-            >
-              <option value="">全部标签</option>
-              <option v-for="tag in availableTags" :key="tag.id" :value="tag.id">
-                {{ tag.name }}
-              </option>
-            </AppSelect>
-            <AppButton
-              class="justify-self-start"
-              :disabled="!hasFilters"
-              tone="ghost"
-              type="button"
-              @click="clearFilters"
-            >
-              清空
-            </AppButton>
-          </div>
-        </section>
-      </Transition>
+        </div>
+      </section>
 
       <FeedbackMessage tone="success" :message="feedback" />
       <FeedbackMessage tone="error" :message="error" />
