@@ -364,7 +364,7 @@ watch(
       <FeedbackMessage tone="success" :message="feedback" />
       <FeedbackMessage tone="error" :message="error" />
 
-      <ListLoadingSkeleton v-if="isLoading" label="正在加载服务..." />
+      <ListLoadingSkeleton v-if="isLoading" :variant="viewMode" label="正在加载服务..." />
 
       <section v-else-if="filteredItems.length === 0" class="dm-surface p-8 text-center">
         <p class="text-base font-medium text-[var(--dm-text)]">
