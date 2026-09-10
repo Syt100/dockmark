@@ -8,7 +8,6 @@
 
 :root {
   color-scheme: light;
-  interpolate-size: allow-keywords;
 
   --dm-bg: #f6f7f9;
   --dm-surface: #ffffff;
@@ -328,23 +327,23 @@ a {
 .dm-collapse-leave-active {
   overflow: hidden;
   transition:
-    opacity var(--dm-motion-slow) var(--dm-motion-ease),
-    height var(--dm-motion-slow) var(--dm-motion-ease),
-    margin-bottom var(--dm-motion-slow) var(--dm-motion-ease);
+    opacity var(--dm-motion-base) var(--dm-motion-ease),
+    transform var(--dm-motion-base) var(--dm-motion-ease),
+    max-height var(--dm-motion-slow) var(--dm-motion-ease);
 }
 
 .dm-collapse-enter-from,
 .dm-collapse-leave-to {
-  height: 0;
-  margin-bottom: calc(-1 * var(--dm-section-gap));
+  max-height: 0;
   opacity: 0;
+  transform: translateY(-0.25rem);
 }
 
 .dm-collapse-enter-to,
 .dm-collapse-leave-from {
-  height: auto;
-  margin-bottom: 0;
+  max-height: 18rem;
   opacity: 1;
+  transform: translateY(0);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -362,7 +361,9 @@ a {
   .dm-feedback-enter-from,
   .dm-feedback-leave-to,
   .dm-list-enter-from,
-  .dm-list-leave-to {
+  .dm-list-leave-to,
+  .dm-collapse-enter-from,
+  .dm-collapse-leave-to {
     transform: none;
   }
 
