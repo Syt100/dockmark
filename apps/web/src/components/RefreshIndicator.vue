@@ -12,8 +12,12 @@ withDefaults(
 
 <template>
   <span
-    class="inline-flex min-w-[5rem] items-center justify-end gap-1.5 text-xs text-[var(--dm-text-subtle)] transition-opacity"
-    :class="active ? 'opacity-100' : 'opacity-0'"
+    class="items-center justify-end gap-1.5 text-xs text-[var(--dm-text-subtle)] transition-opacity"
+    :class="
+      active
+        ? 'inline-flex min-w-[5rem] opacity-100'
+        : 'hidden opacity-0 sm:inline-flex sm:min-w-[5rem]'
+    "
     :aria-hidden="!active"
     aria-live="polite"
   >
