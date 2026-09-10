@@ -23,6 +23,7 @@ let mediaQuery: MediaQueryList | null = null
 let originalBodyOverflow = ''
 let isBodyLocked = false
 let pendingTarget: RouteLocationRaw = props.backTo
+let closeFallbackTimer: number | null = null
 
 function getDesktopMediaQuery() {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
@@ -40,6 +41,13 @@ function isDesktopEditor() {
   return getDesktopMediaQuery()?.matches ?? window.innerWidth >= 768
 }
 
+function clearCloseFallback() {
+  if (closeFallbackTimer !== null) {
+    window.clearTimeout(closeFallbackTimer)
+    closeFallbackTimer = null
+  }
+}
+
 function close(target: RouteLocationRaw = props.backTo) {
   if (isClosing.value) {
     return
@@ -53,6 +61,9 @@ function close(target: RouteLocationRaw = props.backTo) {
   pendingTarget = target
   isClosing.value = true
   isVisible.value = false
+  closeFallbackTimer = window.setTimeout(() => {
+    void finishClose()
+  }, 260)
 }
 
 async function finishClose() {
@@ -60,10 +71,11 @@ async function finishClose() {
     return
   }
 
+  isClosing.value = false
+  clearCloseFallback()
   const failure = await router.push(pendingTarget)
 
   if (failure) {
-    isClosing.value = false
     isVisible.value = true
   }
 }
@@ -122,6 +134,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  clearCloseFallback()
   mediaQuery?.removeEventListener('change', syncBodyScrollLock)
   document.removeEventListener('keydown', handleKeydown)
   unlockBodyScroll()
@@ -154,7 +167,7 @@ onBeforeUnmount(() => {
           class="fixed inset-0 z-30 cursor-default bg-[var(--dm-overlay)]"
           type="button"
           aria-label="关闭编辑器"
-          @click="() => close()"
+          @click="close()"
         ></button>
       </Transition>
       <div class="pointer-events-none fixed inset-0 z-40 grid place-items-center p-6">
@@ -172,7 +185,7 @@ onBeforeUnmount(() => {
               class="sticky top-0 z-10 flex items-center justify-between border-b border-[var(--dm-border)] bg-[var(--dm-surface-elevated)] px-5 py-4"
             >
               <h1 class="text-lg font-semibold text-[var(--dm-text)]">{{ title }}</h1>
-              <AppIconButton label="关闭" type="button" @click="() => close()">
+              <AppIconButton label="关闭" type="button" @click="close()">
                 <svg
                   aria-hidden="true"
                   class="h-5 w-5"
