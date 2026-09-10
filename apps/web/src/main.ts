@@ -11,10 +11,7 @@ app.use(router)
 app.mount('#app')
 
 const idleWindow = window as Window & {
-  requestIdleCallback?: (
-    callback: IdleRequestCallback,
-    options?: IdleRequestOptions,
-  ) => number
+  requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number
 }
 
 if (typeof idleWindow.requestIdleCallback === 'function') {
