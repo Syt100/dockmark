@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
-
-const props = withDefaults(
+withDefaults(
   defineProps<{
     label: string
     rows?: number
@@ -10,18 +7,9 @@ const props = withDefaults(
   }>(),
   {
     rows: 5,
-    variant: undefined,
+    variant: 'list',
   },
 )
-
-const route = useRoute()
-const resolvedVariant = computed(() => {
-  if (props.variant) {
-    return props.variant
-  }
-
-  return route.path.startsWith('/services') && route.query.view !== 'list' ? 'cards' : 'list'
-})
 </script>
 
 <template>
@@ -29,7 +17,7 @@ const resolvedVariant = computed(() => {
     <span class="sr-only">{{ label }}</span>
 
     <div
-      v-if="resolvedVariant === 'cards'"
+      v-if="variant === 'cards'"
       class="grid gap-[var(--dm-section-gap)]"
       data-loading-layout="cards"
       aria-hidden="true"
