@@ -12,5 +12,5 @@
 - [x] Visually reflect the expanded state on the filter icon.
 - [x] Make filter collapse include the disappearing layout gap so content moves continuously.
 - [x] Add regression coverage for shared view switching, hidden filters, card editing, view-matched skeletons, and expanded icon state.
-- [ ] Run `corepack pnpm validate` after the final implementation update.
+- [x] Run `corepack pnpm validate` after the final implementation update.
 - [ ] Run `openspec validate --all --strict --no-interactive` when the CLI is available.
