@@ -96,7 +96,7 @@ function createTestRouter(initialPath: string) {
 }
 
 describe('ServicesView', () => {
-  it('uses one shared card view by default with filters hidden and card editing available', async () => {
+  it('uses one shared card view by default with filters visually collapsed and card editing available', async () => {
     const fetchMock = mockServices()
     vi.stubGlobal('fetch', fetchMock)
 
@@ -110,7 +110,8 @@ describe('ServicesView', () => {
     expect(wrapper.find('[aria-label="卡片视图"]').attributes('aria-pressed')).toBe('true')
     expect(wrapper.find('[aria-label="列表视图"]').attributes('aria-pressed')).toBe('false')
     expect(wrapper.find('[aria-label="展开筛选"]').exists()).toBe(true)
-    expect(wrapper.find('#service-filters').exists()).toBe(false)
+    expect(wrapper.get('[data-service-filter-collapse]').attributes('data-state')).toBe('closed')
+    expect(wrapper.get('#service-filters').attributes('aria-hidden')).toBe('true')
     expect(wrapper.find('a[aria-label="编辑服务"]').attributes('href')).toBe(
       '/services/item_1/edit',
     )
@@ -118,16 +119,20 @@ describe('ServicesView', () => {
     vi.unstubAllGlobals()
   })
 
-  it('expands one shared filter form only after the filter icon is activated', async () => {
+  it('expands and collapses the shared filter form without replacing the collapse container', async () => {
     vi.stubGlobal('fetch', mockServices())
     const router = createTestRouter('/services')
     await router.isReady()
     const wrapper = mount(ServicesView, { global: { plugins: [router] } })
 
     await vi.waitFor(() => expect(wrapper.text()).toContain('Immich'))
+    const collapse = wrapper.get('[data-service-filter-collapse]')
+    const filterPanel = wrapper.get('#service-filters')
+
     await wrapper.get('[aria-label="展开筛选"]').trigger('click')
 
-    expect(wrapper.find('#service-filters').exists()).toBe(true)
+    expect(collapse.attributes('data-state')).toBe('open')
+    expect(filterPanel.attributes('aria-hidden')).toBe('false')
     expect(wrapper.find('input[aria-label="搜索服务"]').exists()).toBe(true)
     expect(wrapper.find('select[aria-label="按分类筛选服务"]').exists()).toBe(true)
     expect(wrapper.find('select[aria-label="按状态筛选服务"]').exists()).toBe(true)
@@ -135,6 +140,12 @@ describe('ServicesView', () => {
 
     await wrapper.get('input[aria-label="搜索服务"]').setValue('不存在')
     expect(wrapper.text()).toContain('没有符合筛选条件的服务')
+
+    await wrapper.get('[aria-label="收起筛选"]').trigger('click')
+
+    expect(collapse.attributes('data-state')).toBe('closed')
+    expect(filterPanel.attributes('aria-hidden')).toBe('true')
+    expect(wrapper.find('[data-service-filter-collapse]').exists()).toBe(true)
 
     vi.unstubAllGlobals()
   })
