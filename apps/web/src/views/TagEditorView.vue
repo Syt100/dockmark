@@ -69,7 +69,11 @@ onMounted(load)
 </script>
 
 <template>
-  <ResponsiveEditorShell v-slot="{ close }" :title="isEditing ? '编辑标签' : '新建标签'" back-to="/tags">
+  <ResponsiveEditorShell
+    v-slot="{ close }"
+    :title="isEditing ? '编辑标签' : '新建标签'"
+    back-to="/tags"
+  >
     <form class="grid gap-[var(--dm-section-gap)]" @submit.prevent="submit(close)">
       <FeedbackMessage tone="error" :message="error" />
 
