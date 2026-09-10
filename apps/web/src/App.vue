@@ -2,7 +2,6 @@
 import { computed, ref } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 
-import './assets/service-page.css'
 import { currentUser, signOut } from './auth/state'
 import AppButton from './components/AppButton.vue'
 import ThemeToggle from './components/ThemeToggle.vue'
