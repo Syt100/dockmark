@@ -327,23 +327,30 @@ a {
 .dm-collapse-leave-active {
   overflow: hidden;
   transition:
-    opacity var(--dm-motion-base) var(--dm-motion-ease),
-    transform var(--dm-motion-base) var(--dm-motion-ease),
-    max-height var(--dm-motion-slow) var(--dm-motion-ease);
+    opacity var(--dm-motion-slow) var(--dm-motion-ease),
+    max-height var(--dm-motion-slow) var(--dm-motion-ease),
+    margin-bottom var(--dm-motion-slow) var(--dm-motion-ease);
 }
 
 .dm-collapse-enter-from,
 .dm-collapse-leave-to {
   max-height: 0;
+  margin-bottom: calc(-1 * var(--dm-section-gap));
   opacity: 0;
-  transform: translateY(-0.25rem);
 }
 
 .dm-collapse-enter-to,
 .dm-collapse-leave-from {
   max-height: 18rem;
+  margin-bottom: 0;
   opacity: 1;
-  transform: translateY(0);
+}
+
+@media (min-width: 768px) {
+  .dm-collapse-enter-to,
+  .dm-collapse-leave-from {
+    max-height: 5rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -361,9 +368,7 @@ a {
   .dm-feedback-enter-from,
   .dm-feedback-leave-to,
   .dm-list-enter-from,
-  .dm-list-leave-to,
-  .dm-collapse-enter-from,
-  .dm-collapse-leave-to {
+  .dm-list-leave-to {
     transform: none;
   }
 
