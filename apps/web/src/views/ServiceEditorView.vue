@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, type RouteLocationRaw } from 'vue-router'
 
 import type { Category, EndpointKind, IconType, ServiceItem, Tag } from '@dockmark/shared'
 
@@ -17,6 +17,8 @@ import ServiceIcon from '../components/ServiceIcon.vue'
 import { useMinimumVisibleLoading } from '../composables/minimumVisibleLoading'
 import { endpointKindLabels, statusLabels } from '../ui/labels'
 import { serviceFormToInput, serviceToForm, type EndpointForm } from './managementForms'
+
+type CloseEditor = (target?: RouteLocationRaw) => void
 
 const endpointKinds: EndpointKind[] = [
   'public',
@@ -40,7 +42,6 @@ const endpointTemplates: Array<{ label: string; kind: EndpointKind }> = [
   { label: '文档', kind: 'docs' },
 ]
 const route = useRoute()
-const router = useRouter()
 const categories = ref<Category[]>([])
 const tags = ref<Tag[]>([])
 const selectedTagIds = ref<string[]>([])
@@ -150,7 +151,7 @@ function removeEndpoint(index: number) {
   }
 }
 
-async function submit() {
+async function submit(close: CloseEditor) {
   isSaving.value = true
   error.value = null
 
@@ -159,10 +160,10 @@ async function submit() {
 
     if (itemId.value) {
       await updateItem(itemId.value, input)
-      await router.push({ path: '/services', query: { saved: 'updated' } })
+      close({ path: '/services', query: { saved: 'updated' } })
     } else {
       await createItem(input)
-      await router.push({ path: '/services', query: { saved: 'created' } })
+      close({ path: '/services', query: { saved: 'created' } })
     }
   } catch (caught) {
     error.value = toChineseError(caught, '保存服务失败')
@@ -175,8 +176,12 @@ onMounted(load)
 </script>
 
 <template>
-  <ResponsiveEditorShell :title="isEditing ? '编辑服务' : '新建服务'" back-to="/services">
-    <form class="grid gap-[var(--dm-section-gap)]" @submit.prevent="submit">
+  <ResponsiveEditorShell
+    v-slot="{ close }"
+    :title="isEditing ? '编辑服务' : '新建服务'"
+    back-to="/services"
+  >
+    <form class="grid gap-[var(--dm-section-gap)]" @submit.prevent="submit(close)">
       <FeedbackMessage tone="error" :message="error" />
 
       <EditorLoadingState v-if="isLoadingVisible" message="正在加载服务信息..." variant="service" />
@@ -377,9 +382,7 @@ onMounted(load)
         <div
           class="grid gap-2 border-t border-[var(--dm-border)] pt-4 sm:flex sm:flex-row sm:justify-end"
         >
-          <AppButton class="w-full sm:w-auto" type="button" @click="router.push('/services')"
-            >取消</AppButton
-          >
+          <AppButton class="w-full sm:w-auto" type="button" @click="close()">取消</AppButton>
           <AppButton class="w-full sm:w-auto" tone="primary" type="submit" :disabled="isSaving">
             {{ isSaving ? '保存中...' : '保存服务' }}
           </AppButton>

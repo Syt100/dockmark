@@ -8,7 +8,9 @@ import { deleteTag, fetchTags } from '../api/client'
 import AppLinkButton from '../components/AppLinkButton.vue'
 import ConfirmAction from '../components/ConfirmAction.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
+import ListLoadingSkeleton from '../components/ListLoadingSkeleton.vue'
 import PageHeader from '../components/PageHeader.vue'
+import RefreshIndicator from '../components/RefreshIndicator.vue'
 import SearchInput from '../components/SearchInput.vue'
 import { useManagementList } from '../composables/managementList'
 import { matchesSearchQuery } from '../ui/search'
@@ -20,6 +22,7 @@ const {
   error,
   feedback,
   isLoading,
+  isRefreshing,
   load,
   applySavedFlash,
   remove,
@@ -61,6 +64,7 @@ watch(
     <div :class="hasEditor ? 'hidden md:grid md:gap-[var(--dm-section-gap)]' : 'dm-page-grid'">
       <PageHeader title="标签" description="用标签补充分组维度，便于搜索服务用途、位置和访问方式。">
         <template #actions>
+          <RefreshIndicator :active="isRefreshing" />
           <AppLinkButton to="/tags/new" tone="primary">新建标签</AppLinkButton>
         </template>
       </PageHeader>
@@ -77,12 +81,7 @@ watch(
         />
       </section>
 
-      <section
-        v-if="isLoading"
-        class="dm-surface p-[var(--dm-panel-padding)] text-sm text-[var(--dm-text-muted)]"
-      >
-        正在加载标签...
-      </section>
+      <ListLoadingSkeleton v-if="isLoading" label="正在加载标签..." />
 
       <section v-else-if="tags.length === 0" class="dm-surface p-8 text-center">
         <p class="text-base font-medium text-[var(--dm-text)]">还没有标签</p>
@@ -105,7 +104,7 @@ watch(
             <span>Slug</span>
             <span class="text-right">操作</span>
           </div>
-          <div class="divide-y divide-[var(--dm-border)]">
+          <TransitionGroup name="dm-list" tag="div" class="divide-y divide-[var(--dm-border)]">
             <article
               v-for="tag in filteredTags"
               :key="tag.id"
@@ -118,10 +117,10 @@ watch(
                 <ConfirmAction :message="`确认删除标签“${tag.name}”？`" @confirm="remove(tag.id)" />
               </div>
             </article>
-          </div>
+          </TransitionGroup>
         </div>
 
-        <div class="grid gap-2 md:hidden">
+        <TransitionGroup name="dm-list" tag="div" class="grid gap-2 md:hidden">
           <article v-for="tag in filteredTags" :key="tag.id" class="dm-mobile-card">
             <p class="text-base font-semibold text-[var(--dm-text)]">{{ tag.name }}</p>
             <p class="mt-1 break-all text-sm text-[var(--dm-text-muted)]">{{ tag.slug }}</p>
@@ -130,7 +129,7 @@ watch(
               <ConfirmAction :message="`确认删除标签“${tag.name}”？`" @confirm="remove(tag.id)" />
             </div>
           </article>
-        </div>
+        </TransitionGroup>
       </section>
     </div>
 

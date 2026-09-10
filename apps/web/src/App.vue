@@ -46,7 +46,7 @@ async function logout() {
             <RouterLink
               v-for="item in navItems"
               :key="item.to"
-              class="shrink-0 rounded-[var(--dm-radius-control)] px-2.5 py-1.5 transition hover:bg-[var(--dm-surface-muted)] hover:text-[var(--dm-text)] aria-[current=page]:bg-[var(--dm-primary-soft)] aria-[current=page]:text-[var(--dm-primary)] sm:px-3 sm:py-2"
+              class="shrink-0 rounded-[var(--dm-radius-control)] px-2.5 py-1.5 transition-colors duration-100 active:bg-[var(--dm-primary-soft)] hover:bg-[var(--dm-surface-muted)] hover:text-[var(--dm-text)] aria-[current=page]:bg-[var(--dm-primary-soft)] aria-[current=page]:text-[var(--dm-primary)] sm:px-3 sm:py-2"
               :to="item.to"
             >
               {{ item.label }}

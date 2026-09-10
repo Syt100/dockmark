@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, type RouteLocationRaw } from 'vue-router'
 
 import { createCategory, fetchCategory, updateCategory } from '../api/client'
 import { toChineseError } from '../api/errors'
@@ -12,8 +12,9 @@ import ResponsiveEditorShell from '../components/ResponsiveEditorShell.vue'
 import { useMinimumVisibleLoading } from '../composables/minimumVisibleLoading'
 import { categoryFormToInput, categoryToForm } from './managementForms'
 
+type CloseEditor = (target?: RouteLocationRaw) => void
+
 const route = useRoute()
-const router = useRouter()
 const error = ref<string | null>(null)
 const isLoading = ref(false)
 const isSaving = ref(false)
@@ -46,7 +47,7 @@ async function load() {
   }
 }
 
-async function submit() {
+async function submit(close: CloseEditor) {
   isSaving.value = true
   error.value = null
 
@@ -55,10 +56,10 @@ async function submit() {
 
     if (categoryId.value) {
       await updateCategory(categoryId.value, input)
-      await router.push({ path: '/categories', query: { saved: 'updated' } })
+      close({ path: '/categories', query: { saved: 'updated' } })
     } else {
       await createCategory(input)
-      await router.push({ path: '/categories', query: { saved: 'created' } })
+      close({ path: '/categories', query: { saved: 'created' } })
     }
   } catch (caught) {
     error.value = toChineseError(caught, '保存分类失败')
@@ -71,8 +72,12 @@ onMounted(load)
 </script>
 
 <template>
-  <ResponsiveEditorShell :title="isEditing ? '编辑分类' : '新建分类'" back-to="/categories">
-    <form class="grid gap-[var(--dm-section-gap)]" @submit.prevent="submit">
+  <ResponsiveEditorShell
+    v-slot="{ close }"
+    :title="isEditing ? '编辑分类' : '新建分类'"
+    back-to="/categories"
+  >
+    <form class="grid gap-[var(--dm-section-gap)]" @submit.prevent="submit(close)">
       <FeedbackMessage tone="error" :message="error" />
 
       <EditorLoadingState v-if="isLoadingVisible" message="正在加载分类..." variant="category" />
@@ -104,7 +109,7 @@ onMounted(load)
         <div
           class="flex flex-col-reverse gap-2 border-t border-[var(--dm-border)] pt-4 sm:flex-row sm:justify-end"
         >
-          <AppButton type="button" @click="router.push('/categories')">取消</AppButton>
+          <AppButton type="button" @click="close()">取消</AppButton>
           <AppButton tone="primary" type="submit" :disabled="isSaving">
             {{ isSaving ? '保存中...' : '保存分类' }}
           </AppButton>

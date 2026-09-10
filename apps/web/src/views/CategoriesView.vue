@@ -9,7 +9,9 @@ import AppBadge from '../components/AppBadge.vue'
 import AppLinkButton from '../components/AppLinkButton.vue'
 import ConfirmAction from '../components/ConfirmAction.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
+import ListLoadingSkeleton from '../components/ListLoadingSkeleton.vue'
 import PageHeader from '../components/PageHeader.vue'
+import RefreshIndicator from '../components/RefreshIndicator.vue'
 import SearchInput from '../components/SearchInput.vue'
 import { useManagementList } from '../composables/managementList'
 import { matchesSearchQuery } from '../ui/search'
@@ -21,6 +23,7 @@ const {
   error,
   feedback,
   isLoading,
+  isRefreshing,
   load,
   applySavedFlash,
   remove,
@@ -70,6 +73,7 @@ watch(
     <div :class="hasEditor ? 'hidden md:grid md:gap-[var(--dm-section-gap)]' : 'dm-page-grid'">
       <PageHeader title="分类" description="用分类组织首页服务入口，排序值越小越靠前。">
         <template #actions>
+          <RefreshIndicator :active="isRefreshing" />
           <AppLinkButton to="/categories/new" tone="primary">新建分类</AppLinkButton>
         </template>
       </PageHeader>
@@ -86,12 +90,7 @@ watch(
         />
       </section>
 
-      <section
-        v-if="isLoading"
-        class="dm-surface p-[var(--dm-panel-padding)] text-sm text-[var(--dm-text-muted)]"
-      >
-        正在加载分类...
-      </section>
+      <ListLoadingSkeleton v-if="isLoading" label="正在加载分类..." />
 
       <section v-else-if="categories.length === 0" class="dm-surface p-8 text-center">
         <p class="text-base font-medium text-[var(--dm-text)]">还没有分类</p>
@@ -115,7 +114,7 @@ watch(
             <span>排序</span>
             <span class="text-right">操作</span>
           </div>
-          <div class="divide-y divide-[var(--dm-border)]">
+          <TransitionGroup name="dm-list" tag="div" class="divide-y divide-[var(--dm-border)]">
             <article
               v-for="category in filteredCategories"
               :key="category.id"
@@ -149,10 +148,10 @@ watch(
                 />
               </div>
             </article>
-          </div>
+          </TransitionGroup>
         </div>
 
-        <div class="grid gap-2 md:hidden">
+        <TransitionGroup name="dm-list" tag="div" class="grid gap-2 md:hidden">
           <article v-for="category in filteredCategories" :key="category.id" class="dm-mobile-card">
             <div class="flex items-start justify-between gap-4">
               <div class="min-w-0">
@@ -178,7 +177,7 @@ watch(
               />
             </div>
           </article>
-        </div>
+        </TransitionGroup>
       </section>
     </div>
 

@@ -5,15 +5,29 @@ Keep top-level route rendering structurally simple and reserve animation for loc
 
 Top-level routes SHALL render directly through `RouterView` without a wrapping Vue `Transition`. The application SHALL avoid overlapping old and new top-level pages because page height, async loading state, and list density differ across routes and can make page-level crossfades appear to jump even when transform motion is removed.
 
-Route-driven editor dialogs SHALL keep their parent management view mounted while the child route transitions in and out. This allows both open and close animation while preserving the existing route-based editor model.
+Route-driven desktop editor dialogs SHALL keep their parent management view mounted while the child route transitions in and out. Closing actions SHALL first move the overlay and panel into their leave state and SHALL navigate back only after the panel leave transition completes. The same close path SHALL be used by the close button, Escape, backdrop dismissal, cancel actions, and successful saves. Mobile editor navigation remains direct because the editor is rendered as a normal page at mobile widths.
 
 Destructive confirmation dialogs SHALL animate the backdrop with `dm-fade` and the dialog panel with `dm-panel` independently. The backdrop SHALL not inherit scale/translate animation intended for the panel.
 
+## Loading and Refresh Feedback
+Management pages SHALL distinguish initial loading from later refreshes. Initial loading SHALL use list-shaped skeleton content with a stable minimum height so the page does not briefly collapse to a single loading message. Once records have loaded, later refreshes SHALL keep the current records rendered and expose a compact refresh indicator instead of replacing the list.
+
+After a delete request succeeds, the deleted record SHALL be removed from local state immediately. A subsequent non-blocking refresh SHALL reconcile local state with server truth.
+
+## Route Preloading
+Primary lazy top-level route loaders SHALL be reusable functions. After the application mounts, Dockmark SHALL invoke those loaders in the background so common first navigations are less likely to wait for a route chunk. Preloading SHALL fetch code only and SHALL NOT issue management data requests.
+
+## Control and List Feedback
+Shared buttons and link-buttons SHALL provide subtle active-state scale feedback, while icon buttons MAY use a slightly smaller active scale. Reduced-motion users SHALL not receive the scale effect. Top navigation SHALL keep direct route rendering but SHALL respond immediately through short color transitions and active-state background feedback.
+
+Management list additions/removals MAY use the existing short local list transition. This SHALL remain scoped to list records and SHALL NOT be used as a page-level transition.
+
 ## Performance
 - Do not animate top-level route geometry or opacity.
-- Prefer `opacity` and `transform` only for local overlays and panels.
-- Avoid layout animation on filtered management lists.
+- Prefer `opacity` and `transform` only for local overlays, panels, controls, and record-level feedback.
+- Keep management data visible during refreshes to avoid unnecessary layout reconstruction.
+- Preload route code after startup rather than making additional API requests.
 - Keep durations short enough that animation communicates state without delaying interaction.
 
 ## Accessibility
-Existing focus management, Escape handling, body scroll locking, and `prefers-reduced-motion` behavior SHALL be preserved.
+Existing focus management, Escape handling, body scroll locking, and `prefers-reduced-motion` behavior SHALL be preserved. Loading skeletons SHALL expose a concise status label without making decorative skeleton elements individually discoverable.

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, type RouteLocationRaw } from 'vue-router'
 
 import { createTag, fetchTag, updateTag } from '../api/client'
 import { toChineseError } from '../api/errors'
@@ -12,8 +12,9 @@ import ResponsiveEditorShell from '../components/ResponsiveEditorShell.vue'
 import { useMinimumVisibleLoading } from '../composables/minimumVisibleLoading'
 import { tagFormToInput, tagToForm } from './managementForms'
 
+type CloseEditor = (target?: RouteLocationRaw) => void
+
 const route = useRoute()
-const router = useRouter()
 const error = ref<string | null>(null)
 const isLoading = ref(false)
 const isSaving = ref(false)
@@ -43,7 +44,7 @@ async function load() {
   }
 }
 
-async function submit() {
+async function submit(close: CloseEditor) {
   isSaving.value = true
   error.value = null
 
@@ -52,10 +53,10 @@ async function submit() {
 
     if (tagId.value) {
       await updateTag(tagId.value, input)
-      await router.push({ path: '/tags', query: { saved: 'updated' } })
+      close({ path: '/tags', query: { saved: 'updated' } })
     } else {
       await createTag(input)
-      await router.push({ path: '/tags', query: { saved: 'created' } })
+      close({ path: '/tags', query: { saved: 'created' } })
     }
   } catch (caught) {
     error.value = toChineseError(caught, '保存标签失败')
@@ -68,8 +69,8 @@ onMounted(load)
 </script>
 
 <template>
-  <ResponsiveEditorShell :title="isEditing ? '编辑标签' : '新建标签'" back-to="/tags">
-    <form class="grid gap-[var(--dm-section-gap)]" @submit.prevent="submit">
+  <ResponsiveEditorShell v-slot="{ close }" :title="isEditing ? '编辑标签' : '新建标签'" back-to="/tags">
+    <form class="grid gap-[var(--dm-section-gap)]" @submit.prevent="submit(close)">
       <FeedbackMessage tone="error" :message="error" />
 
       <EditorLoadingState v-if="isLoadingVisible" message="正在加载标签..." variant="tag" />
@@ -89,7 +90,7 @@ onMounted(load)
         <div
           class="flex flex-col-reverse gap-2 border-t border-[var(--dm-border)] pt-4 sm:flex-row sm:justify-end"
         >
-          <AppButton type="button" @click="router.push('/tags')">取消</AppButton>
+          <AppButton type="button" @click="close()">取消</AppButton>
           <AppButton tone="primary" type="submit" :disabled="isSaving">
             {{ isSaving ? '保存中...' : '保存标签' }}
           </AppButton>
