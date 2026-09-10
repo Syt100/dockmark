@@ -14,7 +14,8 @@ const props = defineProps<{
 }>()
 
 const primaryEndpoint = computed(
-  () => props.item.endpoints.find((endpoint) => endpoint.isPrimary) ?? props.item.endpoints[0] ?? null,
+  () =>
+    props.item.endpoints.find((endpoint) => endpoint.isPrimary) ?? props.item.endpoints[0] ?? null,
 )
 const endpoints = computed(() => {
   const primary = primaryEndpoint.value
@@ -112,7 +113,10 @@ function shouldShowEndpointKind(endpoint: ServiceItem['endpoints'][number]) {
         target="_blank"
       >
         <span class="min-w-0 truncate font-medium">{{ endpoint.label }}</span>
-        <AppBadge v-if="shouldShowEndpointKind(endpoint)" :tone="index === 0 ? 'primary' : 'neutral'">
+        <AppBadge
+          v-if="shouldShowEndpointKind(endpoint)"
+          :tone="index === 0 ? 'primary' : 'neutral'"
+        >
           {{ endpointKindLabels[endpoint.kind] }}
         </AppBadge>
       </a>
