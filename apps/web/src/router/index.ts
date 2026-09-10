@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { authSetupStatus, currentUser, ensureAuthState } from '../auth/state'
 
-const loadUnifiedServicesView = () => import('../views/UnifiedServicesView.vue')
+const loadServicesView = () => import('../views/ServicesView.vue')
 const loadServiceEditorView = () => import('../views/ServiceEditorView.vue')
 const loadCategoriesView = () => import('../views/CategoriesView.vue')
 const loadCategoryEditorView = () => import('../views/CategoryEditorView.vue')
@@ -14,7 +14,7 @@ const loadSetupView = () => import('../views/SetupView.vue')
 
 export function preloadPrimaryRoutes() {
   void Promise.allSettled([
-    loadUnifiedServicesView(),
+    loadServicesView(),
     loadCategoriesView(),
     loadTagsView(),
     loadImportExportView(),
@@ -33,7 +33,7 @@ const router = createRouter({
     {
       path: '/services',
       name: 'services',
-      component: loadUnifiedServicesView,
+      component: loadServicesView,
       children: [
         {
           path: 'new',
@@ -110,7 +110,6 @@ router.beforeEach(async (to, from) => {
   await ensureAuthState()
 
   const isPublic = to.meta.public === true
-  const isServiceEditor = to.name === 'service-new' || to.name === 'service-edit'
   const cameFromServiceEditor = from.name === 'service-new' || from.name === 'service-edit'
 
   if (authSetupStatus.value?.needsSetup && to.name !== 'setup') {
@@ -132,23 +131,10 @@ router.beforeEach(async (to, from) => {
     return { name: 'services' }
   }
 
-  if (
-    isServiceEditor &&
-    from.name === 'services' &&
-    from.query.mode === 'manage' &&
-    to.query.mode !== 'manage'
-  ) {
-    return {
-      name: to.name,
-      params: to.params,
-      query: { ...to.query, mode: 'manage' },
-    }
-  }
-
-  if (to.name === 'services' && cameFromServiceEditor && to.query.mode !== 'manage') {
+  if (to.name === 'services' && cameFromServiceEditor && from.query.view === 'list' && to.query.view !== 'list') {
     return {
       name: 'services',
-      query: { ...to.query, mode: 'manage' },
+      query: { ...to.query, view: 'list' },
     }
   }
 
