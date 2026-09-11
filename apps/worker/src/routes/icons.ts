@@ -19,6 +19,13 @@ import {
 export const iconsRoute = new Hono<AppEnv>()
 export const iconAssetsRoute = new Hono<AppEnv>()
 
+function requireIconBucket(bucket: R2Bucket | undefined): R2Bucket {
+  if (!bucket) {
+    throw apiError(500, 'config_error', 'Managed icon storage is not configured')
+  }
+  return bucket
+}
+
 function iconError(error: unknown): never {
   if (error instanceof IconDiscoveryError) {
     throw apiError(400, 'validation_failed', error.message)
@@ -35,7 +42,10 @@ iconsRoute.post('/fetch', requireAuth, async (c) => {
   const input = requireValidation(validateIconFetchRequest(await readJson(c)))
 
   try {
-    const result: IconDiscoveryResult = await discoverAndStoreIcon(c.env.ICONS, input.url)
+    const result: IconDiscoveryResult = await discoverAndStoreIcon(
+      requireIconBucket(c.env.ICONS),
+      input.url,
+    )
     return c.json(result)
   } catch (error) {
     return iconError(error)
@@ -89,7 +99,11 @@ iconsRoute.post('/upload', requireAuth, async (c) => {
       }),
       automaticIconLimits.maxIconBytes,
     )
-    const result: IconDiscoveryResult = await storeManagedIcon(c.env.ICONS, bytes, sourceUrl.trim())
+    const result: IconDiscoveryResult = await storeManagedIcon(
+      requireIconBucket(c.env.ICONS),
+      bytes,
+      sourceUrl.trim(),
+    )
     return c.json(result, 201)
   } catch (error) {
     return iconError(error)
@@ -103,7 +117,7 @@ iconAssetsRoute.get('/*', requireAuth, async (c) => {
     throw apiError(404, 'not_found', 'Icon asset not found')
   }
 
-  const object = await c.env.ICONS.get(key)
+  const object = await requireIconBucket(c.env.ICONS).get(key)
   if (!object) {
     throw apiError(404, 'not_found', 'Icon asset not found')
   }
