@@ -71,5 +71,6 @@ export type AuthSuccessResponse = {
 }
 
 export * from './import-export'
+export * from './import-export-assets'
 export * from './navigation'
 export * from './service-icons'
