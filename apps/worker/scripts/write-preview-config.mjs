@@ -6,6 +6,7 @@ const [d1ListPath, kvListPath, outputPath] = process.argv.slice(2)
 
 const d1DatabaseName = process.env.PREVIEW_D1_DATABASE_NAME ?? 'dockmark-preview'
 const kvNamespaceName = process.env.PREVIEW_KV_NAMESPACE_NAME ?? 'dockmark-preview'
+const r2BucketName = process.env.PREVIEW_R2_BUCKET_NAME ?? 'dockmark-icons-preview'
 
 if (!d1ListPath || !kvListPath || !outputPath) {
   console.error(
@@ -73,6 +74,12 @@ const config = {
       id: namespaceId,
     },
   ],
+  r2_buckets: [
+    {
+      binding: 'ICONS',
+      bucket_name: r2BucketName,
+    },
+  ],
   observability: {
     enabled: true,
     head_sampling_rate: 1,
@@ -80,4 +87,6 @@ const config = {
 }
 
 await writeFile(outputPath, `${JSON.stringify(config, null, 2)}\n`)
-console.log(`Wrote preview Worker config for D1 '${d1DatabaseName}' and KV '${kvNamespaceName}'.`)
+console.log(
+  `Wrote preview Worker config for D1 '${d1DatabaseName}', KV '${kvNamespaceName}', and R2 '${r2BucketName}'.`,
+)
