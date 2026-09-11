@@ -196,4 +196,21 @@ describe('ServiceIconEditor', () => {
     expect(init?.body).toBeInstanceOf(FormData)
     expect(wrapper.find('[data-icon-candidate]').exists()).toBe(true)
   })
+
+  it('clears a managed R2 key when switching back to a manual icon mode', async () => {
+    const key = `icons/sha256/${'c'.repeat(64)}.png`
+    const wrapper = mount(ServiceIconEditor, {
+      props: {
+        name: 'Grafana',
+        icon: key,
+        iconType: 'r2',
+        endpoints,
+      },
+    })
+
+    await wrapper.get('select[name="service-icon-type"]').setValue('url')
+
+    expect(wrapper.emitted('update:iconType')?.at(-1)).toEqual(['url'])
+    expect(wrapper.emitted('update:icon')?.at(-1)).toEqual([''])
+  })
 })
