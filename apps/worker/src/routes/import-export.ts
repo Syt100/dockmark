@@ -5,7 +5,11 @@ import { apiError } from '../lib/errors'
 import type { AppEnv } from '../lib/env'
 import { readJson, requireValidation } from '../lib/http'
 import { requireAuth } from '../middleware/auth'
-import { buildExportDocument, importDocument, previewImport } from '../services/import-export'
+import {
+  buildPortableExportDocument,
+  importPortableDocument,
+  previewPortableImport,
+} from '../services/portable-import-export'
 
 export const importExportRoute = new Hono<AppEnv>()
 
@@ -29,26 +33,33 @@ function readImportRequest(input: unknown) {
 }
 
 importExportRoute.get('/export', requireAuth, async (c) => {
-  const document = await buildExportDocument(c.env.DB, c.env.APP_VERSION)
+  try {
+    const document = await buildPortableExportDocument(c.env, c.env.APP_VERSION)
 
-  return c.json(document, 200, {
-    'content-disposition': `attachment; filename="dockmark-export-${document.generatedAt.slice(0, 10)}.json"`,
-  })
+    return c.json(document, 200, {
+      'content-disposition': `attachment; filename="dockmark-export-${document.generatedAt.slice(0, 10)}.json"`,
+    })
+  } catch (caught) {
+    throw apiError(
+      500,
+      'internal_error',
+      caught instanceof Error ? caught.message : 'Failed to build export document',
+    )
+  }
 })
 
 importExportRoute.post('/preview', requireAuth, async (c) => {
   const request = readImportRequest(await readJson(c))
-  const preview = await previewImport(c.env.DB, request.mode, request.document)
-  const { document: _document, ...body } = preview
+  const preview = await previewPortableImport(c.env.DB, request.mode, request.document)
 
-  return c.json(body)
+  return c.json(preview)
 })
 
 importExportRoute.post('/import', requireAuth, async (c) => {
   const request = readImportRequest(await readJson(c))
 
   try {
-    const result = await importDocument(c.env, request.mode, request.document)
+    const result = await importPortableDocument(c.env, request.mode, request.document)
     const body: ImportResultResponse = result
     return c.json(body)
   } catch (caught) {
