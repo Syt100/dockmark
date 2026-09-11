@@ -33,6 +33,19 @@ describe('ServiceIcon', () => {
     expect(wrapper.find('img').attributes('src')).toBe('https://grafana.example.test/favicon.ico')
   })
 
+  it('renders managed R2 icons through the authenticated asset route', () => {
+    const key = `icons/sha256/${'a'.repeat(64)}.png`
+    const wrapper = mount(ServiceIcon, {
+      props: {
+        name: 'Immich',
+        icon: key,
+        iconType: 'r2',
+      },
+    })
+
+    expect(wrapper.get('img').attributes('src')).toBe(`/api/icon-assets/${key}`)
+  })
+
   it('falls back to generated initials when an image fails to load', async () => {
     const wrapper = mount(ServiceIcon, {
       props: {
@@ -60,5 +73,18 @@ describe('ServiceIcon', () => {
 
     expect(wrapper.find('img').exists()).toBe(false)
     expect(wrapper.text()).toBe('PN')
+  })
+
+  it('falls back when an R2 icon key is not content-addressed', () => {
+    const wrapper = mount(ServiceIcon, {
+      props: {
+        name: 'Home Assistant',
+        icon: 'icons/not-managed.png',
+        iconType: 'r2',
+      },
+    })
+
+    expect(wrapper.find('img').exists()).toBe(false)
+    expect(wrapper.text()).toBe('HA')
   })
 })
