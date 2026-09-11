@@ -175,7 +175,12 @@ export async function previewPortableImport(
     }
   }
 
-  return previewImport(db, mode, validation.value.document)
+  const { document: _document, ...preview } = await previewImport(
+    db,
+    mode,
+    validation.value.document,
+  )
+  return preview
 }
 
 async function verifyAsset(asset: ManagedExportIconAsset): Promise<VerifiedAsset> {
