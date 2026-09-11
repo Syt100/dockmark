@@ -17,6 +17,7 @@ import {
 } from '../services/service-icons'
 
 export const iconsRoute = new Hono<AppEnv>()
+export const iconAssetsRoute = new Hono<AppEnv>()
 
 function iconError(error: unknown): never {
   if (error instanceof IconDiscoveryError) {
@@ -95,8 +96,8 @@ iconsRoute.post('/upload', requireAuth, async (c) => {
   }
 })
 
-iconsRoute.get('/assets/*', requireAuth, async (c) => {
-  const key = c.req.path.slice('/api/icons/assets/'.length)
+iconAssetsRoute.get('/*', requireAuth, async (c) => {
+  const key = c.req.path.slice('/api/icon-assets/'.length)
 
   if (!/^icons\/sha256\/[a-f0-9]{64}\.(png|jpg|webp|gif|ico)$/.test(key)) {
     throw apiError(404, 'not_found', 'Icon asset not found')
