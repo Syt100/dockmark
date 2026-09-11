@@ -24,7 +24,7 @@ export type AppVars = {
 
 export type Bindings = WidenStringLiterals<GeneratedBindings> &
   AppVars & {
-    ICONS: R2Bucket
+    ICONS?: R2Bucket
   }
 
 export type Variables = {
