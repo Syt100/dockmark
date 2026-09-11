@@ -5,8 +5,8 @@ import {
   managedIconExtensionForMimeType,
   parseManagedIconKey,
   validatePortableDockmarkExportDocument,
-  type DockmarkExportDocumentV2,
   type DockmarkImportMode,
+  type DockmarkPortableExportDocument,
   type ImportPreviewResponse,
   type ImportSummary,
   type ManagedExportIconAsset,
@@ -107,7 +107,7 @@ async function exportManagedAsset(bucket: R2Bucket, key: string): Promise<Manage
 export async function buildPortableExportDocument(
   store: PortableStore,
   appVersion = '0.1.0',
-): Promise<DockmarkExportDocumentV2> {
+): Promise<DockmarkPortableExportDocument> {
   const records = await buildExportDocument(store.DB, appVersion)
   const managedKeys = [
     ...new Set(
@@ -116,10 +116,13 @@ export async function buildPortableExportDocument(
         .map((item) => item.icon as string),
     ),
   ]
-  const assets =
-    managedKeys.length === 0
-      ? []
-      : await Promise.all(managedKeys.map((key) => exportManagedAsset(requireBucket(store.ICONS), key)))
+
+  if (managedKeys.length === 0) {
+    return records
+  }
+
+  const bucket = requireBucket(store.ICONS)
+  const assets = await Promise.all(managedKeys.map((key) => exportManagedAsset(bucket, key)))
 
   return {
     ...records,
@@ -128,7 +131,10 @@ export async function buildPortableExportDocument(
   }
 }
 
-function v1ManagedIconErrors(schemaVersion: number, document: { items: Array<{ name: string; iconType: string }> }): string[] {
+function v1ManagedIconErrors(
+  schemaVersion: number,
+  document: { items: Array<{ name: string; iconType: string }> },
+): string[] {
   if (schemaVersion !== 1) return []
 
   return document.items
@@ -154,7 +160,10 @@ export async function previewPortableImport(
     }
   }
 
-  const portabilityErrors = v1ManagedIconErrors(validation.value.schemaVersion, validation.value.document)
+  const portabilityErrors = v1ManagedIconErrors(
+    validation.value.schemaVersion,
+    validation.value.document,
+  )
   if (portabilityErrors.length > 0) {
     return {
       ok: false,
@@ -224,7 +233,10 @@ export async function importPortableDocument(
     throw new Error(validation.errors.join('; ') || 'Import document is invalid')
   }
 
-  const portabilityErrors = v1ManagedIconErrors(validation.value.schemaVersion, validation.value.document)
+  const portabilityErrors = v1ManagedIconErrors(
+    validation.value.schemaVersion,
+    validation.value.document,
+  )
   if (portabilityErrors.length > 0) {
     throw new Error(portabilityErrors.join('; '))
   }
