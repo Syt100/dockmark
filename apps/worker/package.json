@@ -18,7 +18,7 @@
     "deploy": "wrangler deploy --env production --minify",
     "deploy:dry-run": "wrangler deploy --env production --dry-run --outdir dist",
     "cf-typegen": "wrangler types src/worker-configuration.d.ts --env-interface CloudflareBindings --include-runtime false",
-    "cf-typecheck": "wrangler types src/worker-configuration.d.ts --env-interface CloudflareBindings --include-runtime false --check"
+    "cf-typecheck": "wrangler types src/worker-configuration.d.ts --env-interface CloudflareBindings --include-runtime false && cat src/worker-configuration.d.ts && exit 1"
   },
   "dependencies": {
     "@dockmark/shared": "workspace:*",
