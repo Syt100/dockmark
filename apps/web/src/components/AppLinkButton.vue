@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
+import { RouterLink, type RouteLocationRaw } from 'vue-router'
 
 withDefaults(
   defineProps<{
-    to: string
+    to: RouteLocationRaw
     tone?: 'primary' | 'secondary' | 'danger' | 'ghost'
     size?: 'sm' | 'md'
   }>(),

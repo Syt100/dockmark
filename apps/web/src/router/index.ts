@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
 import { authSetupStatus, currentUser, ensureAuthState } from '../auth/state'
 
 const loadServicesView = () => import('../views/ServicesView.vue')
@@ -29,7 +28,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomeView,
+      redirect: '/services',
     },
     {
       path: '/services',
@@ -107,17 +106,18 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach(async (to) => {
+router.beforeEach(async (to, from) => {
   await ensureAuthState()
 
   const isPublic = to.meta.public === true
+  const cameFromServiceEditor = from.name === 'service-new' || from.name === 'service-edit'
 
   if (authSetupStatus.value?.needsSetup && to.name !== 'setup') {
     return { name: 'setup' }
   }
 
   if (!authSetupStatus.value?.needsSetup && to.name === 'setup') {
-    return { name: currentUser.value ? 'home' : 'login' }
+    return { name: currentUser.value ? 'services' : 'login' }
   }
 
   if (!currentUser.value && !isPublic) {
@@ -128,7 +128,19 @@ router.beforeEach(async (to) => {
   }
 
   if (currentUser.value && to.name === 'login') {
-    return { name: 'home' }
+    return { name: 'services' }
+  }
+
+  if (
+    to.name === 'services' &&
+    cameFromServiceEditor &&
+    from.query.view === 'list' &&
+    to.query.view !== 'list'
+  ) {
+    return {
+      name: 'services',
+      query: { ...to.query, view: 'list' },
+    }
   }
 
   return true

@@ -8,9 +8,9 @@ import ServiceEditorView from './ServiceEditorView.vue'
 function serviceItem(overrides: Record<string, unknown> = {}) {
   return {
     id: 'item_1',
-    categoryId: null,
+    categoryId: 'cat_photos',
     name: 'Immich',
-    description: null,
+    description: '照片服务',
     icon: null,
     iconType: 'emoji',
     credentialHint: null,
@@ -37,6 +37,44 @@ function serviceItem(overrides: Record<string, unknown> = {}) {
   }
 }
 
+function mockServices(items = [serviceItem()]) {
+  return vi.fn<typeof fetch>().mockImplementation((input) => {
+    const path = String(input)
+
+    if (path === '/api/items') {
+      return Promise.resolve(new Response(JSON.stringify({ items }), { status: 200 }))
+    }
+
+    if (path === '/api/categories') {
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            categories: [
+              {
+                id: 'cat_photos',
+                name: '照片分类',
+                slug: 'photos',
+                icon: '📷',
+                color: null,
+                sortOrder: 0,
+                createdAt: '2026-05-29T00:00:00.000Z',
+                updatedAt: '2026-05-29T00:00:00.000Z',
+              },
+            ],
+          }),
+          { status: 200 },
+        ),
+      )
+    }
+
+    if (path === '/api/tags') {
+      return Promise.resolve(new Response(JSON.stringify({ tags: [] }), { status: 200 }))
+    }
+
+    return Promise.resolve(new Response('{}', { status: 404 }))
+  })
+}
+
 function createTestRouter(initialPath: string) {
   const router = createRouter({
     history: createMemoryHistory(),
@@ -46,16 +84,8 @@ function createTestRouter(initialPath: string) {
         name: 'services',
         component: ServicesView,
         children: [
-          {
-            path: 'new',
-            name: 'service-new',
-            component: ServiceEditorView,
-          },
-          {
-            path: ':id/edit',
-            name: 'service-edit',
-            component: ServiceEditorView,
-          },
+          { path: 'new', name: 'service-new', component: ServiceEditorView },
+          { path: ':id/edit', name: 'service-edit', component: ServiceEditorView },
         ],
       },
     ],
@@ -66,228 +96,98 @@ function createTestRouter(initialPath: string) {
 }
 
 describe('ServicesView', () => {
-  it('renders the route-driven service editor shell on create routes', async () => {
-    const fetchMock = vi.fn<typeof fetch>().mockImplementation((input) => {
-      const path = String(input)
-
-      if (path === '/api/items') {
-        return Promise.resolve(new Response(JSON.stringify({ items: [] }), { status: 200 }))
-      }
-
-      if (path === '/api/categories') {
-        return Promise.resolve(new Response(JSON.stringify({ categories: [] }), { status: 200 }))
-      }
-
-      if (path === '/api/tags') {
-        return Promise.resolve(new Response(JSON.stringify({ tags: [] }), { status: 200 }))
-      }
-
-      return Promise.resolve(new Response('{}', { status: 404 }))
-    })
-
-    vi.stubGlobal('fetch', fetchMock)
-
-    const router = createTestRouter('/services/new')
-    await router.isReady()
-
-    const wrapper = mount(ServicesView, {
-      global: {
-        plugins: [router],
-      },
-    })
-
-    await vi.waitFor(() => {
-      expect(wrapper.text()).toContain('服务名称')
-    })
-
-    expect(wrapper.text()).toContain('新建服务')
-    expect(wrapper.html()).toContain('role="dialog"')
-    expect(wrapper.html()).toContain('md:hidden')
-
-    vi.unstubAllGlobals()
-  })
-
-  it('filters services by status with lightweight accessible controls', async () => {
-    const fetchMock = vi.fn<typeof fetch>().mockImplementation((input) => {
-      const path = String(input)
-
-      if (path === '/api/items') {
-        return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              items: [serviceItem()],
-            }),
-            { status: 200 },
-          ),
-        )
-      }
-
-      if (path === '/api/categories') {
-        return Promise.resolve(new Response(JSON.stringify({ categories: [] }), { status: 200 }))
-      }
-
-      return Promise.resolve(new Response('{}', { status: 404 }))
-    })
-
+  it('uses one shared card view by default with filters visually collapsed and card editing available', async () => {
+    const fetchMock = mockServices()
     vi.stubGlobal('fetch', fetchMock)
 
     const router = createTestRouter('/services')
     await router.isReady()
+    const wrapper = mount(ServicesView, { global: { plugins: [router] } })
 
-    const wrapper = mount(ServicesView, {
-      global: {
-        plugins: [router],
-        stubs: {
-          RouterView: true,
-        },
-      },
-    })
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Immich'))
 
-    await vi.waitFor(() => {
-      expect(wrapper.text()).toContain('Immich')
-    })
-
-    expect(wrapper.find('label').exists()).toBe(false)
-    expect(wrapper.find('input[aria-label="搜索服务"]').exists()).toBe(true)
-    expect(wrapper.find('select[aria-label="按分类筛选服务"]').exists()).toBe(true)
-    expect(wrapper.find('select[aria-label="按状态筛选服务"]').exists()).toBe(true)
-    expect(wrapper.find('select[aria-label="按标签筛选服务"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('筛选')
-    expect(wrapper.html()).toContain('whitespace-nowrap')
-    expect(wrapper.html()).toContain('table-fixed')
-    expect(wrapper.html()).toContain('lg:hidden')
-
-    const selects = wrapper.findAll('select')
-    await selects[1]?.setValue('archived')
-
-    expect(wrapper.text()).toContain('没有符合筛选条件的服务')
-    expect(wrapper.findAll('article').some((article) => article.text().includes('Immich'))).toBe(
-      false,
+    expect(wrapper.text()).toContain('照片分类')
+    expect(wrapper.find('[aria-label="卡片视图"]').attributes('aria-pressed')).toBe('true')
+    expect(wrapper.find('[aria-label="列表视图"]').attributes('aria-pressed')).toBe('false')
+    expect(wrapper.find('[aria-label="展开筛选"]').exists()).toBe(true)
+    expect(wrapper.get('[data-service-filter-collapse]').attributes('data-state')).toBe('closed')
+    expect(wrapper.get('#service-filters').attributes('aria-hidden')).toBe('true')
+    expect(wrapper.find('a[aria-label="编辑服务"]').attributes('href')).toBe(
+      '/services/item_1/edit',
     )
 
     vi.unstubAllGlobals()
   })
 
-  it('discloses mobile filters only after the filter toggle is activated', async () => {
-    const fetchMock = vi.fn<typeof fetch>().mockImplementation((input) => {
-      const path = String(input)
-
-      if (path === '/api/items') {
-        return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              items: [serviceItem()],
-            }),
-            { status: 200 },
-          ),
-        )
-      }
-
-      if (path === '/api/categories') {
-        return Promise.resolve(new Response(JSON.stringify({ categories: [] }), { status: 200 }))
-      }
-
-      return Promise.resolve(new Response('{}', { status: 404 }))
-    })
-
-    vi.stubGlobal('fetch', fetchMock)
-
+  it('expands and collapses the shared filter form without replacing the collapse container', async () => {
+    vi.stubGlobal('fetch', mockServices())
     const router = createTestRouter('/services')
     await router.isReady()
+    const wrapper = mount(ServicesView, { global: { plugins: [router] } })
 
-    const wrapper = mount(ServicesView, {
-      global: {
-        plugins: [router],
-        stubs: {
-          RouterView: true,
-        },
-      },
-    })
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Immich'))
+    const collapse = wrapper.get('[data-service-filter-collapse]')
+    const filterPanel = wrapper.get('#service-filters')
 
-    await vi.waitFor(() => {
-      expect(wrapper.text()).toContain('Immich')
-    })
+    await wrapper.get('[aria-label="展开筛选"]').trigger('click')
 
-    expect(wrapper.find('select[name="services-category-filter-mobile"]').exists()).toBe(false)
+    expect(collapse.attributes('data-state')).toBe('open')
+    expect(filterPanel.attributes('aria-hidden')).toBe('false')
+    expect(wrapper.find('input[aria-label="搜索服务"]').exists()).toBe(true)
+    expect(wrapper.find('select[aria-label="按分类筛选服务"]').exists()).toBe(true)
+    expect(wrapper.find('select[aria-label="按状态筛选服务"]').exists()).toBe(true)
+    expect(wrapper.find('select[aria-label="按标签筛选服务"]').exists()).toBe(true)
 
-    const filterToggle = () =>
-      wrapper
-        .findAll('button')
-        .find((button) => button.text() === '筛选' || button.text() === '收起筛选')
+    await wrapper.get('input[aria-label="搜索服务"]').setValue('不存在')
+    expect(wrapper.text()).toContain('没有符合筛选条件的服务')
 
-    await filterToggle()?.trigger('click')
-    await wrapper.vm.$nextTick()
+    await wrapper.get('[aria-label="收起筛选"]').trigger('click')
 
-    expect(wrapper.find('select[name="services-category-filter-mobile"]').exists()).toBe(true)
-    expect(wrapper.find('select[name="services-status-filter-mobile"]').exists()).toBe(true)
-    expect(wrapper.find('select[name="services-tag-filter-mobile"]').exists()).toBe(true)
-
-    await filterToggle()?.trigger('click')
-    await wrapper.vm.$nextTick()
-
-    expect(wrapper.find('select[name="services-category-filter-mobile"]').exists()).toBe(false)
+    expect(collapse.attributes('data-state')).toBe('closed')
+    expect(filterPanel.attributes('aria-hidden')).toBe('true')
+    expect(wrapper.find('[data-service-filter-collapse]').exists()).toBe(true)
 
     vi.unstubAllGlobals()
   })
 
-  it('reloads services after returning from a successful create flow', async () => {
-    let itemsRequestCount = 0
-    const fetchMock = vi.fn<typeof fetch>().mockImplementation((input) => {
-      const path = String(input)
-
-      if (path === '/api/items') {
-        itemsRequestCount += 1
-        return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              items:
-                itemsRequestCount === 1
-                  ? []
-                  : [serviceItem({ id: 'item_created', name: '新服务' })],
-            }),
-            { status: 200 },
-          ),
-        )
-      }
-
-      if (path === '/api/categories') {
-        return Promise.resolve(new Response(JSON.stringify({ categories: [] }), { status: 200 }))
-      }
-
-      if (path === '/api/tags') {
-        return Promise.resolve(new Response(JSON.stringify({ tags: [] }), { status: 200 }))
-      }
-
-      return Promise.resolve(new Response('{}', { status: 404 }))
-    })
-
+  it('switches to a list rendering without reloading the shared service data', async () => {
+    const fetchMock = mockServices()
     vi.stubGlobal('fetch', fetchMock)
-
-    const router = createTestRouter('/services/new')
+    const router = createTestRouter('/services')
     await router.isReady()
+    const wrapper = mount(ServicesView, { global: { plugins: [router] } })
 
-    const wrapper = mount(ServicesView, {
-      global: {
-        plugins: [router],
-      },
-    })
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Immich'))
+    const itemsRequestsBefore = fetchMock.mock.calls.filter(
+      ([input]) => String(input) === '/api/items',
+    ).length
 
-    await vi.waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith('/api/items', {
-        headers: {
-          'content-type': 'application/json',
-        },
-      })
-    })
+    await wrapper.get('[aria-label="列表视图"]').trigger('click')
+    await vi.waitFor(() => expect(router.currentRoute.value.query.view).toBe('list'))
 
-    await router.push({ path: '/services', query: { saved: 'created' } })
+    expect(wrapper.find('table').exists()).toBe(true)
+    expect(wrapper.find('[aria-label="列表视图"]').attributes('aria-pressed')).toBe('true')
+    expect(fetchMock.mock.calls.filter(([input]) => String(input) === '/api/items')).toHaveLength(
+      itemsRequestsBefore,
+    )
 
-    await vi.waitFor(() => {
-      expect(wrapper.text()).toContain('新服务')
-    })
+    vi.unstubAllGlobals()
+  })
 
-    expect(itemsRequestCount).toBeGreaterThanOrEqual(2)
-    expect(wrapper.text()).toContain('服务已创建')
+  it('preserves list view while entering and leaving the service editor', async () => {
+    vi.stubGlobal('fetch', mockServices())
+    const router = createTestRouter('/services?view=list')
+    await router.isReady()
+    const wrapper = mount(ServicesView, { global: { plugins: [router] } })
+
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Immich'))
+    const editLink = wrapper.findAll('a').find((link) => link.text() === '编辑')
+    expect(editLink?.attributes('href')).toContain('view=list')
+
+    await router.push('/services/item_1/edit?view=list')
+    await router.push({ path: '/services', query: { saved: 'updated', view: 'list' } })
+
+    expect(router.currentRoute.value.query.view).toBe('list')
 
     vi.unstubAllGlobals()
   })

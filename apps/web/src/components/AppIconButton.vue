@@ -14,7 +14,7 @@ withDefaults(
 
 <template>
   <button
-    class="inline-flex h-10 w-10 items-center justify-center rounded-[var(--dm-radius-control)] text-[var(--dm-text-muted)] transition active:scale-[0.96] motion-reduce:active:scale-100 hover:bg-[var(--dm-surface-muted)] hover:text-[var(--dm-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--dm-focus)] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
+    class="inline-flex h-10 w-10 items-center justify-center rounded-[var(--dm-radius-control)] text-[var(--dm-text-muted)] transition active:scale-[0.96] aria-expanded:bg-[var(--dm-primary-soft)] aria-expanded:text-[var(--dm-primary)] aria-expanded:hover:bg-[var(--dm-primary-soft-hover)] motion-reduce:active:scale-100 hover:bg-[var(--dm-surface-muted)] hover:text-[var(--dm-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--dm-focus)] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
     :aria-label="label"
     :disabled="disabled"
     :title="label"
