@@ -72,9 +72,12 @@ function updateIconType(value: string) {
   candidate.value = null
   error.value = null
   feedback.value = null
-  emit('update:iconType', value as IconType)
+  const nextType = value as IconType
+  const shouldClearValue = nextType === 'favicon' || (props.iconType === 'r2' && nextType !== 'r2')
 
-  if (value === 'favicon') {
+  emit('update:iconType', nextType)
+
+  if (shouldClearValue) {
     emit('update:icon', '')
   }
 }
