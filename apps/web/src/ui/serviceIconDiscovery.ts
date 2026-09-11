@@ -113,6 +113,57 @@ async function fetchWithTimeout(url: string, accept: string): Promise<Response> 
   })
 }
 
+async function readBoundedBytes(response: Response, limit: number): Promise<Uint8Array<ArrayBuffer>> {
+  const declaredLength = Number(response.headers.get('content-length') ?? 0)
+  if (Number.isFinite(declaredLength) && declaredLength > limit) {
+    throw new Error(`响应内容超过 ${limit} 字节限制`)
+  }
+
+  if (!response.body) {
+    const bytes = new Uint8Array(await response.arrayBuffer())
+    if (bytes.byteLength > limit) throw new Error(`响应内容超过 ${limit} 字节限制`)
+    return Uint8Array.from(bytes)
+  }
+
+  const reader = response.body.getReader()
+  const chunks: Uint8Array[] = []
+  let total = 0
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      if (!value) continue
+
+      total += value.byteLength
+      if (total > limit) {
+        await reader.cancel()
+        throw new Error(`响应内容超过 ${limit} 字节限制`)
+      }
+      chunks.push(value)
+    }
+  } finally {
+    reader.releaseLock()
+  }
+
+  const output = new Uint8Array(total)
+  let offset = 0
+  for (const chunk of chunks) {
+    output.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return output
+}
+
+async function readBoundedText(response: Response, limit: number): Promise<string> {
+  return new TextDecoder().decode(await readBoundedBytes(response, limit))
+}
+
+async function readBoundedBlob(response: Response, limit: number): Promise<Blob> {
+  const bytes = await readBoundedBytes(response, limit)
+  return new Blob([bytes], { type: response.headers.get('content-type')?.split(';')[0]?.trim() ?? '' })
+}
+
 async function readBlobCandidate(candidate: IconCandidate): Promise<BrowserIconDiscoveryResult | null> {
   try {
     const response = await fetchWithTimeout(
@@ -121,11 +172,8 @@ async function readBlobCandidate(candidate: IconCandidate): Promise<BrowserIconD
     )
     if (!response.ok) return null
 
-    const declaredLength = Number(response.headers.get('content-length') ?? 0)
-    if (declaredLength > automaticIconLimits.maxIconBytes) return null
-
-    const blob = await response.blob()
-    if (blob.size <= 0 || blob.size > automaticIconLimits.maxIconBytes) return null
+    const blob = await readBoundedBlob(response, automaticIconLimits.maxIconBytes)
+    if (blob.size <= 0) return null
 
     if (blob.type.toLowerCase() === 'image/svg+xml') {
       return { kind: 'external', sourceUrl: response.url || candidate.url }
@@ -192,37 +240,32 @@ export async function discoverIconInBrowser(sourceUrl: string): Promise<BrowserI
       const contentType = (pageResponse.headers.get('content-type') ?? '').toLowerCase()
 
       if (contentType.startsWith('image/')) {
-        const blob = await pageResponse.blob()
-        if (blob.size > 0 && blob.size <= automaticIconLimits.maxIconBytes) {
+        const blob = await readBoundedBlob(pageResponse, automaticIconLimits.maxIconBytes)
+        if (blob.size > 0) {
           if (blob.type.toLowerCase() === 'image/svg+xml') {
             return { kind: 'external', sourceUrl: effectiveUrl.toString() }
           }
           return { kind: 'blob', blob, sourceUrl: effectiveUrl.toString() }
         }
       } else {
-        const html = await pageResponse.text()
-        if (new TextEncoder().encode(html).byteLength <= automaticIconLimits.maxHtmlBytes) {
-          const document = new DOMParser().parseFromString(html, 'text/html')
-          const declared = declaredCandidates(document, effectiveUrl)
-          candidates.push(...declared.candidates)
+        const html = await readBoundedText(pageResponse, automaticIconLimits.maxHtmlBytes)
+        const document = new DOMParser().parseFromString(html, 'text/html')
+        const declared = declaredCandidates(document, effectiveUrl)
+        candidates.push(...declared.candidates)
 
-          for (const manifestUrl of declared.manifestUrls) {
-            try {
-              const response = await fetchWithTimeout(
-                manifestUrl,
-                'application/manifest+json,application/json,*/*;q=0.5',
-              )
-              if (!response.ok) continue
-              const text = await response.text()
-              if (new TextEncoder().encode(text).byteLength > automaticIconLimits.maxManifestBytes) {
-                continue
-              }
-              candidates.push(
-                ...manifestCandidates(JSON.parse(text), new URL(response.url || manifestUrl)),
-              )
-            } catch {
-              // Manifest discovery is optional.
-            }
+        for (const manifestUrl of declared.manifestUrls) {
+          try {
+            const response = await fetchWithTimeout(
+              manifestUrl,
+              'application/manifest+json,application/json,*/*;q=0.5',
+            )
+            if (!response.ok) continue
+            const text = await readBoundedText(response, automaticIconLimits.maxManifestBytes)
+            candidates.push(
+              ...manifestCandidates(JSON.parse(text), new URL(response.url || manifestUrl)),
+            )
+          } catch {
+            // Manifest discovery is optional.
           }
         }
       }
@@ -239,7 +282,7 @@ export async function discoverIconInBrowser(sourceUrl: string): Promise<BrowserI
     if (readable) return readable
   }
 
-  for (const candidate of ranked.filter((candidate) => candidate.source === 'conventional')) {
+  for (const candidate of ranked) {
     const external = await probeExternalImage(candidate.url)
     if (external) return external
   }
