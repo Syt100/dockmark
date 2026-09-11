@@ -366,7 +366,8 @@ export async function storeManagedIcon(
     throw new IconDiscoveryError('仅支持 PNG、JPEG、WebP、GIF 或 ICO 作为托管图标')
   }
 
-  const hash = bytesToHex(await crypto.subtle.digest('SHA-256', bytes))
+  const digestInput = Uint8Array.from(bytes)
+  const hash = bytesToHex(await crypto.subtle.digest('SHA-256', digestInput))
   const key = managedIconKey(hash, mimeType)
 
   const existing = await bucket.head(key)
@@ -394,7 +395,9 @@ async function tryStoreCandidate(
 ): Promise<ManagedIconDiscoveryResult | null> {
   try {
     const response = await fetchSafeExternal(candidate.url, {
-      headers: { accept: 'image/avif,image/webp,image/png,image/jpeg,image/gif,image/x-icon,*/*;q=0.5' },
+      headers: {
+        accept: 'image/avif,image/webp,image/png,image/jpeg,image/gif,image/x-icon,*/*;q=0.5',
+      },
     })
     if (!response.ok) return null
 
@@ -418,7 +421,8 @@ export async function discoverAndStoreIcon(
   })
 
   if (response.ok) {
-    const contentType = (response.headers.get('content-type') ?? '').split(';')[0]?.trim().toLowerCase() ?? ''
+    const contentType =
+      (response.headers.get('content-type') ?? '').split(';')[0]?.trim().toLowerCase() ?? ''
     if (contentType.startsWith('image/')) {
       const bytes = await readBoundedBytes(response, automaticIconLimits.maxIconBytes)
       return storeManagedIcon(bucket, bytes, response.url || pageUrl.toString())
@@ -445,7 +449,10 @@ export async function discoverAndStoreIcon(
             automaticIconLimits.maxManifestBytes,
           )
           candidates.push(
-            ...discoverManifestCandidates(JSON.parse(manifestText), new URL(manifestResponse.url || manifestUrl)),
+            ...discoverManifestCandidates(
+              JSON.parse(manifestText),
+              new URL(manifestResponse.url || manifestUrl),
+            ),
           )
         } catch {
           // Manifest discovery is optional; conventional candidates still apply.
