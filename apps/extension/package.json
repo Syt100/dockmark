@@ -13,6 +13,6 @@
     "format": "corepack pnpm --dir ../.. exec prettier --write apps/extension"
   },
   "devDependencies": {
-    "typescript": "~6.0.0"
+    "typescript": "~7.0.2"
   }
 }
