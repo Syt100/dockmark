@@ -49,6 +49,9 @@ describe('service icon Worker boundary', () => {
     'http://192.168.1.10',
     'http://100.64.1.2',
     'http://[::1]',
+    'http://[::ffff:127.0.0.1]',
+    'http://[::ffff:0a00:1]',
+    'http://[2001:db8::1]',
     'http://grafana.local',
     'http://nas.home.arpa',
   ])('rejects server-side private target %s', (target) => {
@@ -58,6 +61,9 @@ describe('service icon Worker boundary', () => {
   it('rejects embedded credentials but accepts public HTTP(S)', () => {
     expect(() => assertSafeExternalUrl('https://user:pass@example.com')).toThrow('用户名或密码')
     expect(assertSafeExternalUrl('https://example.com/app').hostname).toBe('example.com')
+    expect(assertSafeExternalUrl('https://[2606:4700:4700::1111]/').hostname).toContain(
+      '2606:4700:4700::1111',
+    )
   })
 
   it('revalidates redirect destinations before following them', async () => {
