@@ -13,7 +13,7 @@ import AppTextarea from '../components/AppTextarea.vue'
 import EditorLoadingState from '../components/EditorLoadingState.vue'
 import FeedbackMessage from '../components/FeedbackMessage.vue'
 import ResponsiveEditorShell from '../components/ResponsiveEditorShell.vue'
-import ServiceIcon from '../components/ServiceIcon.vue'
+import ServiceIconEditor from '../components/ServiceIconEditor.vue'
 import { useMinimumVisibleLoading } from '../composables/minimumVisibleLoading'
 import { endpointKindLabels, statusLabels } from '../ui/labels'
 import { serviceFormToInput, serviceToForm, type EndpointForm } from './managementForms'
@@ -28,11 +28,6 @@ const endpointKinds: EndpointKind[] = [
   'backup',
   'docs',
   'api',
-]
-const serviceIconTypes: Array<{ value: IconType; label: string }> = [
-  { value: 'emoji', label: 'Emoji / 文本' },
-  { value: 'url', label: '图片 URL' },
-  { value: 'favicon', label: '主地址 Favicon' },
 ]
 const endpointTemplates: Array<{ label: string; kind: EndpointKind }> = [
   { label: '公网', kind: 'public' },
@@ -66,10 +61,6 @@ const filteredTags = computed(() => {
   )
 })
 const selectedTagCount = computed(() => selectedTagIds.value.length)
-const primaryEndpointUrl = computed(
-  () =>
-    form.endpoints.find((endpoint) => endpoint.isPrimary)?.url ?? form.endpoints[0]?.url ?? null,
-)
 
 const form = reactive({
   name: '',
@@ -213,46 +204,19 @@ onMounted(load)
             </label>
           </div>
 
-          <div class="grid gap-[var(--dm-form-gap)] md:grid-cols-2">
-            <label class="grid gap-1 text-sm">
-              <span class="dm-label">描述</span>
-              <AppInput v-model="form.description" />
-            </label>
-            <div class="grid gap-2 text-sm">
-              <span class="dm-label">图标</span>
-              <div
-                class="grid gap-2 sm:grid-cols-[auto_minmax(8rem,0.8fr)_minmax(8rem,1fr)] sm:items-center"
-              >
-                <ServiceIcon
-                  :icon="form.icon"
-                  :icon-type="form.iconType"
-                  :name="form.name || '服务'"
-                  :primary-url="primaryEndpointUrl"
-                />
-                <AppSelect v-model="form.iconType" aria-label="图标类型" name="service-icon-type">
-                  <option
-                    v-for="option in serviceIconTypes"
-                    :key="option.value"
-                    :value="option.value"
-                  >
-                    {{ option.label }}
-                  </option>
-                </AppSelect>
-                <AppInput
-                  v-if="form.iconType === 'emoji'"
-                  v-model="form.icon"
-                  name="service-icon-value"
-                  placeholder="例如 🏠 或服务缩写"
-                />
-                <AppInput
-                  v-else-if="form.iconType === 'url'"
-                  v-model="form.icon"
-                  name="service-icon-url"
-                  placeholder="https://example.com/icon.png"
-                  type="url"
-                />
-              </div>
-            </div>
+          <label class="grid gap-1 text-sm">
+            <span class="dm-label">描述</span>
+            <AppInput v-model="form.description" />
+          </label>
+
+          <div class="grid gap-2 text-sm">
+            <span class="dm-label">图标</span>
+            <ServiceIconEditor
+              v-model:icon="form.icon"
+              v-model:icon-type="form.iconType"
+              :endpoints="form.endpoints"
+              :name="form.name || '服务'"
+            />
           </div>
         </section>
 

@@ -89,6 +89,7 @@ jobs:
     env:
       PREVIEW_D1_DATABASE_NAME: dockmark-preview-pr-${{ github.event.pull_request.number }}
       PREVIEW_KV_NAMESPACE_NAME: dockmark-preview
+      PREVIEW_R2_BUCKET_NAME: dockmark-icons-preview
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -111,7 +112,7 @@ jobs:
       - name: Build preview assets
         run: corepack pnpm build
 
-      - name: Ensure preview D1 and KV exist
+      - name: Ensure preview D1, KV, and R2 exist
         working-directory: apps/worker
         run: |
           corepack pnpm exec wrangler d1 list --json > "$RUNNER_TEMP/d1-list.json"
@@ -130,6 +131,13 @@ jobs:
             echo "Creating KV namespace $PREVIEW_KV_NAMESPACE_NAME."
             corepack pnpm exec wrangler kv namespace create "$PREVIEW_KV_NAMESPACE_NAME"
             corepack pnpm exec wrangler kv namespace list > "$RUNNER_TEMP/kv-list.json"
+          fi
+
+          if corepack pnpm exec wrangler r2 bucket info "$PREVIEW_R2_BUCKET_NAME" --json >/dev/null 2>&1; then
+            echo "R2 bucket $PREVIEW_R2_BUCKET_NAME already exists."
+          else
+            echo "Creating R2 bucket $PREVIEW_R2_BUCKET_NAME."
+            corepack pnpm exec wrangler r2 bucket create "$PREVIEW_R2_BUCKET_NAME"
           fi
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -197,7 +205,7 @@ jobs:
           script: |
             const marker = '<!-- dockmark-pr-preview -->'
             const shortSha = context.payload.pull_request.head.sha.slice(0, 7)
-            const body = `${marker}\n## Cloudflare Preview ✅\n\n🌐 **Preview:** ${process.env.PREVIEW_URL}\n\nPR head: \`${shortSha}\`\n\nThis preview uses isolated D1 \`${process.env.PREVIEW_D1_DATABASE_NAME}\` and shared non-production KV with demo data.`
+            const body = `${marker}\n## Cloudflare Preview ✅\n\n🌐 **Preview:** ${process.env.PREVIEW_URL}\n\nPR head: \`${shortSha}\`\n\nThis preview uses isolated D1 \`${process.env.PREVIEW_D1_DATABASE_NAME}\`, shared non-production KV, and shared private R2 \`${process.env.PREVIEW_R2_BUCKET_NAME}\` with demo data.`
             const { owner, repo } = context.repo
             const issue_number = context.issue.number
             const comments = await github.paginate(github.rest.issues.listComments, {
@@ -315,7 +323,7 @@ jobs:
         env:
           DOCKMARK_SETUP_TOKEN: ${{ secrets.DOCKMARK_SETUP_TOKEN }}
 
-      - name: Ensure production D1 exists
+      - name: Ensure production D1 and R2 exist
         working-directory: apps/worker
         run: |
           corepack pnpm exec wrangler d1 list --json > "$RUNNER_TEMP/d1-list.json"
@@ -327,6 +335,13 @@ jobs:
             corepack pnpm exec wrangler d1 list --json > "$RUNNER_TEMP/d1-list.json"
           fi
           node scripts/write-d1-migration-config.mjs "$RUNNER_TEMP/d1-list.json" wrangler.d1.generated.jsonc
+
+          if corepack pnpm exec wrangler r2 bucket info dockmark-icons-production --json >/dev/null 2>&1; then
+            echo "R2 bucket dockmark-icons-production already exists."
+          else
+            echo "Creating R2 bucket dockmark-icons-production."
+            corepack pnpm exec wrangler r2 bucket create dockmark-icons-production
+          fi
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

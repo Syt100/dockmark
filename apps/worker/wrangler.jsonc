@@ -24,6 +24,13 @@
       "binding": "KV",
     },
   ],
+  "r2_buckets": [
+    {
+      "binding": "ICONS",
+      "bucket_name": "dockmark-icons-dev",
+      "preview_bucket_name": "dockmark-icons-preview",
+    },
+  ],
   "secrets": {
     "required": ["SETUP_TOKEN"],
   },
@@ -51,6 +58,12 @@
       "kv_namespaces": [
         {
           "binding": "KV",
+        },
+      ],
+      "r2_buckets": [
+        {
+          "binding": "ICONS",
+          "bucket_name": "dockmark-icons-production",
         },
       ],
       "secrets": {

@@ -47,6 +47,14 @@ const faviconUrl = computed(() => {
   }
 })
 
+const managedIconUrl = computed(() => {
+  if (!/^icons\/sha256\/[a-f0-9]{64}\.(png|jpg|webp|gif|ico)$/.test(trimmedIcon.value)) {
+    return null
+  }
+
+  return `/api/icon-assets/${trimmedIcon.value}`
+})
+
 const imageUrl = computed(() => {
   if (props.iconType === 'url') {
     return trimmedIcon.value || null
@@ -54,6 +62,10 @@ const imageUrl = computed(() => {
 
   if (props.iconType === 'favicon') {
     return faviconUrl.value
+  }
+
+  if (props.iconType === 'r2') {
+    return managedIconUrl.value
   }
 
   return null

@@ -361,6 +361,14 @@ export function validateServiceItemInput(input: unknown): ValidationResult<Servi
     }
   }
 
+  if (iconType === 'r2') {
+    if (!icon) {
+      errors.push('icon is required when iconType is r2')
+    } else if (!/^icons\/sha256\/[a-f0-9]{64}\.(png|jpg|webp|gif|ico)$/.test(icon)) {
+      errors.push('icon must be a managed icon key when iconType is r2')
+    }
+  }
+
   if (errors.length > 0) {
     return { ok: false, errors }
   }

@@ -11,6 +11,7 @@ import type {
   CategoryInput,
   DockmarkExportDocument,
   DockmarkImportMode,
+  IconDiscoveryResult,
   ImportPreviewResponse,
   ImportResultResponse,
   NavResponse,
@@ -223,6 +224,33 @@ export async function updateItem(id: string, input: ServiceItemInput): Promise<S
 
 export async function deleteItem(id: string): Promise<void> {
   await request<void>(`/api/items/${id}`, { method: 'DELETE' })
+}
+
+export async function fetchServiceIcon(url: string): Promise<IconDiscoveryResult> {
+  return jsonRequest<IconDiscoveryResult>('/api/icons/fetch', {
+    method: 'POST',
+    body: { url },
+  })
+}
+
+export async function uploadServiceIcon(
+  blob: Blob,
+  sourceUrl: string,
+): Promise<IconDiscoveryResult> {
+  const form = new FormData()
+  form.set('file', blob, 'service-icon')
+  form.set('sourceUrl', sourceUrl)
+
+  const response = await fetch('/api/icons/upload', {
+    method: 'POST',
+    body: form,
+  })
+
+  if (!response.ok) {
+    throw await readError(response)
+  }
+
+  return response.json() as Promise<IconDiscoveryResult>
 }
 
 export async function exportDockmarkData(): Promise<DockmarkExportDocument> {

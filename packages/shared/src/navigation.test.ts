@@ -72,6 +72,49 @@ describe('navigation validation', () => {
     })
   })
 
+  it('requires content-addressed keys for managed R2 icons', () => {
+    const invalid = validateServiceItemInput({
+      name: 'Grafana',
+      icon: 'icons/grafana.png',
+      iconType: 'r2',
+      endpoints: [
+        {
+          label: 'Public',
+          url: 'https://grafana.example.com',
+          kind: 'public',
+          isPrimary: true,
+        },
+      ],
+    })
+
+    expect(invalid).toEqual({
+      ok: false,
+      errors: ['icon must be a managed icon key when iconType is r2'],
+    })
+
+    const valid = validateServiceItemInput({
+      name: 'Grafana',
+      icon: `icons/sha256/${'a'.repeat(64)}.png`,
+      iconType: 'r2',
+      endpoints: [
+        {
+          label: 'Public',
+          url: 'https://grafana.example.com',
+          kind: 'public',
+          isPrimary: true,
+        },
+      ],
+    })
+
+    expect(valid).toMatchObject({
+      ok: true,
+      value: {
+        iconType: 'r2',
+        icon: `icons/sha256/${'a'.repeat(64)}.png`,
+      },
+    })
+  })
+
   it('allows favicon icons without a stored icon value', () => {
     const result = validateServiceItemInput({
       name: 'Grafana',

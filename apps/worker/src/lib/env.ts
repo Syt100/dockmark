@@ -2,7 +2,7 @@ import type { AuthenticatedUser } from '@dockmark/shared'
 
 export type AuthMode = 'builtin' | 'cloudflare-access' | 'development' | 'oidc'
 
-type GeneratedBindings = Omit<CloudflareBindings, 'AUTH_MODE'>
+type GeneratedBindings = Omit<CloudflareBindings, 'AUTH_MODE' | 'ICONS'>
 type WidenStringLiterals<T> = {
   [Key in keyof T]: T[Key] extends string | undefined
     ? undefined extends T[Key]
@@ -22,7 +22,10 @@ export type AppVars = {
   SESSION_TOUCH_INTERVAL_SECONDS?: string
 }
 
-export type Bindings = WidenStringLiterals<GeneratedBindings> & AppVars
+export type Bindings = WidenStringLiterals<GeneratedBindings> &
+  AppVars & {
+    ICONS?: R2Bucket
+  }
 
 export type Variables = {
   user: AuthenticatedUser
