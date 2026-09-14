@@ -104,6 +104,17 @@ async function exportManagedAsset(bucket: R2Bucket, key: string): Promise<Manage
   }
 }
 
+function requirePortableExportLimits(
+  document: DockmarkPortableExportDocument,
+): DockmarkPortableExportDocument {
+  const validation = validatePortableDockmarkExportDocument(document)
+  if (!validation.ok) {
+    throw new Error(`Export document is not portable: ${validation.errors.join('; ')}`)
+  }
+
+  return document
+}
+
 export async function buildPortableExportDocument(
   store: PortableStore,
   appVersion = '0.1.0',
@@ -124,11 +135,11 @@ export async function buildPortableExportDocument(
   const bucket = requireBucket(store.ICONS)
   const assets = await Promise.all(managedKeys.map((key) => exportManagedAsset(bucket, key)))
 
-  return {
+  return requirePortableExportLimits({
     ...records,
     schemaVersion: dockmarkAssetExportSchemaVersion,
     assets,
-  }
+  })
 }
 
 function v1ManagedIconErrors(
