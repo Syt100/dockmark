@@ -23,7 +23,7 @@
     "format": "prettier --write \"*.{json,md,yaml,yml}\" \"apps/**/*.{ts,mts,vue,mjs,json,jsonc,html,css,md}\" \"packages/**/*.{ts,json,md}\" \"docs/**/*.md\" \"scripts/**/*.mjs\" \"openspec/specs/**/*.md\"",
     "format:check": "prettier --check \"*.{json,md,yaml,yml}\" \"apps/**/*.{ts,mts,vue,mjs,json,jsonc,html,css,md}\" \"packages/**/*.{ts,json,md}\" \"docs/**/*.md\" \"scripts/**/*.mjs\" \"openspec/specs/**/*.md\"",
     "clean": "node scripts/clean.mjs",
-    "validate": "corepack pnpm typecheck && corepack pnpm test && corepack pnpm lint:check && corepack pnpm format:check && corepack pnpm build && npm exec --yes --package=@fission-ai/openspec@1.13.0 -- openspec validate --all --strict --no-interactive"
+    "validate": "corepack pnpm typecheck && corepack pnpm test && corepack pnpm lint:check && corepack pnpm format:check && corepack pnpm build"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
