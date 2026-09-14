@@ -23,7 +23,7 @@
     "format": "prettier --write \"*.{json,md,yaml,yml}\" \"apps/**/*.{ts,mts,vue,mjs,json,jsonc,html,css,md}\" \"packages/**/*.{ts,json,md}\" \"docs/**/*.md\" \"scripts/**/*.mjs\" \"openspec/specs/**/*.md\"",
     "format:check": "prettier --check \"*.{json,md,yaml,yml}\" \"apps/**/*.{ts,mts,vue,mjs,json,jsonc,html,css,md}\" \"packages/**/*.{ts,json,md}\" \"docs/**/*.md\" \"scripts/**/*.mjs\" \"openspec/specs/**/*.md\"",
     "clean": "node scripts/clean.mjs",
-    "validate": "prettier --write apps/web/src/api/client.ts apps/web/src/components/ServiceIconEditor.vue apps/web/src/ui/serviceIconDiscovery.ts apps/worker/src/services/portable-import-export.ts apps/worker/src/services/service-icons.ts apps/worker/test/service-icons.test.ts packages/shared/src/import-export-assets.ts packages/shared/src/service-icons.ts && git diff -- apps/web/src/api/client.ts apps/web/src/components/ServiceIconEditor.vue apps/web/src/ui/serviceIconDiscovery.ts apps/worker/src/services/portable-import-export.ts apps/worker/src/services/service-icons.ts apps/worker/test/service-icons.test.ts packages/shared/src/import-export-assets.ts packages/shared/src/service-icons.ts && exit 1"
+    "validate": "corepack pnpm typecheck && corepack pnpm test && corepack pnpm lint:check && corepack pnpm format:check && corepack pnpm build && npm exec --yes --package=@fission-ai/openspec@1.13.0 -- openspec validate --all --strict --no-interactive"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
