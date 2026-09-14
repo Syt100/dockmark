@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 
 import type { IconDiscoveryResult, IconType } from '@dockmark/shared'
 
-import { fetchServiceIcon, uploadServiceIcon } from '../api/client'
+import { ApiError, fetchServiceIcon, uploadServiceIcon } from '../api/client'
 import { toChineseError } from '../api/errors'
 import { discoverIconInBrowser } from '../ui/serviceIconDiscovery'
 import AppButton from './AppButton.vue'
@@ -68,6 +68,14 @@ function formatBytes(value: number): string {
   return `${Math.round(value / 1024)} KiB`
 }
 
+function iconDiscoveryError(caught: unknown, fallback: string): string {
+  if (caught instanceof ApiError && caught.code === 'validation_failed' && caught.message.trim()) {
+    return caught.message
+  }
+
+  return toChineseError(caught, fallback)
+}
+
 function updateIconType(value: string) {
   candidate.value = null
   error.value = null
@@ -116,7 +124,7 @@ async function browserFetch() {
       }
     }
   } catch (caught) {
-    error.value = toChineseError(caught, '浏览器没有找到可用的网站图标')
+    error.value = iconDiscoveryError(caught, '浏览器没有找到可用的网站图标')
   } finally {
     isBrowserFetching.value = false
   }
@@ -136,7 +144,7 @@ async function serverFetch() {
   try {
     candidate.value = await fetchServiceIcon(selectedSourceUrl.value)
   } catch (caught) {
-    error.value = toChineseError(caught, '服务端没有找到可用的网站图标')
+    error.value = iconDiscoveryError(caught, '服务端没有找到可用的网站图标')
   } finally {
     isServerFetching.value = false
   }
