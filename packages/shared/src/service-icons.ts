@@ -116,13 +116,17 @@ export function rankIconCandidates(candidates: IconCandidate[]): IconCandidate[]
   }
 
   return [...unique.values()]
-    .sort((left, right) => candidateScore(right) - candidateScore(left) || left.url.localeCompare(right.url))
+    .sort(
+      (left, right) =>
+        candidateScore(right) - candidateScore(left) || left.url.localeCompare(right.url),
+    )
     .slice(0, automaticIconLimits.maxCandidates)
 }
 
 function candidateScore(candidate: IconCandidate): number {
   const normalizedMime = candidate.mimeType?.toLowerCase() ?? ''
-  const vectorBonus = normalizedMime === 'image/svg+xml' || candidate.url.toLowerCase().endsWith('.svg') ? 500 : 0
+  const vectorBonus =
+    normalizedMime === 'image/svg+xml' || candidate.url.toLowerCase().endsWith('.svg') ? 500 : 0
   const size = Math.max(0, Math.min(candidate.size ?? 0, 512))
   return sourcePriority[candidate.source] * 10_000 + vectorBonus + size
 }
@@ -141,7 +145,10 @@ export function validateIconFetchRequest(input: unknown): ValidationResult<IconF
   const normalized = url.trim()
 
   if (normalized.length > automaticIconLimits.maxSourceUrlLength) {
-    return { ok: false, errors: [`url must be at most ${automaticIconLimits.maxSourceUrlLength} characters`] }
+    return {
+      ok: false,
+      errors: [`url must be at most ${automaticIconLimits.maxSourceUrlLength} characters`],
+    }
   }
 
   try {

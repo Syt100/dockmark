@@ -56,7 +56,11 @@ export function base64ByteLength(value: string): number {
   return (value.length / 4) * 3 - padding
 }
 
-function parseAsset(value: unknown, index: number, errors: string[]): ManagedExportIconAsset | null {
+function parseAsset(
+  value: unknown,
+  index: number,
+  errors: string[],
+): ManagedExportIconAsset | null {
   const path = `assets.${index}`
   if (!isRecord(value)) {
     errors.push(`${path} must be an object`)
@@ -159,7 +163,9 @@ export function validatePortableDockmarkExportDocument(
 
   const totalAssetBytes = assets.reduce((total, asset) => total + asset.byteLength, 0)
   if (totalAssetBytes > managedExportLimits.maxTotalAssetBytes) {
-    errors.push(`managed icon assets must total at most ${managedExportLimits.maxTotalAssetBytes} bytes`)
+    errors.push(
+      `managed icon assets must total at most ${managedExportLimits.maxTotalAssetBytes} bytes`,
+    )
   }
 
   if (estimateJsonByteLength(input) > managedExportLimits.maxJsonBytes) {

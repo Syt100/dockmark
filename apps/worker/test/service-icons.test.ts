@@ -14,18 +14,20 @@ const pngBytes = new Uint8Array([
 
 function createR2Mock() {
   const objects = new Map<string, Uint8Array>()
-  const put = vi.fn(async (key: string, value: ReadableStream | ArrayBuffer | ArrayBufferView | string | null) => {
-    if (value instanceof Uint8Array) {
-      objects.set(key, value)
-    } else if (ArrayBuffer.isView(value)) {
-      objects.set(key, new Uint8Array(value.buffer, value.byteOffset, value.byteLength))
-    } else if (value instanceof ArrayBuffer) {
-      objects.set(key, new Uint8Array(value))
-    } else {
-      throw new Error('unexpected test value')
-    }
-    return {} as R2Object
-  })
+  const put = vi.fn(
+    async (key: string, value: ReadableStream | ArrayBuffer | ArrayBufferView | string | null) => {
+      if (value instanceof Uint8Array) {
+        objects.set(key, value)
+      } else if (ArrayBuffer.isView(value)) {
+        objects.set(key, new Uint8Array(value.buffer, value.byteOffset, value.byteLength))
+      } else if (value instanceof ArrayBuffer) {
+        objects.set(key, new Uint8Array(value))
+      } else {
+        throw new Error('unexpected test value')
+      }
+      return {} as R2Object
+    },
+  )
 
   return {
     objects,

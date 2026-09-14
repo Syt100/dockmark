@@ -233,7 +233,10 @@ export async function fetchServiceIcon(url: string): Promise<IconDiscoveryResult
   })
 }
 
-export async function uploadServiceIcon(blob: Blob, sourceUrl: string): Promise<IconDiscoveryResult> {
+export async function uploadServiceIcon(
+  blob: Blob,
+  sourceUrl: string,
+): Promise<IconDiscoveryResult> {
   const form = new FormData()
   form.set('file', blob, 'service-icon')
   form.set('sourceUrl', sourceUrl)

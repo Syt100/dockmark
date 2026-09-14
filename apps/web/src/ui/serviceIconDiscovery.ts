@@ -31,7 +31,10 @@ function largestSize(value: string | null): number | undefined {
   return largest || undefined
 }
 
-function declaredCandidates(document: Document, pageUrl: URL): {
+function declaredCandidates(
+  document: Document,
+  pageUrl: URL,
+): {
   candidates: IconCandidate[]
   manifestUrls: string[]
 } {
@@ -49,10 +52,7 @@ function declaredCandidates(document: Document, pageUrl: URL): {
       continue
     }
 
-    const rel = (link.getAttribute('rel') ?? '')
-      .toLowerCase()
-      .split(/\s+/)
-      .filter(Boolean)
+    const rel = (link.getAttribute('rel') ?? '').toLowerCase().split(/\s+/).filter(Boolean)
 
     if (rel.includes('manifest')) {
       manifestUrls.push(url)
@@ -113,7 +113,10 @@ async function fetchWithTimeout(url: string, accept: string): Promise<Response> 
   })
 }
 
-async function readBoundedBytes(response: Response, limit: number): Promise<Uint8Array<ArrayBuffer>> {
+async function readBoundedBytes(
+  response: Response,
+  limit: number,
+): Promise<Uint8Array<ArrayBuffer>> {
   const declaredLength = Number(response.headers.get('content-length') ?? 0)
   if (Number.isFinite(declaredLength) && declaredLength > limit) {
     throw new Error(`响应内容超过 ${limit} 字节限制`)
@@ -161,10 +164,14 @@ async function readBoundedText(response: Response, limit: number): Promise<strin
 
 async function readBoundedBlob(response: Response, limit: number): Promise<Blob> {
   const bytes = await readBoundedBytes(response, limit)
-  return new Blob([bytes], { type: response.headers.get('content-type')?.split(';')[0]?.trim() ?? '' })
+  return new Blob([bytes], {
+    type: response.headers.get('content-type')?.split(';')[0]?.trim() ?? '',
+  })
 }
 
-async function readBlobCandidate(candidate: IconCandidate): Promise<BrowserIconDiscoveryResult | null> {
+async function readBlobCandidate(
+  candidate: IconCandidate,
+): Promise<BrowserIconDiscoveryResult | null> {
   try {
     const response = await fetchWithTimeout(
       candidate.url,
@@ -220,7 +227,9 @@ function conventionalCandidates(pageUrl: URL): IconCandidate[] {
   }))
 }
 
-export async function discoverIconInBrowser(sourceUrl: string): Promise<BrowserIconDiscoveryResult> {
+export async function discoverIconInBrowser(
+  sourceUrl: string,
+): Promise<BrowserIconDiscoveryResult> {
   const source = new URL(sourceUrl)
   if (source.protocol !== 'http:' && source.protocol !== 'https:') {
     throw new Error('浏览器图标获取仅支持 HTTP 或 HTTPS 地址')

@@ -36,10 +36,13 @@ const feedback = ref<string | null>(null)
 const isBrowserFetching = ref(false)
 const isServerFetching = ref(false)
 
-const sourceEndpoints = computed(() => props.endpoints.filter((endpoint) => endpoint.url.trim().length > 0))
+const sourceEndpoints = computed(() =>
+  props.endpoints.filter((endpoint) => endpoint.url.trim().length > 0),
+)
 const isFetching = computed(() => isBrowserFetching.value || isServerFetching.value)
 const primaryUrl = computed(
-  () => props.endpoints.find((endpoint) => endpoint.isPrimary)?.url ?? props.endpoints[0]?.url ?? null,
+  () =>
+    props.endpoints.find((endpoint) => endpoint.isPrimary)?.url ?? props.endpoints[0]?.url ?? null,
 )
 const candidateLabel = computed(() => {
   if (!candidate.value) return ''
@@ -196,19 +199,33 @@ function acceptCandidate() {
         type="url"
         @update:model-value="updateIcon"
       />
-      <p v-else-if="iconType === 'r2'" class="truncate text-xs text-[var(--dm-text-subtle)]" :title="icon">
+      <p
+        v-else-if="iconType === 'r2'"
+        class="truncate text-xs text-[var(--dm-text-subtle)]"
+        :title="icon"
+      >
         Dockmark 托管 · {{ icon.split('/').at(-1) }}
       </p>
       <p v-else class="text-xs text-[var(--dm-text-subtle)]">自动使用主地址 `/favicon.ico`</p>
     </div>
 
-    <div class="rounded-[var(--dm-radius-surface)] border border-[var(--dm-border)] bg-[var(--dm-surface-muted)] p-3">
+    <div
+      class="rounded-[var(--dm-radius-surface)] border border-[var(--dm-border)] bg-[var(--dm-surface-muted)] p-3"
+    >
       <div class="grid gap-2 sm:grid-cols-[minmax(10rem,1fr)_auto_auto] sm:items-end">
         <label class="grid gap-1 text-sm">
           <span class="dm-label">自动获取来源</span>
-          <AppSelect v-model="selectedSourceUrl" name="service-icon-source" :disabled="sourceEndpoints.length === 0">
+          <AppSelect
+            v-model="selectedSourceUrl"
+            name="service-icon-source"
+            :disabled="sourceEndpoints.length === 0"
+          >
             <option v-if="sourceEndpoints.length === 0" value="">请先填写服务地址</option>
-            <option v-for="(endpoint, index) in sourceEndpoints" :key="`${endpoint.url}-${index}`" :value="endpoint.url">
+            <option
+              v-for="(endpoint, index) in sourceEndpoints"
+              :key="`${endpoint.url}-${index}`"
+              :value="endpoint.url"
+            >
               {{ endpoint.label }}{{ endpoint.isPrimary ? '（主地址）' : '' }} · {{ endpoint.url }}
             </option>
           </AppSelect>
@@ -221,7 +238,8 @@ function acceptCandidate() {
         </AppButton>
       </div>
       <p class="mt-2 text-xs leading-5 text-[var(--dm-text-subtle)]">
-        浏览器获取适合当前设备可访问的地址；服务端获取仅允许公网 HTTP(S) 地址。两种方式不会自动互相切换。
+        浏览器获取适合当前设备可访问的地址；服务端获取仅允许公网 HTTP(S)
+        地址。两种方式不会自动互相切换。
       </p>
     </div>
 

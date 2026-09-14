@@ -219,7 +219,10 @@ function largestDeclaredSize(value: string | undefined): number | undefined {
   return largest || undefined
 }
 
-export function discoverHtmlCandidates(html: string, pageUrl: URL): {
+export function discoverHtmlCandidates(
+  html: string,
+  pageUrl: URL,
+): {
   candidates: IconCandidate[]
   manifestUrls: string[]
 } {
@@ -240,10 +243,7 @@ export function discoverHtmlCandidates(html: string, pageUrl: URL): {
       continue
     }
 
-    const rel = (attributes.get('rel') ?? '')
-      .toLowerCase()
-      .split(/\s+/)
-      .filter(Boolean)
+    const rel = (attributes.get('rel') ?? '').toLowerCase().split(/\s+/).filter(Boolean)
 
     if (rel.includes('manifest')) {
       manifestUrls.push(resolved)

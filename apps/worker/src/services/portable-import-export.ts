@@ -12,7 +12,12 @@ import {
   type ManagedExportIconAsset,
 } from '@dockmark/shared'
 
-import { buildExportDocument, getCurrentImportSummary, importDocument, previewImport } from './import-export'
+import {
+  buildExportDocument,
+  getCurrentImportSummary,
+  importDocument,
+  previewImport,
+} from './import-export'
 import { detectManagedIconMimeType } from './service-icons'
 
 type PortableStore = {
@@ -223,7 +228,10 @@ async function verifyAsset(asset: ManagedExportIconAsset): Promise<VerifiedAsset
   return { asset, bytes }
 }
 
-async function restoreManagedAssets(bucket: R2Bucket | undefined, assets: ManagedExportIconAsset[]) {
+async function restoreManagedAssets(
+  bucket: R2Bucket | undefined,
+  assets: ManagedExportIconAsset[],
+) {
   if (assets.length === 0) return
 
   const target = requireBucket(bucket)
