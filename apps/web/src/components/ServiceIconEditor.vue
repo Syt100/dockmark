@@ -93,11 +93,11 @@ function updateIconType(value: string) {
   }
 }
 
-function updateIcon(value: string) {
+function updateIcon(value: string | number) {
   candidate.value = null
   error.value = null
   feedback.value = null
-  emit('update:icon', value)
+  emit('update:icon', String(value))
 }
 
 async function browserFetch() {
