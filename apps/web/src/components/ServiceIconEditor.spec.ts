@@ -5,7 +5,7 @@ import { discoverIconInBrowser } from '../ui/serviceIconDiscovery'
 import ServiceIconEditor from './ServiceIconEditor.vue'
 
 vi.mock('../ui/serviceIconDiscovery', () => ({
-  discoverIconInBrowser: vi.fn(),
+  discoverIconInBrowser: vi.fn<typeof discoverIconInBrowser>(),
 }))
 
 const endpoints = [
