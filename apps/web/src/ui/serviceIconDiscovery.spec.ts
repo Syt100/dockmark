@@ -56,19 +56,11 @@ describe('browser service icon discovery', () => {
     })
   })
 
-  it('does not consume an oversized HTML body when Content-Length already exceeds the limit', async () => {
-    let bodyRead = false
-    const stream = new ReadableStream<Uint8Array>({
-      pull(controller) {
-        bodyRead = true
-        controller.enqueue(new TextEncoder().encode('<link rel="icon" href="/declared.png">'))
-        controller.close()
-      },
-    })
+  it('does not parse declared icon candidates when Content-Length already exceeds the HTML limit', async () => {
     const fetchMock = vi.fn<typeof fetch>().mockImplementation((input) => {
       if (String(input) === 'https://example.test/app') {
         return Promise.resolve(
-          new Response(stream, {
+          new Response('<link rel="icon" href="/declared.png">', {
             status: 200,
             headers: {
               'content-type': 'text/html',
@@ -81,8 +73,10 @@ describe('browser service icon discovery', () => {
       return Promise.reject(new TypeError('CORS blocked'))
     })
 
+    const probedUrls: string[] = []
     class FailingImage extends ProbeImage {
-      override set src(_value: string) {
+      override set src(value: string) {
+        probedUrls.push(value)
         queueMicrotask(() => this.onerror?.())
       }
     }
@@ -93,6 +87,10 @@ describe('browser service icon discovery', () => {
     await expect(discoverIconInBrowser('https://example.test/app')).rejects.toThrow(
       '浏览器没有找到可用的网站图标',
     )
-    expect(bodyRead).toBe(false)
+
+    expect(fetchMock.mock.calls.map(([input]) => String(input))).not.toContain(
+      'https://example.test/declared.png',
+    )
+    expect(probedUrls).not.toContain('https://example.test/declared.png')
   })
 })
