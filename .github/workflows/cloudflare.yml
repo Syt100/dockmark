@@ -190,7 +190,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Comment preview link on pull request
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           PREVIEW_URL: ${{ steps.upload-preview.outputs.url }}
         with:
