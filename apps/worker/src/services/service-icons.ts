@@ -94,21 +94,22 @@ function isNonPublicIpLiteral(hostname: string): boolean {
 
 function isNonPublicIpv6(hostname: string): boolean {
   const value = hostname.toLowerCase()
+  const firstHextet = Number.parseInt(value.split(':', 1)[0] ?? '', 16)
 
-  if (value === '::' || value === '::1') {
+  // Only permit currently allocated global-unicast literal addresses (2000::/3).
+  // This conservatively rejects IPv4-mapped/compatible, loopback, ULA,
+  // link-local, multicast, unspecified, and transition-only literal ranges.
+  if (!Number.isInteger(firstHextet) || firstHextet < 0x2000 || firstHextet > 0x3fff) {
     return true
   }
 
-  if (value.startsWith('fc') || value.startsWith('fd') || value.startsWith('ff')) {
-    return true
-  }
-
-  if (/^fe[89ab]/.test(value)) {
-    return true
-  }
-
-  const mapped = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/.exec(value)
-  return mapped ? isNonPublicIpLiteral(mapped[1] ?? '') : false
+  return (
+    value === '2001:2' ||
+    value.startsWith('2001:2:') ||
+    value === '2001:db8' ||
+    value.startsWith('2001:db8:') ||
+    value.startsWith('3fff:')
+  )
 }
 
 export async function fetchSafeExternal(
